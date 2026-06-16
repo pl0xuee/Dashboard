@@ -70,6 +70,7 @@
       <div class="controls" style="display: inline-flex; justify-content: flex-start; margin-left: auto;">
         <input type="text" id="streamUrl" placeholder="YouTube URL or Twitch Channel Name" onkeydown="if(event.key === 'Enter') loadStream()" style="width: 350px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: #fff; outline: none; font-size: 13px;">
         <button onclick="loadStream()" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; margin-left: 5px; font-weight: 500; transition: all 180ms ease;">Load</button>
+        <button onclick="toggleChat()" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; margin-left: 5px; font-weight: 500; transition: all 180ms ease;">Toggle Chat</button>
       </div>
     </header>
     <main class="main">
@@ -140,6 +141,11 @@
         inputElement.dataset.lastInput = channel;
         inputElement.value = "You are Watching: " + channel;
     }
+    }
+
+    function toggleChat() {
+      const chat = document.getElementById('chat');
+      chat.style.display = (chat.style.display === 'none') ? 'block' : 'none';
     }
 
     // Clear the input completely when focused, regardless of whether it's "Watching" text or the ID.
