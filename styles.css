@@ -337,7 +337,7 @@ button, .url-control input[type=text] {
   align-items: stretch;
   position: relative;
   z-index: 5;
-  gap: 15px; /* Uniform spacing */
+  gap: 5px;
   height: 100%;
   width: 100%;
   overflow: hidden;
