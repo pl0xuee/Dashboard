@@ -286,3 +286,33 @@ header {
   z-index: 1 !important;
 }
 
+@media (max-width: 900px) {
+  .tradingview-grid {
+    grid-template-columns: 1fr;
+  }
+  .page {
+    max-width: 95%; /* More width on mobile */
+  }
+}
+
+@media (max-width: 760px) {
+  header {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px;
+  }
+
+  .header-left {
+    justify-content: center;
+  }
+
+  .main {
+    min-height: auto;
+  }
+
+  /* Optimize panels for mobile touch */
+  .tv-panel {
+    min-height: 200px;
+  }
+}
+
