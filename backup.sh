@@ -15,14 +15,9 @@ echo "Creating backup branch: $BRANCH_NAME"
 # Create and switch to a new branch for this backup
 git checkout -b "$BRANCH_NAME"
 
-# Generate a summary of changes
-SUMMARY=$(git diff --stat)
-
-# Commit all changes with the summary
+# Commit all changes
 git add .
-git commit -m "Automated backup $TIMESTAMP
-Summary of changes:
-$SUMMARY"
+git commit -m "Automated backup $TIMESTAMP"
 
 # Push the new backup branch to GitHub
 git push origin "$BRANCH_NAME"
@@ -31,5 +26,3 @@ git push origin "$BRANCH_NAME"
 git checkout main
 
 echo "Backup complete: $BRANCH_NAME pushed to GitHub."
-echo "Summary of changes:"
-echo "$SUMMARY"
