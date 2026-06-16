@@ -67,21 +67,28 @@ header {
   z-index: 10;
   flex: 0 0 auto;
   align-self: flex-start;
+  margin-left: 0; /* Ensures consistent left-alignment regardless of page max-width */
+}
+
+/* Ensure the header inside .page behaves predictably */
+.page > header {
+  margin-left: 0;
 }
 
 .home-button {
   background: rgba(255, 255, 255, 0.04);
   color: #e8ecef;
-  padding: 0.5rem 0.8rem;
+  padding: 0.6rem 1.2rem; /* Consistent padding */
   border-radius: 999px;
   border: 1px solid var(--border);
   cursor: pointer;
   white-space: nowrap;
   text-decoration: none;
-  font-size: 13px;
+  font-size: 14px; /* Consistent font size */
   transition: all 180ms ease;
   display: inline-block;
   line-height: 1;
+  font-weight: 500;
 }
 
 .home-button:hover {
@@ -226,19 +233,25 @@ header {
 
 .tv-panel-header button {
   height: 36px;
-  padding: 0 12px;
-  border-radius: 18px;
+  padding: 0 16px; /* Consistent padding */
+  border-radius: 999px; /* Pill shape matching header buttons */
   background: rgba(109, 140, 255, 0.16);
   color: #e9f0ff;
   border: 1px solid rgba(109, 140, 255, 0.18);
   cursor: pointer;
   font-size: 14px;
   font-weight: 500;
-  transition: background-color 180ms ease, transform 180ms ease;
+  transition: all 180ms ease;
   white-space: nowrap;
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.tv-panel-header button:hover {
+  border-color: rgba(109, 140, 255, 0.45);
+  background: rgba(109, 140, 255, 0.14);
+  transform: translateY(-1px);
 }
 
 .tv-widget {
