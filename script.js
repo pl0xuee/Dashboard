@@ -219,7 +219,7 @@ function initializeTradingViewPage() {
         const symbolInput = tvTickerInputs[panelIndex];
         const query = symbolInput ? symbolInput.value.trim() : '';
         if (query) {
-          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+          const searchUrl = `https://search.brave.com/search?q=${encodeURIComponent(query)}`;
           window.open(searchUrl, '_blank');
         }
       } else {
