@@ -143,16 +143,19 @@ function createTradingViewWidget(index, symbol) {
       const youtubeSrc = getYouTubeEmbedUrl(media.id);
       if (youtubeSrc) {
         iframe.src = youtubeSrc;
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
         container.appendChild(iframe);
       }
     } else if (media.type === 'twitch') {
       const twitchSrc = getTwitchEmbedUrl(media);
       if (twitchSrc) {
         iframe.src = twitchSrc;
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
         container.appendChild(iframe);
       }
     } else if (media.type === 'youtube_tv') {
       iframe.src = `https://tv.youtube.com/watch/${media.id}`;
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
       container.appendChild(iframe);
     }
   } else {
@@ -211,7 +214,17 @@ function initializeTradingViewPage() {
   document.querySelectorAll('.tv-panel-header button').forEach((button) => {
     button.addEventListener('click', () => {
       const panelIndex = Number(button.dataset.panel);
+      // Fixed the identification: Checking by title attribute is safer
+      if (button.getAttribute('title') === 'Search YouTube/Twitch') {
+        const symbolInput = tvTickerInputs[panelIndex];
+        const query = symbolInput ? symbolInput.value.trim() : '';
+        if (query) {
+          const searchUrl = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+          window.open(searchUrl, '_blank');
+        }
+      } else {
       updatePanel(panelIndex);
+      }
     });
   });
 

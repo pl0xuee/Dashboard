@@ -226,7 +226,7 @@ header {
 
 .tv-panel-header button {
   height: 36px;
-  padding: 0 18px;
+  padding: 0 12px;
   border-radius: 18px;
   background: rgba(109, 140, 255, 0.16);
   color: #e9f0ff;
@@ -236,6 +236,9 @@ header {
   font-weight: 500;
   transition: background-color 180ms ease, transform 180ms ease;
   white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tv-widget {
@@ -269,3 +272,4 @@ header {
   background: transparent !important;
   z-index: 1 !important;
 }
+
