@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stream - Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <style>
     .page {
       max-width: 99% !important; /* Wider width for stream page */
@@ -86,17 +87,16 @@
       if (url.includes('youtube.com') || url.includes('youtu.be')) {
         const videoId = url.split('v=')[1] || url.split('/').pop();
         // Add dark theme parameter to YouTube embed
-        player.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allowfullscreen></iframe>`;
-        chat.innerHTML = `<iframe src="https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}&dark_theme=1"></iframe>`;
+        player.innerHTML = '<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allowfullscreen></iframe>';
+        chat.innerHTML = '<iframe src="https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}&dark_theme=1"></iframe>';
       } else if (url.includes('twitch.tv')) {
         const channel = url.split('/').pop();
         // Add dark theme parameter to Twitch embed
-        player.innerHTML = `<iframe src="https://player.twitch.tv/?channel=${channel}&parent=${window.location.hostname}&darkmode=true" allowfullscreen></iframe>`;
+        player.innerHTML = '<iframe src="https://player.twitch.tv/?channel=${channel}&parent=${window.location.hostname}&darkmode=true" allowfullscreen></iframe>';
         // Use 'darkpopout' as suggested
-        chat.innerHTML = `<iframe src="https://www.twitch.tv/embed/${channel}/chat?parent=${window.location.hostname}&darkpopout"></iframe>`;
+        chat.innerHTML = '<iframe src="https://www.twitch.tv/embed/${channel}/chat?parent=${window.location.hostname}&darkpopout"></iframe>';
       }
     }
   </script>
 </body>
 </html>
-
