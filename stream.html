@@ -67,9 +67,9 @@
       </div>
     </header>
     <main class="main">
-      <div class="controls" style="display: flex; justify-content: flex-start; margin-bottom: 5px;">
-        <input type="text" id="streamUrl" placeholder="YouTube/Twitch URL" onkeydown="if(event.key === 'Enter') loadStream()" style="width: 250px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: #fff; outline: none; font-size: 13px;">
-        <button onclick="loadStream()" class="load-button" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; margin-left: 5px; font-weight: 500; transition: all 180ms ease;">Load</button>
+      <div class="controls" style="display: inline-flex; justify-content: flex-start; margin-bottom: 5px;">
+        <input type="text" id="streamUrl" placeholder="YouTube URL or Twitch Channel Name" onkeydown="if(event.key === 'Enter') loadStream()" style="width: 350px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: #fff; outline: none; font-size: 13px;">
+        <button onclick="loadStream()" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; margin-left: 5px; font-weight: 500; transition: all 180ms ease;">Load</button>
       </div>
       <div class="stream-container">
         <div class="stream-player" id="player"></div>
@@ -79,24 +79,52 @@
   </div>
   <script>
     function loadStream() {
-      const url = document.getElementById('streamUrl').value;
+      const inputElement = document.getElementById('streamUrl');
+      const input = inputElement.value.trim();
       const player = document.getElementById('player');
       const chat = document.getElementById('chat');
       
-      // Simple logic to detect if YouTube or Twitch
-      if (url.includes('youtube.com') || url.includes('youtu.be')) {
-        const videoId = url.split('v=')[1] || url.split('/').pop();
-        // Add dark theme parameter to YouTube embed
-        player.innerHTML = '<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1" allowfullscreen></iframe>';
-        chat.innerHTML = '<iframe src="https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}&dark_theme=1"></iframe>';
-      } else if (url.includes('twitch.tv')) {
-        const channel = url.split('/').pop();
-        // Add dark theme parameter to Twitch embed
-        player.innerHTML = '<iframe src="https://player.twitch.tv/?channel=${channel}&parent=${window.location.hostname}&darkmode=true" allowfullscreen></iframe>';
-        // Use 'darkpopout' as suggested
-        chat.innerHTML = '<iframe src="https://www.twitch.tv/embed/${channel}/chat?parent=${window.location.hostname}&darkpopout"></iframe>';
-      }
+      if (!input) return;
+      if (input.includes('youtube.com') || input.includes('youtu.be')) {
+        let videoId = "";
+        // More robust YouTube URL parsing
+        if (input.includes('v=')) {
+          videoId = input.split('v=')[1].split('&')[0];
+        } else if (input.includes('youtu.be/')) {
+          videoId = input.split('youtu.be/')[1].split('?')[0];
+        } else if (input.includes('/embed/')) {
+          videoId = input.split('/embed/')[1].split('?')[0];
+        } else {
+          videoId = input.split('/').pop();
+        }
+
+        // To reliably detect live chat, we attempt to load it.
+        // YouTube doesn't offer a clean way to check live status via client-side JS without an API key,
+        // so we will load the chat iframe and let YouTube's embed handle the "chat disabled" message.
+        // If you want to hide it automatically, we'd need to use the YouTube Data API.
+        // For now, let's keep the chat panel but make it smart:
+        player.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}&enablejsapi=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+
+          chat.innerHTML = `<iframe src="https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}&dark_theme=1"></iframe>`;
+        chat.style.display = 'block';
+        inputElement.dataset.lastInput = videoId;
+        inputElement.value = "You are Watching: " + videoId;
+      } else {
+        const channel = input.includes('twitch.tv/') ? input.split('twitch.tv/').pop().split('/')[0] : input;
+        player.innerHTML = '<iframe src="https://player.twitch.tv/?channel=' + channel + '&parent=' + window.location.hostname + '&autoplay=true&muted=false" allow="autoplay; fullscreen" allowfullscreen></iframe>';
+        chat.innerHTML = '<iframe src="https://www.twitch.tv/embed/' + channel + '/chat?parent=' + window.location.hostname + '&darkpopout"></iframe>';
+        chat.style.display = 'block';
+        inputElement.dataset.lastInput = channel;
+        inputElement.value = "You are Watching: " + channel;
     }
+    }
+
+    // Clear the input completely when focused, regardless of whether it's "Watching" text or the ID.
+    document.getElementById('streamUrl').addEventListener('focus', function() {
+      this.value = "";
+      this.dataset.lastInput = "";
+    });
   </script>
 </body>
 </html>
+
