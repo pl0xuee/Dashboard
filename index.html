@@ -3,45 +3,90 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>pl0xuee's Dashboard</title>
+  <title>Home - Dashboard</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
+<body class="home-page">
   <div class="page">
-    <main class="main">
-      <div class="tradingview-grid" id="tradingviewGrid">
-        <div class="tv-panel">
-          <div class="tv-panel-header">
-            <input id="tvTicker0" type="text" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
-            <button type="button" data-panel="0">Update</button>
-          </div>
-          <div class="tv-widget" id="tvWidget0"></div>
-        </div>
-        <div class="tv-panel">
-          <div class="tv-panel-header">
-            <input id="tvTicker1" type="text" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
-            <button type="button" data-panel="1">Update</button>
-          </div>
-          <div class="tv-widget" id="tvWidget1"></div>
-        </div>
-        <div class="tv-panel">
-          <div class="tv-panel-header">
-            <input id="tvTicker2" type="text" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
-            <button type="button" data-panel="2">Update</button>
-          </div>
-          <div class="tv-widget" id="tvWidget2"></div>
-        </div>
-        <div class="tv-panel">
-          <div class="tv-panel-header">
-            <input id="tvTicker3" type="text" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
-            <button type="button" data-panel="3">Update</button>
-          </div>
-          <div class="tv-widget" id="tvWidget3"></div>
-        </div>
+    <header>
+      <div class="header-left">
+        <a href="index.html" class="home-button">Home</a>
+        <a href="dashboard.html" class="home-button">Dashboard</a>
+      </div>
+    </header>
+    <main class="main welcome">
+      <div class="welcome-inner">
+        <h1>My Favorites</h1>
+        
+        <!-- Quote of the Day -->
+        <p id="quote" style="margin-bottom: 20px; font-style: italic; color: #8b95a1;"></p>
+
+        <!-- Brave Search Bar -->
+        <form action="https://search.brave.com/search" method="get" target="_blank" style="margin-bottom: 30px; width: 100%; display: flex; justify-content: center;">
+          <input type="text" name="q" placeholder="Search Brave..." style="width: 100%; max-width: 500px; padding: 14px 24px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: #fff; outline: none; font-size: 16px;">
+        </form>
+
+        <section class="link-group">
+          <h2>Entertainment</h2>
+          <ul class="quick-links-list">
+            <li><a href="https://youtube.com" target="_blank">YouTube</a></li>
+            <li><a href="https://tv.youtube.com" target="_blank">YouTube TV</a></li>
+            <li><a href="https://twitch.tv" target="_blank">Twitch</a></li>
+            <li><a href="https://netflix.com" target="_blank">Netflix</a></li>
+            <li><a href="https://primevideo.com" target="_blank">Amazon Video</a></li>
+            <li><a href="https://disneyplus.com" target="_blank">Disney+</a></li>
+            <li><a href="https://hulu.com" target="_blank">Hulu</a></li>
+            <li><a href="https://hbomax.com" target="_blank">Max</a></li>
+          </ul>
+        </section>
+
+        <section class="link-group">
+          <h2>AI & Research</h2>
+          <ul class="quick-links-list">
+            <li><a href="https://chatgpt.com" target="_blank">ChatGPT</a></li>
+            <li><a href="https://gemini.google.com" target="_blank">Gemini</a></li>
+            <li><a href="https://claude.ai" target="_blank">Claude</a></li>
+            <li><a href="https://perplexity.ai" target="_blank">Perplexity</a></li>
+            <li><a href="https://reddit.com" target="_blank">Reddit</a></li>
+            <li><a href="https://wikipedia.org" target="_blank">Wikipedia</a></li>
+          </ul>
+        </section>
+
+        <section class="link-group">
+          <h2>Work & Tools</h2>
+          <ul class="quick-links-list">
+            <li><a href="https://tradingview.com" target="_blank">TradingView</a></li>
+            <li><a href="https://github.com" target="_blank">GitHub</a></li>
+            <li><a href="https://proton.me/mail" target="_blank">ProtonMail</a></li>
+            <li><a href="https://gmail.com" target="_blank">Gmail</a></li>
+            <li><a href="https://amazon.com" target="_blank">Amazon</a></li>
+            <li><a href="https://notion.so" target="_blank">Notion</a></li>
+            <li><a href="https://calendar.google.com" target="_blank">Calendar</a></li>
+          </ul>
+        </section>
+
+        <section class="link-group">
+          <h2>Quick Financials</h2>
+          <ul class="quick-links-list">
+            <li><a href="https://finance.yahoo.com" target="_blank">Yahoo Finance</a></li>
+            <li><a href="https://coinmarketcap.com" target="_blank">CoinMarketCap</a></li>
+            <li><a href="https://bloomberg.com" target="_blank">Bloomberg</a></li>
+          </ul>
+        </section>
       </div>
     </main>
   </div>
-  <script src="script.js"></script>
+  <script>
+    const quotes = [
+      "I’m not lazy, I’m just on energy saving mode.",
+      "My bed is a magical place where I suddenly remember everything I forgot to do.",
+      "I’d agree with you, but then we’d both be wrong.",
+      "The early bird can have the worm, because worms are gross.",
+      "I pretend to work, they pretend to pay me.",
+      "A day without sunshine is like, you know, night."
+    ];
+    document.getElementById('quote').textContent = quotes[Math.floor(Math.random() * quotes.length)];
+  </script>
 </body>
 </html>
 
