@@ -48,7 +48,8 @@ body {
 
 .page {
   width: 100%;
-  max-width: 84%; /* Reach edges of the body padding */
+  max-width: 84%; /* Set max-width to 84% */
+  margin: 0 auto; /* Center the page */
   height: 100%; /* Reach the bottom */
   display: flex;
   flex-direction: column;
