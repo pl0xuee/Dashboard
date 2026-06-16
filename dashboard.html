@@ -14,6 +14,11 @@
         <a href="dashboard.html" class="home-button">Dashboard</a>
         <a href="stream.html" class="home-button">Stream</a>
       </div>
+      <!-- Stock Ticker Container -->
+      <div class="ticker-container">
+        <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js"></script>
+        <tv-ticker-tape symbols="NASDAQ:AAPL,NASDAQ:MSFT,NASDAQ:NVDA,NASDAQ:AMZN,NASDAQ:GOOGL,NASDAQ:META,NASDAQ:BRK.B,NASDAQ:TSLA,NASDAQ:AVGO,NASDAQ:LLY,NASDAQ:JPM,NASDAQ:V,NASDAQ:JNJ,NASDAQ:WMT,NASDAQ:UNH,NASDAQ:XOM,NASDAQ:MA,NASDAQ:PG,NASDAQ:HD,NASDAQ:CVX,BITSTAMP:BTCUSD,BITSTAMP:ETHUSD,BINANCE:BNBUSDT,BITSTAMP:SOLUSD,BINANCE:XRPUSDT,BINANCE:ADAUSDT,BINANCE:DOGEUSDT,BINANCE:AVAXUSDT,BINANCE:DOTUSDT,BINANCE:TRXUSDT,BINANCE:LINKUSDT,BINANCE:BCHUSDT,BINANCE:MATICUSDT,BINANCE:NEARUSDT,BINANCE:LTCUSDT,BINANCE:SHIBUSDT,BINANCE:DAIUSDT,BINANCE:ATOMUSDT,BINANCE:UNIUSDT,BINANCE:XLMUSDT" theme="dark" display-mode="compact"></tv-ticker-tape>
+      </div>
     </header>
     <main class="main">
       <div class="tradingview-grid" id="tradingviewGrid">
