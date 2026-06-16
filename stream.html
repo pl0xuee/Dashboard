@@ -65,12 +65,14 @@
         <a href="dashboard.html" class="home-button">Dashboard</a>
         <a href="stream.html" class="home-button">Stream</a>
       </div>
-    </header>
-    <main class="main">
-      <div class="controls" style="display: inline-flex; justify-content: flex-start; margin-bottom: 5px;">
+
+      <!-- Moved controls here -->
+      <div class="controls" style="display: inline-flex; justify-content: flex-start; margin-left: auto;">
         <input type="text" id="streamUrl" placeholder="YouTube URL or Twitch Channel Name" onkeydown="if(event.key === 'Enter') loadStream()" style="width: 350px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: #fff; outline: none; font-size: 13px;">
         <button onclick="loadStream()" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; margin-left: 5px; font-weight: 500; transition: all 180ms ease;">Load</button>
       </div>
+    </header>
+    <main class="main">
       <div class="stream-container">
         <div class="stream-player" id="player"></div>
         <div class="stream-chat" id="chat"></div>
