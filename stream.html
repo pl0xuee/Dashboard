@@ -105,8 +105,29 @@
         // For now, let's keep the chat panel but make it smart:
         player.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}&enablejsapi=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
 
-          chat.innerHTML = `<iframe src="https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}&dark_theme=1"></iframe>`;
+        // Load chat, but use onload to check if it's actually "disabled"
+        const chatIframe = document.createElement('iframe');
+        chatIframe.src = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}&dark_theme=1`;
+
+        // This is a common hack: check if the iframe loads a "chat disabled" error
+        chatIframe.onload = function() {
+          try {
+            const body = chatIframe.contentDocument.body;
+            if (body && body.innerText.includes('disabled')) {
+              chat.style.display = 'none';
+            } else {
         chat.style.display = 'block';
+    }
+          } catch(e) {
+            // Browsers block cross-origin access to iframes, so we usually can't see inside.
+            // If we can't see inside, we leave it visible.
+            chat.style.display = 'block';
+    }
+        };
+
+        chat.innerHTML = '';
+        chat.appendChild(chatIframe);
+
         inputElement.dataset.lastInput = videoId;
         inputElement.value = "You are Watching: " + videoId;
       } else {
