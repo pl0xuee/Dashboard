@@ -22,7 +22,10 @@ $SUMMARY"
 # Push the changes to the current branch (main)
 git push origin main
 
-echo "Backup complete and pushed to GitHub (main branch)."
-echo "Summary of changes:"
+echo "------------------------------------------"
+echo "Backup complete and pushed to GitHub."
+echo "------------------------------------------"
+echo "SUMMARY OF CHANGES:"
 echo "$SUMMARY"
+echo "------------------------------------------"
 
