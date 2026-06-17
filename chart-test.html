@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Real-Time AAPL Chart</title>
+  <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+</head>
+<body style="background: #090b10; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 20px; font-family: sans-serif;">
+  <h1 style="color: #fff;">Real-Time AAPL Chart</h1>
+  <div id="chart" style="width: 800px; height: 400px; border: 1px solid #333; border-radius: 12px;"></div>
+
+  <script type="module">
+    import { API_KEY } from './config.js';
+    const chart = LightweightCharts.createChart(document.getElementById('chart'), {
+        width: 800, height: 400,
+        layout: { background: { type: 'solid', color: '#090b10' }, textColor: '#DDD' },
+        grid: { vertLines: { color: '#1f2937' }, horzLines: { color: '#1f2937' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        timeScale: {
+            timeVisible: true,
+            secondsVisible: false,
+            fixLeftEdge: true,
+            fixRightEdge: false, /* Set to false to allow space */
+            rightOffset: 10,     /* Adds space on the right */
+        },
+    });
+
+    const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+        upColor: '#26a69a', downColor: '#ef5350', borderVisible: false,
+        wickUpColor: '#26a69a', wickDownColor: '#ef5350'
+    });
+
+    // Add Volume Series at the bottom
+    const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+        color: '#26a69a',
+        priceFormat: { type: 'volume' },
+        priceScaleId: '', // Place on the same scale or create a new one
+    });
+
+    // Configure Volume Scale
+    chart.priceScale('').applyOptions({
+        scaleMargins: { top: 0.8, bottom: 0 },
+    });
+
+    let currentCandle = null;
+
+    async function fetchHistoricalData() {
+        const url = `https://api.twelvedata.com/time_series?symbol=AAPL&interval=1min&outputsize=100&apikey=${API_KEY}`;
+        
+        try {
+            const res = await fetch(url);
+            const json = await res.json();
+            
+            if (json.status === 'error') {
+                console.error("API Error:", json.message);
+                return;
+            }
+            
+            const formattedData = json.values.map(bar => ({
+                time: Math.floor(new Date(bar.datetime.replace(' ', 'T')).getTime() / 1000),
+                open: parseFloat(bar.open),
+                high: parseFloat(bar.high),
+                low: parseFloat(bar.low),
+                close: parseFloat(bar.close)
+            })).reverse();
+            
+            // Map volume data
+            const volumeData = json.values.map(bar => ({
+                time: Math.floor(new Date(bar.datetime.replace(' ', 'T')).getTime() / 1000),
+                value: parseFloat(bar.volume),
+                color: parseFloat(bar.close) >= parseFloat(bar.open) ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)'
+            })).reverse();
+
+            candleSeries.setData(formattedData);
+            volumeSeries.setData(volumeData);
+            chart.timeScale().fitContent();
+            // Store the last candle globally to update it
+            currentCandle = formattedData[formattedData.length - 1];
+
+            // Start real-time updates after history loads
+            setInterval(updateRealTime, 5000);
+        } catch (e) {
+            console.error("Failed to load history", e);
+        }
+    }
+
+    async function updateRealTime() {
+        const url = `https://api.twelvedata.com/price?symbol=AAPL&apikey=${API_KEY}`;
+
+        try {
+            const res = await fetch(url);
+            const data = await res.json();
+            const currentPrice = parseFloat(data.price);
+
+            if (currentCandle) {
+                // Update the current candle
+                currentCandle.close = currentPrice;
+                currentCandle.high = Math.max(currentCandle.high, currentPrice);
+                currentCandle.low = Math.min(currentCandle.low, currentPrice);
+
+                candleSeries.update(currentCandle);
+            }
+        } catch (e) {
+            console.log("Waiting for data...");
+        }
+    }
+
+    fetchHistoricalData();
+  </script>
+</body>
+</html>
+

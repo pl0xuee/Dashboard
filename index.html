@@ -33,7 +33,7 @@
 
           <!-- News Section (Left) -->
           <section class="link-group" style="max-width: 600px; flex: 2; margin: 0; display: flex; flex-direction: column;">
-            <div style="display: flex; gap: 15px; margin-bottom: 20px; justify-content: center;">
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; justify-content: flex-start;">
             <button onclick="showNews('usa', this)" id="btn-usa" class="home-button">USA News</button>
             <button onclick="showNews('world', this)" id="btn-world" class="home-button">World News</button>
           </div>
@@ -44,15 +44,56 @@
         </section>
 
           <!-- Market Stats (Right) -->
-          <section class="stats-group" style="display: flex; flex-direction: column; gap: 20px; flex: 1;">
-            <div style="background: var(--surface); padding: 30px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; flex: 1;">
-              <h3 style="margin-top: 0;">Market Sentiment</h3>
-              <p style="color: var(--accent); font-size: 1.1rem; margin-bottom: 0;">Greed / Neutral</p>
-      </div>
-            <div style="background: var(--surface); padding: 30px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; flex: 1;">
-              <h3 style="margin-top: 0;">Time (PST)</h3>
-              <p id="clock" style="color: var(--accent); font-family: monospace; font-size: 1.5rem; margin-bottom: 0;"></p>
-  </div>
+          <section class="stats-group" style="display: flex; flex-direction: column; gap: 15px; flex: 1;">
+            <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
+              <h3 style="margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-muted);">Sentiment</h3>
+              <p style="color: var(--accent); font-size: 1.1rem; margin: 0; font-weight: 600;">Greed / Neutral</p>
+              <p id="market-status" style="color: #ffffff; font-size: 1rem; font-weight: bold; margin: 5px 0 0 0;"></p>
+            </div>
+
+            <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
+              <h3 style="margin: 0 0 10px 0; font-size: 0.9rem; color: var(--text-muted);">Market Indices</h3>
+              <!-- TradingView Widget BEGIN -->
+              <div class="tradingview-widget-container">
+                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
+                {
+                  "symbols": [
+                    {"description": "Dow Jones", "proName": "DJI"},
+                    {"description": "Nasdaq 100", "proName": "NDX"},
+                    {"description": "S&P 500", "proName": "SPX"}
+                  ],
+                  "chartOnly": false,
+                  "width": "100%",
+                  "height": "150",
+                  "locale": "en",
+                  "colorTheme": "dark",
+                  "autosize": true,
+                  "showVolume": false,
+                  "hideDateRanges": false,
+                  "hideMarketStatus": true,
+                  "hideSymbolLogo": false,
+                  "scalePosition": "right",
+                  "scaleMode": "Normal",
+                  "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
+                  "fontSize": "10",
+                  "noTimeScale": false,
+                  "valuesTracking": "1",
+                  "changeMode": "price-and-percent",
+                  "chartType": "area",
+                  "maLineColor": "#2962FF",
+                  "maLineWidth": 1,
+                  "maLength": 9,
+                  "headerFontSize": "medium"
+                }
+                </script>
+              </div>
+              <!-- TradingView Widget END -->
+            </div>
+
+            <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
+              <h3 style="margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-muted);">Time (PST)</h3>
+              <p id="clock" style="color: var(--accent); font-family: monospace; font-size: 1.5rem; margin: 0; font-weight: 600;"></p>
+            </div>
           </section>
         </div>
 
@@ -152,6 +193,45 @@
     }
     showNews('usa');
 
+    function updateMarketStatus() {
+      const now = new Date();
+      const day = now.getDay();
+
+      const marketStatus = document.getElementById('market-status');
+
+      // US Market Hours: Mon-Fri, 9:30 AM - 4:00 PM EST
+      // Check if weekend
+      if (day === 0 || day === 6) {
+          marketStatus.textContent = "Market Closed (Weekend)";
+          return;
+      }
+
+      // Convert current time to EST/EDT
+      const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+      const estHour = estTime.getHours();
+      const estMinute = estTime.getMinutes();
+      const totalMinutes = estHour * 60 + estMinute;
+
+      const openTime = 9 * 60 + 30; // 9:30 AM
+      const closeTime = 16 * 60;    // 4:00 PM
+
+      if (totalMinutes >= openTime && totalMinutes < closeTime) {
+          const timeLeft = closeTime - totalMinutes;
+          const hours = Math.floor(timeLeft / 60);
+          const mins = timeLeft % 60;
+          marketStatus.textContent = `Market closes in ${hours}h ${mins}m`;
+      } else {
+          if (totalMinutes < openTime) {
+             const timeUntilOpen = openTime - totalMinutes;
+             const hours = Math.floor(timeUntilOpen / 60);
+             const mins = timeUntilOpen % 60;
+             marketStatus.textContent = `Market opens in ${hours}h ${mins}m`;
+          } else {
+             marketStatus.textContent = "Market Closed";
+          }
+      }
+    }
+
     // Clock Script
     function updateClock() {
       const now = new Date();
@@ -163,6 +243,7 @@
         second: '2-digit',
         hour12: true
       });
+      updateMarketStatus();
     }
     setInterval(updateClock, 1000);
     updateClock();
