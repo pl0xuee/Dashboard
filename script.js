@@ -214,7 +214,6 @@ function createTradingViewWidget(index, symbol) {
 
 async function loadChartData(ticker, candleSeries, volumeSeries, chart, index) {
     try {
-        // Now using the proxy.php to hide the API key
         const response = await fetch(`../proxy.php?symbol=${ticker}&interval=1min&outputsize=100`);
             const json = await response.json();
 
@@ -251,6 +250,25 @@ function fallbackToTradingView(index, symbol) {
     if (!container) return;
 
     container.innerHTML = '';
+
+    // Create the notification overlay
+    const notification = document.createElement('div');
+    notification.style.position = 'absolute';
+    notification.style.top = '0';
+    notification.style.left = '0';
+    notification.style.right = '0';
+    notification.style.background = 'rgba(255, 165, 0, 0.9)';
+    notification.style.color = '#000';
+    notification.style.padding = '10px';
+    notification.style.fontSize = '12px';
+    notification.style.zIndex = '20';
+    notification.style.textAlign = 'center';
+    notification.textContent = `Ticker "${symbol}" not available. Falling back to TradingView...`;
+    container.appendChild(notification);
+
+    // Auto-remove notification after 5 seconds
+    setTimeout(() => { notification.style.display = 'none'; }, 5000);
+
     const widgetContainer = document.createElement('div');
     widgetContainer.className = 'tradingview-widget-container';
     widgetContainer.style.height = '100%';
