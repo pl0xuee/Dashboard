@@ -32,26 +32,32 @@
         <!-- News and Stats Wrapper -->
         <div class="home-container" style="display: flex; gap: 40px; align-items: stretch; justify-content: center; margin-bottom: 40px;">
           <!-- News Section (Left) -->
-          <section class="news-section" style="max-width: 600px; flex: 2; margin: 0; display: flex; flex-direction: column;">
+          <section class="news-section" style="max-width: 900px; flex: 2; margin: 0; display: flex; flex-direction: column;">
             <div class="news-controls" style="display: flex; gap: 15px; margin-bottom: 20px; justify-content: flex-start;">
             <button onclick="showNews('usa', this)" id="btn-usa" class="home-button">USA News</button>
             <button onclick="showNews('world', this)" id="btn-world" class="home-button">World News</button>
+            <button onclick="showNews('finance', this)" id="btn-finance" class="home-button">Financial News</button>
           </div>
-            <div id="news-container" style="background: var(--surface); padding: 25px; border-radius: 24px; border: 1px solid var(--border); text-align: left; flex: 1;">
+            <div id="news-container" style="background: var(--surface); padding: 25px; border-radius: 24px; border: 1px solid var(--border); text-align: left; flex: 1; min-height: 250px;">
             <p>Loading headlines...</p>
           </div>
             <button id="toggle-news" onclick="toggleNews()" style="display: none; margin-top: 15px; padding: 8px 16px; font-size: 13px;" class="home-button">Show More</button>
         </section>
         <!-- Stats Section (Below News) -->
           <section class="stats-group" style="display: flex; flex-direction: column; gap: 15px; flex: 1;">
-            <div class="stat-card" style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
-              <h3 class="stat-title" style="margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-muted);">Sentiment</h3>
-              <p class="stat-value" style="color: var(--accent); font-size: 1.1rem; margin: 0; font-weight: 600;">Greed / Neutral</p>
-            <p id="market-status" style="color: #ffffff; font-size: 1rem; font-weight: bold; margin: 5px 0 0 0;"></p>
+            <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <h3 style="margin: 0 0 10px 0; font-size: 1rem; color: #fff; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); padding-bottom: 5px; width: 100%;">Market Insight</h3>
+
+              <div style="text-align: center; margin-bottom: 8px;">
+                <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Sentiment</span>
+                <span id="sentiment-val" style="color: var(--accent); font-size: 1.1rem; font-weight: 600;">Loading...</span>
               </div>
-            <div class="stat-card" style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
-              <h3 class="stat-title" style="margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-muted);">Time (PST)</h3>
-              <p id="clock" style="color: var(--accent); font-family: monospace; font-size: 1.5rem; margin: 0; font-weight: 600;"></p>
+
+              <div id="market-status" style="margin-top: 10px; padding: 6px 14px; background: rgba(109, 140, 255, 0.1); border-radius: 999px; color: #ffffff; font-size: 0.85rem; font-weight: bold; text-align: center;"></div>
+            </div>
+            <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; align-items: center;">
+              <h3 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);">Time (PST)</h3>
+              <p id="clock" style="color: var(--accent); font-family: monospace; font-size: 1.4rem; margin: 0; font-weight: 600;"></p>
             </div>
           </section>
       </div>
@@ -96,11 +102,12 @@
         </section>
 
         <section class="link-group">
-          <h2>Quick Financials</h2>
+          <h2>News & Financials</h2>
           <ul class="quick-links-list">
             <li><a href="https://finance.yahoo.com" target="_blank">Yahoo Finance</a></li>
             <li><a href="https://coinmarketcap.com" target="_blank">CoinMarketCap</a></li>
             <li><a href="https://bloomberg.com" target="_blank">Bloomberg</a></li>
+            <li><a href="https://reuters.com" target="_blank">Reuters</a></li>
           </ul>
         </section>
       </div>
@@ -118,9 +125,13 @@
       toggleBtn.textContent = 'Show More';
 
       try {
-        const feedUrl = type === 'usa'
-          ? 'https://news.google.com/rss?gl=US&hl=en-US&ceid=US:en'
-          : 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en';
+        // Updated feed URLs to include Finance
+        let feedUrl = 'https://news.google.com/rss?gl=US&hl=en-US&ceid=US:en'; // Default USA
+        if (type === 'world') {
+          feedUrl = 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en';
+        } else if (type === 'finance') {
+          feedUrl = 'https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en';
+        }
 
         const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl));
         const data = await response.json();
@@ -152,6 +163,18 @@
     }
     showNews('usa');
 
+    // Fetch Fear & Greed Index
+    async function fetchSentiment() {
+      try {
+        const res = await fetch('https://api.alternative.me/fng/');
+        const data = await res.json();
+        const value = data.data[0].value_classification;
+        document.getElementById('sentiment-val').textContent = value;
+      } catch (e) {
+        document.getElementById('sentiment-val').textContent = "Unavailable";
+      }
+    }
+
     function updateMarketStatus() {
       const now = new Date();
       const day = now.getDay();
@@ -180,14 +203,18 @@
           const mins = timeLeft % 60;
           marketStatus.textContent = `Market closes in ${hours}h ${mins}m`;
       } else {
+          // If before opening (even on same day), or after close (next day)
+          let timeUntilOpen;
           if (totalMinutes < openTime) {
-             const timeUntilOpen = openTime - totalMinutes;
-             const hours = Math.floor(timeUntilOpen / 60);
-             const mins = timeUntilOpen % 60;
-             marketStatus.textContent = `Market opens in ${hours}h ${mins}m`;
+             timeUntilOpen = openTime - totalMinutes;
           } else {
-             marketStatus.textContent = "Market Closed";
+             // Calculate time until 9:30 AM next day
+             // Minutes remaining in current day + opening time
+             timeUntilOpen = (24 * 60 - totalMinutes) + openTime;
           }
+          const hours = Math.floor(timeUntilOpen / 60);
+          const mins = timeUntilOpen % 60;
+          marketStatus.textContent = `Market opens in ${hours}h ${mins}m`;
       }
     }
 
@@ -204,6 +231,9 @@
       });
       updateMarketStatus();
     }
+
+    // Initial calls
+    fetchSentiment();
     setInterval(updateClock, 1000);
     updateClock();
 

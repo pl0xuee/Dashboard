@@ -113,15 +113,15 @@
         <a href="../media-portal/" class="home-button">Media</a>
       </div>
 
-      <!-- Moved controls here -->
-      <div class="controls" style="display: inline-flex; justify-content: flex-start; margin-bottom: 5px;">
+      <!-- Controls moved back to the header on the right -->
+      <div class="controls" style="display: inline-flex; justify-content: flex-start; margin-left: auto;">
         <input type="text" id="streamUrl" placeholder="YouTube URL or Twitch Channel Name" onkeydown="if(event.key === 'Enter') loadStream()" style="width: 350px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: #fff; outline: none; font-size: 13px;">
         <button onclick="loadStream()" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; margin-left: 5px; font-weight: 500; transition: all 180ms ease;">Load</button>
         <button onclick="toggleChat()" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; margin-left: 5px; font-weight: 500; transition: all 180ms ease;">Toggle Chat</button>
 
         <!-- Streamer Dropdown -->
         <div class="dropdown" style="margin-left: 5px;">
-          <button class="dropbtn">My Streamers ▼</button>
+          <button class="dropbtn" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; font-weight: 500;">My Streamers ▼</button>
           <div class="dropdown-content" id="streamerList">
             <div id="listItems"></div>
             <div style="border-top: 1px solid var(--border); margin: 5px 0;"></div>
@@ -139,6 +139,8 @@
   </div>
   <script src="../script.js"></script>
   <script>
+    const API_KEY = 'e113279daa094cf29e24802ff56566e2';
+
     function loadStreamDirect(url) {
       document.getElementById('streamUrl').value = url;
       loadStream();
