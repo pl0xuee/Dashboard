@@ -24,16 +24,15 @@
         <p id="quote" style="margin-bottom: 20px; font-style: italic; color: #8b95a1;"></p>
 
         <!-- Brave Search Bar -->
-        <form action="https://search.brave.com/search" method="get" target="_blank" style="margin-bottom: 40px; width: 100%; display: flex; justify-content: center;">
-          <input type="text" name="q" placeholder="Search Brave..." style="width: 100%; max-width: 500px; padding: 14px 24px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: #fff; outline: none; font-size: 16px;">
+        <form action="https://search.brave.com/search" method="get" target="_blank" class="search-form" style="margin-bottom: 40px; width: 100%; display: flex; justify-content: center;">
+          <input type="text" name="q" placeholder="Search Brave..." class="search-input" style="width: 100%; max-width: 500px; padding: 14px 24px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: #fff; outline: none; font-size: 16px;">
         </form>
 
         <!-- News and Stats Wrapper -->
-        <div style="display: flex; gap: 40px; align-items: stretch; justify-content: center; margin-bottom: 60px;">
-
+        <div class="home-container" style="display: flex; gap: 40px; align-items: stretch; justify-content: center; margin-bottom: 40px;">
           <!-- News Section (Left) -->
-          <section class="link-group" style="max-width: 600px; flex: 2; margin: 0; display: flex; flex-direction: column;">
-            <div style="display: flex; gap: 15px; margin-bottom: 20px; justify-content: flex-start;">
+          <section class="news-section" style="max-width: 600px; flex: 2; margin: 0; display: flex; flex-direction: column;">
+            <div class="news-controls" style="display: flex; gap: 15px; margin-bottom: 20px; justify-content: flex-start;">
             <button onclick="showNews('usa', this)" id="btn-usa" class="home-button">USA News</button>
             <button onclick="showNews('world', this)" id="btn-world" class="home-button">World News</button>
           </div>
@@ -42,60 +41,19 @@
           </div>
             <button id="toggle-news" onclick="toggleNews()" style="display: none; margin-top: 15px; padding: 8px 16px; font-size: 13px;" class="home-button">Show More</button>
         </section>
-
-          <!-- Market Stats (Right) -->
+        <!-- Stats Section (Below News) -->
           <section class="stats-group" style="display: flex; flex-direction: column; gap: 15px; flex: 1;">
-            <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
-              <h3 style="margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-muted);">Sentiment</h3>
-              <p style="color: var(--accent); font-size: 1.1rem; margin: 0; font-weight: 600;">Greed / Neutral</p>
-              <p id="market-status" style="color: #ffffff; font-size: 1rem; font-weight: bold; margin: 5px 0 0 0;"></p>
-            </div>
-
-            <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
-              <h3 style="margin: 0 0 10px 0; font-size: 0.9rem; color: var(--text-muted);">Market Indices</h3>
-              <!-- TradingView Widget BEGIN -->
-              <div class="tradingview-widget-container">
-                <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-mini-symbol-overview.js" async>
-                {
-                  "symbols": [
-                    {"description": "Dow Jones", "proName": "DJI"},
-                    {"description": "Nasdaq 100", "proName": "NDX"},
-                    {"description": "S&P 500", "proName": "SPX"}
-                  ],
-                  "chartOnly": false,
-                  "width": "100%",
-                  "height": "150",
-                  "locale": "en",
-                  "colorTheme": "dark",
-                  "autosize": true,
-                  "showVolume": false,
-                  "hideDateRanges": false,
-                  "hideMarketStatus": true,
-                  "hideSymbolLogo": false,
-                  "scalePosition": "right",
-                  "scaleMode": "Normal",
-                  "fontFamily": "-apple-system, BlinkMacSystemFont, Trebuchet MS, Roboto, Ubuntu, sans-serif",
-                  "fontSize": "10",
-                  "noTimeScale": false,
-                  "valuesTracking": "1",
-                  "changeMode": "price-and-percent",
-                  "chartType": "area",
-                  "maLineColor": "#2962FF",
-                  "maLineWidth": 1,
-                  "maLength": 9,
-                  "headerFontSize": "medium"
-                }
-                </script>
+            <div class="stat-card" style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
+              <h3 class="stat-title" style="margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-muted);">Sentiment</h3>
+              <p class="stat-value" style="color: var(--accent); font-size: 1.1rem; margin: 0; font-weight: 600;">Greed / Neutral</p>
+            <p id="market-status" style="color: #ffffff; font-size: 1rem; font-weight: bold; margin: 5px 0 0 0;"></p>
               </div>
-              <!-- TradingView Widget END -->
-            </div>
-
-            <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
-              <h3 style="margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-muted);">Time (PST)</h3>
+            <div class="stat-card" style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
+              <h3 class="stat-title" style="margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-muted);">Time (PST)</h3>
               <p id="clock" style="color: var(--accent); font-family: monospace; font-size: 1.5rem; margin: 0; font-weight: 600;"></p>
             </div>
           </section>
-        </div>
+      </div>
 
         <section class="link-group">
           <h2>Entertainment</h2>
