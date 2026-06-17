@@ -46,36 +46,35 @@ button:hover, .home-button:hover, .load-button:hover {
 
 html, body {
   min-height: 100%;
-  height: 100%;
   margin: 0;
   padding: 0;
   background: radial-gradient(circle at top left, rgba(109, 140, 255, 0.14), transparent 28%),
               radial-gradient(circle at bottom right, rgba(151, 100, 255, 0.12), transparent 30%),
               linear-gradient(180deg, #070a0f 0%, #0c1017 100%);
+  overflow-y: auto; /* Ensure scrollbar is always available */
 }
 
 body {
   display: flex;
-  align-items: stretch;
+  align-items: flex-start;
   justify-content: center;
   font-size: 16px;
   line-height: 1.6;
   padding: 15px;
   color: var(--text-muted);
-  height: 100vh;
-  overflow: hidden;
-  box-sizing: border-box;
+  min-height: 100vh;
+  overflow-y: auto; /* Enable vertical scrolling */
 }
 
 .page {
   width: 100%;
-  max-width: 79%;
+  max-width: 84%;
   margin: 0 auto;
-  height: 100%;
   display: flex;
   flex-direction: column;
   gap: 5px;
-  overflow: hidden;
+  min-height: 100vh; /* Ensure the page covers the viewport height */
+  overflow: visible; /* Allow content to flow properly */
 }
 
 header {
