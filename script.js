@@ -206,10 +206,33 @@ function initializeTradingViewPage() {
   const updatePanel = (index) => {
     const symbolInput = tvTickerInputs[index];
     const symbol = symbolInput ? symbolInput.value.trim() : '';
-    if (symbol) {
-      createTradingViewWidget(index, symbol);
+
+    // Check if the input is in "Loaded: " state and revert it if necessary
+    const actualSymbol = symbol.startsWith("Loaded: ") ? symbolInput.dataset.lastInput : symbol;
+    if (actualSymbol) {
+      // Save current input to data attribute
+      symbolInput.dataset.lastInput = actualSymbol;
+      symbolInput.value = "You are Watching: " + actualSymbol;
+      createTradingViewWidget(index, actualSymbol);
     }
   };
+
+  // Add focus behavior to clear "You are Watching: " text
+  tvTickerInputs.forEach((input, index) => {
+    if (input) {
+      input.addEventListener('focus', function() {
+        if (this.dataset.lastInput) {
+          this.value = this.dataset.lastInput;
+        }
+      });
+
+      input.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          updatePanel(index);
+        }
+      });
+    }
+  });
 
   document.querySelectorAll('.tv-panel-header button').forEach((button) => {
     button.addEventListener('click', () => {
@@ -226,16 +249,6 @@ function initializeTradingViewPage() {
       updatePanel(panelIndex);
       }
     });
-  });
-
-  tvTickerInputs.forEach((input, index) => {
-    if (input) {
-      input.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-          updatePanel(index);
-        }
-      });
-    }
   });
 }
 
