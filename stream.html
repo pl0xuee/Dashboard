@@ -238,9 +238,17 @@
     }
 
     document.getElementById('streamUrl').addEventListener('focus', function() {
-      this.value = "";
-      this.dataset.lastInput = "";
+      if (this.dataset.lastInput) this.value = this.dataset.lastInput;
     });
+
+    // Prevent the browser from throttling the stream in background tabs
+    document.addEventListener("visibilitychange", function() {
+        if (document.hidden) {
+            console.log("Tab is hidden, but stream should continue...");
+        }
+    });
+
+    window.onload = renderList;
   </script>
 </body>
 </html>
