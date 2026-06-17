@@ -145,14 +145,25 @@
 
     async function renderList() {
         let list = JSON.parse(localStorage.getItem('myStreamers')) || [{name: 'hutchmf', url: 'hutchmf'}, {name: 'shroud', url: 'shroud'}];
+
+        // Fetch statuses first
+        const streamerStatuses = await Promise.all(list.map(async (item) => {
+            const isOnline = await getTwitchStatus(item.url);
+            return { ...item, isOnline };
+        }));
+
+        // Sort: Online (true) first
+        streamerStatuses.sort((a, b) => b.isOnline - a.isOnline);
+
         const container = document.getElementById('listItems');
         container.innerHTML = '';
 
-        list.forEach((item, index) => {
+        streamerStatuses.forEach((item, index) => {
+            const statusColor = item.isOnline ? "#00ff00" : "#ff3333";
             container.innerHTML += `
                 <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 4px;">
                     <a href="#" onclick="loadStreamDirect('${item.url}')" style="display: flex; align-items: center; text-decoration: none; color: #e8ecef; flex-grow: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        <span id="dot-${index}" style="margin-right: 6px; font-size: 8px; color: #ff3333; flex-shrink: 0;">●</span>
+                        <span id="dot-${index}" style="margin-right: 6px; font-size: 8px; color: ${statusColor}; flex-shrink: 0;">●</span>
                         <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</span>
                     </a>
                     <button onclick="removeStreamer('${item.name}')"
@@ -161,21 +172,20 @@
                             onmouseout="this.style.color='rgba(255,50,50,0.5)'; this.style.transform='scale(1)';"
                     >×</button>
                 </div>`;
-            checkTwitchStatus(item.url, index);
         });
     }
 
-    async function checkTwitchStatus(url, index) {
-        if (url.includes('youtube')) return;
+    async function getTwitchStatus(url) {
+        if (url.includes('youtube')) return false;
         const channel = url.includes('twitch.tv/') ? url.split('twitch.tv/').pop().split('/')[0] : url;
         try {
                 const response = await fetch(`https://decapi.me/twitch/uptime/${channel}`);
                     const text = await response.text();
-            if (!text.includes("offline") && !text.includes("not found")) {
-                document.getElementById(`dot-${index}`).style.color = "#00ff00";
-            }
-        } catch (e) {}
+            return !text.includes("offline") && !text.includes("not found");
+        } catch (e) {
+            return false;
         }
+    }
 
     function removeStreamer(name) {
         let list = JSON.parse(localStorage.getItem('myStreamers'));
