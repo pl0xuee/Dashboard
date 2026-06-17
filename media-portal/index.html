@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Media Portal</title>
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <style>
+    body { padding: 0; margin: 0; height: 100vh; overflow: hidden; }
+    .page {
+        width: 100%;
+      max-width: 99% !important;
+      margin: 0 auto;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      overflow: hidden;
+      padding: 15px;
+    }
+    header {
+      display: inline-flex;
+      flex-wrap: nowrap;
+      gap: 8px;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 8px 12px;
+      height: 56px;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      background: var(--surface);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(18px);
+      position: relative;
+      z-index: 10;
+      flex: 0 0 auto;
+      align-self: flex-start;
+    }
+    .media-container {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      background: #000;
+    }
+    iframe { width: 100%; height: 100%; border: none; }
+  </style>
+</head>
+<body class="home-page">
+  <div class="page">
+    <header>
+      <div class="header-left">
+        <a href="../" class="home-button">Home</a>
+        <a href="../dashboard/" class="home-button">Dashboard</a>
+        <a href="../stream/" class="home-button">Stream</a>
+        <a href="../media-portal/" class="home-button">Media</a>
+      </div>
+    </header>
+    <main class="media-container">
+      <!-- Your local Jellyfin server -->
+      <iframe src="http://192.168.1.212:8096" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    </main>
+  </div>
+</body>
+</html>
+
