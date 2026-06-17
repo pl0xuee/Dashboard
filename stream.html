@@ -55,9 +55,56 @@
       border-radius: 20px;
       margin-bottom: 5px;
     }
+
+    /* Dropdown Styles */
+    .dropdown {
+      position: relative;
+      display: inline-block;
+    }
+
+    .dropbtn {
+      cursor: pointer;
+      padding: 8px 16px;
+      border-radius: 999px;
+      background: rgba(109, 140, 255, 0.16);
+      color: #e9f0ff;
+      border: 1px solid rgba(109, 140, 255, 0.18);
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      min-width: 160px;
+      z-index: 20;
+      padding: 8px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+    }
+
+    .dropdown:hover .dropdown-content {
+      display: block;
+    }
+
+    .dropdown-content a {
+      display: block;
+      padding: 8px 12px;
+      text-decoration: none;
+      color: #e8ecef;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .dropdown-content a:hover {
+      background: rgba(109, 140, 255, 0.14);
+      color: #f6f8ff;
+    }
   </style>
 </head>
-<body class="home-page">
+<body class="home-page" onload="renderList()">
   <div class="page">
     <header>
       <div class="header-left">
@@ -67,10 +114,20 @@
       </div>
 
       <!-- Moved controls here -->
-      <div class="controls" style="display: inline-flex; justify-content: flex-start; margin-left: auto;">
+      <div class="controls" style="display: inline-flex; justify-content: flex-start; margin-bottom: 5px;">
         <input type="text" id="streamUrl" placeholder="YouTube URL or Twitch Channel Name" onkeydown="if(event.key === 'Enter') loadStream()" style="width: 350px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: #fff; outline: none; font-size: 13px;">
         <button onclick="loadStream()" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; margin-left: 5px; font-weight: 500; transition: all 180ms ease;">Load</button>
         <button onclick="toggleChat()" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; margin-left: 5px; font-weight: 500; transition: all 180ms ease;">Toggle Chat</button>
+
+        <!-- Streamer Dropdown -->
+        <div class="dropdown" style="margin-left: 5px;">
+          <button class="dropbtn">My Streamers ▼</button>
+          <div class="dropdown-content" id="streamerList">
+            <div id="listItems"></div>
+            <div style="border-top: 1px solid var(--border); margin: 5px 0;"></div>
+            <a href="#" onclick="addStreamer()" style="color: var(--accent);">Add Streamer...</a>
+          </div>
+        </div>
       </div>
     </header>
     <main class="main">
@@ -81,6 +138,42 @@
     </main>
   </div>
   <script>
+    function loadStreamDirect(url) {
+      document.getElementById('streamUrl').value = url;
+      loadStream();
+    }
+
+    function renderList() {
+        let list = JSON.parse(localStorage.getItem('myStreamers')) || [{name: 'hutchmf', url: 'hutchmf'}, {name: 'shroud', url: 'shroud'}];
+        const container = document.getElementById('listItems');
+        container.innerHTML = '';
+        list.forEach((item, index) => {
+            container.innerHTML += '<div style="display:flex; justify-content:space-between; align-items:center; padding:5px;">' +
+                '<a href="#" onclick="loadStreamDirect(\'' + item.url + '\')">' + item.name + '</a>' +
+                '<button onclick="removeStreamer(' + index + ')" style="background:none; border:none; color:red; cursor:pointer;">x</button>' +
+                '</div>';
+        });
+    }
+
+    function addStreamer() {
+        let name = prompt("Enter Name:");
+        let url = prompt("Enter Channel/URL:");
+        if (name && url) {
+            let list = JSON.parse(localStorage.getItem('myStreamers')) || [];
+            list.push({name, url});
+            localStorage.setItem('myStreamers', JSON.stringify(list));
+            renderList();
+        }
+    }
+
+    function removeStreamer(index) {
+        let list = JSON.parse(localStorage.getItem('myStreamers'));
+        list.splice(index, 1);
+        localStorage.setItem('myStreamers', JSON.stringify(list));
+        renderList();
+        event.stopPropagation();
+    }
+
     function loadStream() {
       const inputElement = document.getElementById('streamUrl');
       const input = inputElement.value.trim();
@@ -88,7 +181,7 @@
       const chat = document.getElementById('chat');
       
       if (!input) return;
-      if (input.includes('youtube.com') || input.includes('youtu.be')) {
+      if (input.includes('youtube.com') || input.includes('youtu.be') || input.includes('@')) {
         let videoId = "";
         // More robust YouTube URL parsing
         if (input.includes('v=')) {
@@ -97,22 +190,20 @@
           videoId = input.split('youtu.be/')[1].split('?')[0];
         } else if (input.includes('/embed/')) {
           videoId = input.split('/embed/')[1].split('?')[0];
+        } else if (input.includes('@')) {
+            videoId = input.split('@').pop().split('/')[0];
+            player.innerHTML = `<iframe src="https://www.youtube.com/embed/live_stream?channel=${videoId}&autoplay=1&origin=${window.location.origin}&enablejsapi=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
+            chat.innerHTML = `<iframe src="https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}&dark_theme=1"></iframe>`;
+            return;
         } else {
           videoId = input.split('/').pop();
         }
 
-        // To reliably detect live chat, we attempt to load it.
-        // YouTube doesn't offer a clean way to check live status via client-side JS without an API key,
-        // so we will load the chat iframe and let YouTube's embed handle the "chat disabled" message.
-        // If you want to hide it automatically, we'd need to use the YouTube Data API.
-        // For now, let's keep the chat panel but make it smart:
         player.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}&enablejsapi=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
 
-        // Load chat, but use onload to check if it's actually "disabled"
         const chatIframe = document.createElement('iframe');
         chatIframe.src = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}&dark_theme=1`;
 
-        // This is a common hack: check if the iframe loads a "chat disabled" error
         chatIframe.onload = function() {
           try {
             const body = chatIframe.contentDocument.body;
@@ -122,8 +213,6 @@
         chat.style.display = 'block';
     }
           } catch(e) {
-            // Browsers block cross-origin access to iframes, so we usually can't see inside.
-            // If we can't see inside, we leave it visible.
             chat.style.display = 'block';
     }
         };
@@ -148,7 +237,6 @@
       chat.style.display = (chat.style.display === 'none') ? 'block' : 'none';
     }
 
-    // Clear the input completely when focused, regardless of whether it's "Watching" text or the ID.
     document.getElementById('streamUrl').addEventListener('focus', function() {
       this.value = "";
       this.dataset.lastInput = "";
