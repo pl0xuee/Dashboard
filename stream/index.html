@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Stream - Dashboard</title>
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <link rel="stylesheet" href="../styles.css" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
   <style>
     .page {
       max-width: 99% !important; /* Wider width for stream page */
@@ -108,9 +108,9 @@
   <div class="page">
     <header>
       <div class="header-left">
-        <a href="index.html" class="home-button">Home</a>
-        <a href="dashboard.html" class="home-button">Dashboard</a>
-        <a href="stream.html" class="home-button">Stream</a>
+        <a href="../" class="home-button">Home</a>
+        <a href="../dashboard/" class="home-button">Dashboard</a>
+        <a href="../stream/" class="home-button">Stream</a>
       </div>
 
       <!-- Moved controls here -->
@@ -137,6 +137,7 @@
       </div>
     </main>
   </div>
+  <script src="../script.js"></script>
   <script>
     function loadStreamDirect(url) {
       document.getElementById('streamUrl').value = url;
