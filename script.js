@@ -5,7 +5,7 @@ const tvTickerInputs = [
   document.getElementById('tvTicker3')
 ];
 // Removed unused statusText const
-const defaultTvTickers = ['googl', 'spcx', 'AMEX:SPY', 'BTCUSD'];
+const defaultTvTickers = ['GOOGL', 'SPCX', 'SPY', 'BTC/USD'];
 
 function setStatus(message) {
   // Status bar removed
@@ -130,6 +130,8 @@ function createTradingViewWidget(index, symbol) {
   const container = document.getElementById(`tvWidget${index}`);
   if (!container) return;
 
+  if (window[`interval${index}`]) clearInterval(window[`interval${index}`]);
+
   const media = parseMediaSource(symbol);
   container.innerHTML = ''; // Clear previous content
 
@@ -143,48 +145,155 @@ function createTradingViewWidget(index, symbol) {
       const youtubeSrc = getYouTubeEmbedUrl(media.id);
       if (youtubeSrc) {
         iframe.src = youtubeSrc;
-        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
         container.appendChild(iframe);
       }
     } else if (media.type === 'twitch') {
       const twitchSrc = getTwitchEmbedUrl(media);
       if (twitchSrc) {
         iframe.src = twitchSrc;
-        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
         container.appendChild(iframe);
       }
     } else if (media.type === 'youtube_tv') {
       iframe.src = `https://tv.youtube.com/watch/${media.id}`;
-      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
       container.appendChild(iframe);
     }
   } else {
-    // Official TradingView Widget
-  const widgetContainer = document.createElement('div');
-  widgetContainer.className = 'tradingview-widget-container';
+    // Custom Chart logic adapted from chart-test.html
+    const chartDiv = document.createElement('div');
+    chartDiv.id = `chart${index}`;
+    chartDiv.style.width = '100%';
+    chartDiv.style.height = '100%';
+    container.appendChild(chartDiv);
+
+    const toolTip = document.createElement('div');
+    toolTip.style.position = 'absolute';
+    toolTip.style.top = '10px';
+    toolTip.style.left = '10px';
+    toolTip.style.fontSize = '18px';
+    toolTip.style.fontWeight = 'bold';
+    toolTip.style.color = '#fff';
+    toolTip.style.zIndex = '10';
+    toolTip.style.pointerEvents = 'none';
+    toolTip.textContent = symbol;
+    container.appendChild(toolTip);
+
+    const chart = LightweightCharts.createChart(chartDiv, {
+        width: chartDiv.clientWidth,
+        height: chartDiv.clientHeight,
+        layout: { background: { type: 'solid', color: '#081018' }, textColor: '#DDD' },
+        grid: { vertLines: { color: '#1f2937' }, horzLines: { color: '#1f2937' } },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        timeScale: { timeVisible: true, secondsVisible: false, fixLeftEdge: true, fixRightEdge: false, rightOffset: 10 },
+    });
+
+    const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
+        upColor: '#26a69a', downColor: '#ef5350', borderVisible: false,
+        wickUpColor: '#26a69a', wickDownColor: '#ef5350'
+    });
+
+    const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
+        color: '#26a69a',
+        priceFormat: { type: 'volume' },
+        priceScaleId: '',
+    });
+
+    chart.priceScale('').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
+
+    loadChartData(symbol, candleSeries, volumeSeries, chart, index);
+
+    // Set to 40s (40000ms).
+    // With 4 panels, this will result in ~6 requests/minute, keeping you safe from API limits.
+    window[`interval${index}`] = setInterval(() => {
+        updateChartPrice(symbol, candleSeries, index);
+    }, 40000);
+  }
+}
+
+async function loadChartData(ticker, candleSeries, volumeSeries, chart, index) {
+    try {
+        // Now using the proxy.php to hide the API key
+        const response = await fetch(`../proxy.php?symbol=${ticker}&interval=1min&outputsize=100`);
+            const json = await response.json();
+
+        if (json.values && json.values.length > 0) {
+            const formattedData = json.values.map(bar => ({
+                time: Math.floor(new Date(bar.datetime.replace(' ', 'T')).getTime() / 1000),
+                open: parseFloat(bar.open),
+                high: parseFloat(bar.high),
+                low: parseFloat(bar.low),
+                close: parseFloat(bar.close)
+            })).reverse();
+
+            const volumeData = json.values.map(bar => ({
+                time: Math.floor(new Date(bar.datetime.replace(' ', 'T')).getTime() / 1000),
+                value: parseFloat(bar.volume),
+                color: parseFloat(bar.close) >= parseFloat(bar.open) ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)'
+            })).reverse();
+
+            candleSeries.setData(formattedData);
+            volumeSeries.setData(volumeData);
+            chart.timeScale().fitContent();
+            window[`lastCandle${index}`] = formattedData[formattedData.length - 1];
+        } else {
+            throw new Error("No data available");
+    }
+    } catch (e) {
+        console.error("Chart load error, falling back to TradingView widget:", e);
+        fallbackToTradingView(index, ticker);
+  }
+}
+
+function fallbackToTradingView(index, symbol) {
+    const container = document.getElementById(`tvWidget${index}`);
+    if (!container) return;
+
+    container.innerHTML = '';
+    const widgetContainer = document.createElement('div');
+    widgetContainer.className = 'tradingview-widget-container';
     widgetContainer.style.height = '100%';
     widgetContainer.style.width = '100%';
-  container.appendChild(widgetContainer);
+    container.appendChild(widgetContainer);
 
-  const script = document.createElement('script');
-  script.type = 'text/javascript';
-  script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-  script.async = true;
-  script.textContent = JSON.stringify({
-    "autosize": true,
-    "symbol": symbol || "NASDAQ:AAPL",
-    "interval": "1",
-      "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-    "theme": "dark",
-    "style": "1",
-    "locale": "en",
-    "allow_symbol_change": true,
-    "calendar": true,
-    "support_host": "https://www.tradingview.com"
-  });
-  widgetContainer.appendChild(script);
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+    script.async = true;
+    script.textContent = JSON.stringify({
+        "autosize": true,
+        "symbol": symbol,
+        "interval": "1",
+        "timezone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+        "theme": "dark",
+        "style": "1",
+        "locale": "en",
+        "allow_symbol_change": true,
+        "calendar": true,
+        "support_host": "https://www.tradingview.com"
+    });
+    widgetContainer.appendChild(script);
 }
+
+async function updateChartPrice(ticker, candleSeries, index) {
+    try {
+        // Using the proxy to fetch current price.
+        // Twelve Data price endpoint expects "symbol" as a param.
+        const res = await fetch(`../proxy.php?symbol=${ticker}`);
+        const data = await res.json();
+        if (data.price) {
+            const currentPrice = parseFloat(data.price);
+            let lastCandle = window[`lastCandle${index}`];
+            if (lastCandle) {
+                lastCandle.close = currentPrice;
+                lastCandle.high = Math.max(lastCandle.high, currentPrice);
+                lastCandle.low = Math.min(lastCandle.low, currentPrice);
+                candleSeries.update(lastCandle);
 }
+    }
+    } catch (e) {}
+    }
 
 function renderDefaultTradingViewWidgets() {
   defaultTvTickers.forEach((symbol, index) => {
@@ -237,7 +346,7 @@ function initializeTradingViewPage() {
   document.querySelectorAll('.tv-panel-header button').forEach((button) => {
     button.addEventListener('click', () => {
       const panelIndex = Number(button.dataset.panel);
-      // Fixed the identification: Checking by title attribute is safer
+      // Check if this was the search button (based on title)
       if (button.getAttribute('title') === 'Search YouTube/Twitch') {
         const symbolInput = tvTickerInputs[panelIndex];
         const query = symbolInput ? symbolInput.value.trim() : '';
@@ -246,6 +355,7 @@ function initializeTradingViewPage() {
           window.open(searchUrl, '_blank');
         }
       } else {
+        // This ensures the "Update" button triggers the updatePanel function
       updatePanel(panelIndex);
       }
     });
