@@ -45,9 +45,13 @@
                 <p id="sentiment-val" style="color: var(--accent); font-size: 1.1rem; margin: 0; font-weight: 600;">Loading...</p>
                 <p id="market-status" style="color: #ffffff; font-size: 1rem; font-weight: bold; margin: 5px 0 0 0;"></p>
               </div>
-              <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
+              <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; align-items: center;">
                 <h3 style="margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-muted);">Time (PST)</h3>
-                <p id="clock" style="color: var(--accent); font-family: monospace; font-size: 1.5rem; margin: 0; font-weight: 600;"></p>
+                <p id="clock" class="stat-value" style="font-family: monospace; font-size: 1.4rem;"></p>
+              </div>
+              <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; align-items: center;">
+                <h3 style="margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-muted);">Weather</h3>
+                <p id="weather" style="color: var(--accent); font-size: 1.1rem; margin: 0; font-weight: 600;">Loading...</p>
               </div>
             </section>
           </div>
@@ -171,6 +175,71 @@
       updateMarketStatus();
     }
     fetchSentiment(); setInterval(updateClock, 1000); updateClock();
+
+    // Weather Script
+    async function fetchWeather() {
+      const statusEl = document.getElementById('weather');
+      if (!navigator.geolocation) {
+        statusEl.textContent = "Geoloc not supported";
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min&hourly=weather_code&temperature_unit=fahrenheit&timezone=auto`);
+        const data = await res.json();
+
+          const temp = data.current.temperature_2m;
+        const max = data.daily.temperature_2m_max[0];
+        const min = data.daily.temperature_2m_min[0];
+
+          // Map weather code to description
+          const code = data.current.weather_code;
+          const conditions = {
+            0: "Clear", 1: "Mainly Clear", 2: "Partly Cloudy", 3: "Cloudy",
+            45: "Foggy", 48: "Depositing Rime Fog",
+            51: "Light Drizzle", 53: "Drizzle", 55: "Heavy Drizzle",
+            61: "Light Rain", 63: "Rain", 65: "Heavy Rain",
+            71: "Light Snow", 73: "Snow", 75: "Heavy Snow",
+            95: "Thunderstorm"
+          };
+          const condition = conditions[code] || "Unknown";
+
+          // Logic to find when the next weather change occurs
+          const hourlyCodes = data.hourly.weather_code;
+          const currentCode = data.current.weather_code;
+          let changeInHours = 0;
+          let nextCondition = "";
+
+          for (let i = 1; i < hourlyCodes.length; i++) {
+              if (hourlyCodes[i] !== currentCode) {
+                  changeInHours = i;
+                  nextCondition = conditions[hourlyCodes[i]] || "Change";
+                  break;
+              }
+          }
+
+          let outlook = "";
+          if (changeInHours === 0) {
+              outlook = "Stable weather";
+          } else {
+              outlook = `${nextCondition} in ${changeInHours}h`;
+    }
+
+          statusEl.innerHTML = `${temp}°F <br/>
+                                <span style="font-size: 0.8rem;">${condition}</span><br/>
+                                <span style="font-size: 0.7rem; color: var(--text-muted);">${outlook}</span><br/>
+                                <span style="font-size: 0.75rem;">(H:${max}° L:${min}°)</span>`;
+        } catch (e) {
+            statusEl.textContent = "Error loading weather";
+    }
+      }, () => {
+        statusEl.textContent = "Location access denied";
+      });
+    }
+    fetchWeather();
+
     const quotes = [
       "I’m not lazy, I’m just on energy saving mode.",
       "My bed is a magical place where I suddenly remember everything I forgot to do.",
