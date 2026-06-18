@@ -5,7 +5,7 @@ const tvTickerInputs = [
   document.getElementById('tvTicker3')
 ];
 // Removed unused statusText const
-const defaultTvTickers = ['GOOGL', 'SPCX', 'SPY', 'BTC/USD'];
+const defaultTvTickers = ['GOOGL', 'SPCX', 'SPY', 'BTCUSD'];
 
 function setStatus(message) {
   // Status bar removed

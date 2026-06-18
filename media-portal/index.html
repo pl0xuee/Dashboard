@@ -3,51 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Media Portal</title>
+  <title>Media Server - Dashboard</title>
   <link rel="stylesheet" href="../styles.css" />
   <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
-  <style>
-    body { padding: 0; margin: 0; height: 100vh; overflow: hidden; }
-    .page {
-        width: 100%;
-      max-width: 99% !important;
-      margin: 0 auto;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-      overflow: hidden;
-      padding: 15px;
-    }
-    header {
-      display: inline-flex;
-      flex-wrap: nowrap;
-      gap: 8px;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 8px 12px;
-      height: 56px;
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      background: var(--surface);
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(18px);
-      position: relative;
-      z-index: 10;
-      flex: 0 0 auto;
-      align-self: flex-start;
-    }
-    .media-container {
-      flex: 1;
-      width: 100%;
-      height: 100%;
-      border-radius: 20px;
-      overflow: hidden;
-      border: 1px solid var(--border);
-      background: #000;
-    }
-    iframe { width: 100%; height: 100%; border: none; }
-  </style>
 </head>
 <body class="home-page">
   <div class="page">
@@ -59,11 +17,42 @@
         <a href="../media-portal/" class="home-button">Media</a>
       </div>
     </header>
-    <main class="media-container">
-      <!-- Your local Jellyfin server -->
-      <iframe src="http://192.168.1.212:8096" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+    <main class="main welcome">
+      <div class="welcome-inner">
+        <h1 style="margin-bottom: 10px;">Jellyfin Media Portal</h1>
+        <p style="margin-bottom: 40px; color: var(--text-muted);">Access your private media library directly from your home network.</p>
+
+        <a href="http://192.168.1.212:8096" target="_blank"
+           class="home-button"
+           style="padding: 24px 48px; font-size: 1.5rem; background: #5a2c94; border-color: #7a3dbf; color: #fff; box-shadow: 0 4px 15px rgba(90, 44, 148, 0.4); display: flex; justify-content: center; align-items: center; width: fit-content; margin: 0 auto; text-align: center;">
+           Click to Open Jellyfin
+        </a>
+
+        <div style="margin-top: 20px; padding: 15px 25px; border-radius: 20px; background: rgba(22, 28, 36, 0.4); border: 1px solid var(--border); display: inline-flex; align-items: center; gap: 15px;">
+            <h3 style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">Status</h3>
+            <p id="server-status" style="font-size: 0.9rem; margin: 0; font-weight: 600; display: flex; align-items: center; gap: 6px;">Checking...</p>
+        </div>
+      </div>
     </main>
   </div>
+  <script>
+    async function checkServerStatus() {
+        const statusEl = document.getElementById('server-status');
+        try {
+            // We use 'no-cache' to ensure we get the latest status
+            // Note: This relies on the server supporting CORS, which Jellyfin might block.
+            // If it shows "Offline" even when online, it's a browser security restriction.
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+
+            const response = await fetch('http://192.168.1.212:8096/web/index.html', { mode: 'no-cors', signal: controller.signal });
+            statusEl.innerHTML = '<span style="color: #00ff00;">●</span> Online';
+        } catch (e) {
+            statusEl.innerHTML = '<span style="color: #ff3333;">●</span> Offline';
+        }
+    }
+    checkServerStatus();
+  </script>
 </body>
 </html>
 
