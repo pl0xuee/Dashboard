@@ -11,105 +11,96 @@
   <div class="page">
     <header>
       <div class="header-left">
-        <a href="../" class="home-button">Home</a>
-        <a href="../dashboard/" class="home-button">Dashboard</a>
-        <a href="../stream/" class="home-button">Stream</a>
-        <a href="../media-portal/" class="home-button">Media</a>
+        <a href="index.html" class="home-button">Home</a>
+        <a href="dashboard/index.html" class="home-button">Dashboard</a>
+        <a href="stream/index.html" class="home-button">Stream</a>
+        <a href="media-portal/index.html" class="home-button">Media</a>
       </div>
     </header>
-    <main class="main welcome">
-      <div class="welcome-inner">
-        <h1>My Favorites</h1>
-        
-        <!-- Quote of the Day -->
-        <p id="quote" style="margin-bottom: 20px; font-style: italic; color: #8b95a1;"></p>
+    <main class="main">
+      <div class="welcome">
+        <div class="welcome-inner">
+          <h1>My Favorites</h1>
+          <p id="quote" style="margin-bottom: 20px; font-style: italic; color: #8b95a1;"></p>
 
-        <!-- Brave Search Bar -->
-        <form action="https://search.brave.com/search" method="get" target="_blank" class="search-form" style="margin-bottom: 40px; width: 100%; display: flex; justify-content: center;">
-          <input type="text" name="q" placeholder="Search Brave..." class="search-input" style="width: 100%; max-width: 500px; padding: 14px 24px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: #fff; outline: none; font-size: 16px;">
-        </form>
+          <form action="https://search.brave.com/search" method="get" target="_blank" style="margin-bottom: 40px; width: 100%; display: flex; justify-content: center;">
+            <input type="text" name="q" placeholder="Search Brave..." style="width: 100%; max-width: 500px; padding: 14px 24px; border-radius: 999px; border: 1px solid var(--border); background: rgba(255,255,255,0.05); color: #fff; outline: none; font-size: 16px;">
+          </form>
 
-        <!-- News and Stats Wrapper -->
-        <div class="home-container" style="display: flex; gap: 40px; align-items: stretch; justify-content: center; margin-bottom: 40px;">
-          <!-- News Section (Left) -->
-          <section class="news-section" style="max-width: 900px; flex: 2; margin: 0; display: flex; flex-direction: column;">
-            <div class="news-controls" style="display: flex; gap: 15px; margin-bottom: 20px; justify-content: flex-start;">
-            <button onclick="showNews('usa', this)" id="btn-usa" class="home-button">USA News</button>
-            <button onclick="showNews('world', this)" id="btn-world" class="home-button">World News</button>
-            <button onclick="showNews('finance', this)" id="btn-finance" class="home-button">Financial News</button>
-          </div>
-            <div id="news-container" style="background: var(--surface); padding: 25px; border-radius: 24px; border: 1px solid var(--border); text-align: left; flex: 1; min-height: 250px;">
-            <p>Loading headlines...</p>
-          </div>
-            <button id="toggle-news" onclick="toggleNews()" style="display: none; margin-top: 15px; padding: 8px 16px; font-size: 13px;" class="home-button">Show More</button>
-        </section>
-        <!-- Stats Section (Below News) -->
-          <section class="stats-group" style="display: flex; flex-direction: column; gap: 15px; flex: 1;">
-            <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; align-items: center;">
-              <h3 style="margin: 0 0 10px 0; font-size: 1rem; color: #fff; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid var(--border); padding-bottom: 5px; width: 100%;">Market Insight</h3>
-
-              <div style="text-align: center; margin-bottom: 8px;">
-                <span style="font-size: 0.8rem; color: var(--text-muted); display: block;">Sentiment</span>
-                <span id="sentiment-val" style="color: var(--accent); font-size: 1.1rem; font-weight: 600;">Loading...</span>
+          <div class="home-container" style="display: flex; gap: 40px; align-items: stretch; justify-content: center; margin-bottom: 40px;">
+            <section class="news-section" style="max-width: 600px; flex: 2; margin: 0; display: flex; flex-direction: column;">
+              <div style="display: flex; gap: 15px; margin-bottom: 20px; justify-content: flex-start;">
+                <button onclick="showNews('usa', this)" id="btn-usa" class="home-button">USA News</button>
+                <button onclick="showNews('world', this)" id="btn-world" class="home-button">World News</button>
+                <button onclick="showNews('finance', this)" id="btn-finance" class="home-button">Financial News</button>
               </div>
+              <div id="news-container" style="background: var(--surface); padding: 25px; border-radius: 24px; border: 1px solid var(--border); text-align: left; flex: 1; min-height: 250px;">
+                <p>Loading headlines...</p>
+              </div>
+              <button id="toggle-news" onclick="toggleNews()" style="display: none; margin-top: 15px; padding: 8px 16px; font-size: 13px;" class="home-button">Show More</button>
+            </section>
+            <section class="stats-group" style="display: flex; flex-direction: column; gap: 15px; flex: 1;">
+              <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
+                <h3 style="margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-muted);">Sentiment</h3>
+                <p id="sentiment-val" style="color: var(--accent); font-size: 1.1rem; margin: 0; font-weight: 600;">Loading...</p>
+                <p id="market-status" style="color: #ffffff; font-size: 1rem; font-weight: bold; margin: 5px 0 0 0;"></p>
+              </div>
+              <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center;">
+                <h3 style="margin: 0 0 5px 0; font-size: 0.9rem; color: var(--text-muted);">Time (PST)</h3>
+                <p id="clock" style="color: var(--accent); font-family: monospace; font-size: 1.5rem; margin: 0; font-weight: 600;"></p>
+              </div>
+            </section>
+          </div>
 
-              <div id="market-status" style="margin-top: 10px; padding: 6px 14px; background: rgba(109, 140, 255, 0.1); border-radius: 999px; color: #ffffff; font-size: 0.85rem; font-weight: bold; text-align: center;"></div>
-            </div>
-            <div style="background: var(--surface); padding: 20px; border-radius: 24px; border: 1px solid var(--border); display: flex; flex-direction: column; justify-content: center; align-items: center;">
-              <h3 style="margin: 0 0 8px 0; font-size: 0.9rem; color: var(--text-muted);">Time (PST)</h3>
-              <p id="clock" style="color: var(--accent); font-family: monospace; font-size: 1.4rem; margin: 0; font-weight: 600;"></p>
-            </div>
+          <section class="link-group">
+            <h2>Entertainment</h2>
+            <ul class="quick-links-list">
+              <li><a href="https://youtube.com" target="_blank">YouTube</a></li>
+              <li><a href="https://tv.youtube.com" target="_blank">YouTube TV</a></li>
+              <li><a href="https://twitch.tv" target="_blank">Twitch</a></li>
+              <li><a href="https://netflix.com" target="_blank">Netflix</a></li>
+              <li><a href="https://primevideo.com" target="_blank">Amazon Video</a></li>
+              <li><a href="https://disneyplus.com" target="_blank">Disney+</a></li>
+              <li><a href="https://hulu.com" target="_blank">Hulu</a></li>
+              <li><a href="https://hbomax.com" target="_blank">Max</a></li>
+            </ul>
           </section>
-      </div>
 
-        <section class="link-group">
-          <h2>Entertainment</h2>
-          <ul class="quick-links-list">
-            <li><a href="https://youtube.com" target="_blank">YouTube</a></li>
-            <li><a href="https://tv.youtube.com" target="_blank">YouTube TV</a></li>
-            <li><a href="https://twitch.tv" target="_blank">Twitch</a></li>
-            <li><a href="https://netflix.com" target="_blank">Netflix</a></li>
-            <li><a href="https://primevideo.com" target="_blank">Amazon Video</a></li>
-            <li><a href="https://disneyplus.com" target="_blank">Disney+</a></li>
-            <li><a href="https://hulu.com" target="_blank">Hulu</a></li>
-            <li><a href="https://hbomax.com" target="_blank">Max</a></li>
-          </ul>
-        </section>
+          <section class="link-group">
+            <h2>AI & Research</h2>
+            <ul class="quick-links-list">
+              <li><a href="https://chatgpt.com" target="_blank">ChatGPT</a></li>
+              <li><a href="https://gemini.google.com" target="_blank">Gemini</a></li>
+              <li><a href="https://claude.ai" target="_blank">Claude</a></li>
+              <li><a href="https://perplexity.ai" target="_blank">Perplexity</a></li>
+              <li><a href="https://reddit.com" target="_blank">Reddit</a></li>
+              <li><a href="https://wikipedia.org" target="_blank">Wikipedia</a></li>
+            </ul>
+          </section>
 
-        <section class="link-group">
-          <h2>AI & Research</h2>
-          <ul class="quick-links-list">
-            <li><a href="https://chatgpt.com" target="_blank">ChatGPT</a></li>
-            <li><a href="https://gemini.google.com" target="_blank">Gemini</a></li>
-            <li><a href="https://claude.ai" target="_blank">Claude</a></li>
-            <li><a href="https://perplexity.ai" target="_blank">Perplexity</a></li>
-            <li><a href="https://reddit.com" target="_blank">Reddit</a></li>
-            <li><a href="https://wikipedia.org" target="_blank">Wikipedia</a></li>
-          </ul>
-        </section>
+          <section class="link-group">
+            <h2>Work & Tools</h2>
+            <ul class="quick-links-list">
+              <li><a href="https://tradingview.com" target="_blank">TradingView</a></li>
+              <li><a href="https://github.com" target="_blank">GitHub</a></li>
+              <li><a href="https://proton.me/mail" target="_blank">ProtonMail</a></li>
+              <li><a href="https://gmail.com" target="_blank">Gmail</a></li>
+              <li><a href="https://amazon.com" target="_blank">Amazon</a></li>
+              <li><a href="https://notion.so" target="_blank">Notion</a></li>
+              <li><a href="https://calendar.google.com" target="_blank">Calendar</a></li>
+            </ul>
+          </section>
 
-        <section class="link-group">
-          <h2>Work & Tools</h2>
-          <ul class="quick-links-list">
-            <li><a href="https://tradingview.com" target="_blank">TradingView</a></li>
-            <li><a href="https://github.com" target="_blank">GitHub</a></li>
-            <li><a href="https://proton.me/mail" target="_blank">ProtonMail</a></li>
-            <li><a href="https://gmail.com" target="_blank">Gmail</a></li>
-            <li><a href="https://amazon.com" target="_blank">Amazon</a></li>
-            <li><a href="https://notion.so" target="_blank">Notion</a></li>
-            <li><a href="https://calendar.google.com" target="_blank">Calendar</a></li>
-          </ul>
-        </section>
-
-        <section class="link-group">
-          <h2>News & Financials</h2>
-          <ul class="quick-links-list">
-            <li><a href="https://finance.yahoo.com" target="_blank">Yahoo Finance</a></li>
-            <li><a href="https://coinmarketcap.com" target="_blank">CoinMarketCap</a></li>
-            <li><a href="https://bloomberg.com" target="_blank">Bloomberg</a></li>
-            <li><a href="https://reuters.com" target="_blank">Reuters</a></li>
-          </ul>
-        </section>
+          <section class="link-group">
+            <h2>Quick Financials</h2>
+            <ul class="quick-links-list">
+              <li><a href="https://finance.yahoo.com" target="_blank">Yahoo Finance</a></li>
+              <li><a href="https://coinmarketcap.com" target="_blank">CoinMarketCap</a></li>
+              <li><a href="https://bloomberg.com" target="_blank">Bloomberg</a></li>
+              <li><a href="https://reuters.com" target="_blank">Reuters</a></li>
+            </ul>
+          </section>
+        </div>
       </div>
     </main>
   </div>
@@ -123,26 +114,17 @@
       showAll = false;
       toggleBtn.style.display = 'none';
       toggleBtn.textContent = 'Show More';
-
       try {
-        // Updated feed URLs to include Finance
-        let feedUrl = 'https://news.google.com/rss?gl=US&hl=en-US&ceid=US:en'; // Default USA
-        if (type === 'world') {
-          feedUrl = 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en';
-        } else if (type === 'finance') {
-          feedUrl = 'https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en';
-        }
-
+        let feedUrl = 'https://news.google.com/rss?gl=US&hl=en-US&ceid=US:en';
+        if (type === 'world') feedUrl = 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en';
+        else if (type === 'finance') feedUrl = 'https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en';
         const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl));
         const data = await response.json();
         allNewsItems = data.items;
         renderNews();
         toggleBtn.style.display = 'block';
-      } catch (e) {
-        container.innerHTML = "Could not load news.";
-      }
+      } catch (e) { container.innerHTML = "Could not load news."; }
     }
-
     function renderNews() {
       const container = document.getElementById('news-container');
       const toggleBtn = document.getElementById('toggle-news');
@@ -150,93 +132,45 @@
 
       let html = '<ul style="padding-left: 20px; margin: 0;">';
       allNewsItems.slice(0, limit).forEach(item => {
-        html += `<li style="margin-bottom: 8px;"><a href="${item.link}" target="_blank" style="color: #e8ecef; text-decoration: none;">${item.title}</a></li>`;
+        html += '<li style="margin-bottom: 8px;"><a href="' + item.link + '" target="_blank" style="color: #e8ecef; text-decoration: none;">' + item.title + '</a></li>';
       });
       html += '</ul>';
       container.innerHTML = html;
     }
-
     function toggleNews() {
       showAll = !showAll;
       document.getElementById('toggle-news').textContent = showAll ? 'Show Less' : 'Show More';
       renderNews();
     }
     showNews('usa');
-
-    // Fetch Fear & Greed Index
     async function fetchSentiment() {
       try {
         const res = await fetch('https://api.alternative.me/fng/');
         const data = await res.json();
-        const value = data.data[0].value_classification;
-        document.getElementById('sentiment-val').textContent = value;
-      } catch (e) {
-        document.getElementById('sentiment-val').textContent = "Unavailable";
-      }
+        document.getElementById('sentiment-val').textContent = data.data[0].value_classification;
+      } catch (e) { document.getElementById('sentiment-val').textContent = "Unavailable"; }
     }
-
     function updateMarketStatus() {
       const now = new Date();
       const day = now.getDay();
-
       const marketStatus = document.getElementById('market-status');
-
-      // US Market Hours: Mon-Fri, 9:30 AM - 4:00 PM EST
-      // Check if weekend
-      if (day === 0 || day === 6) {
-          marketStatus.textContent = "Market Closed (Weekend)";
-          return;
-      }
-
-      // Convert current time to EST/EDT
+      if (day === 0 || day === 6) { marketStatus.textContent = "Market Closed"; return; }
       const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
-      const estHour = estTime.getHours();
-      const estMinute = estTime.getMinutes();
-      const totalMinutes = estHour * 60 + estMinute;
-
-      const openTime = 9 * 60 + 30; // 9:30 AM
-      const closeTime = 16 * 60;    // 4:00 PM
-
+      const totalMinutes = estTime.getHours() * 60 + estTime.getMinutes();
+      const openTime = 9 * 60 + 30, closeTime = 16 * 60;
       if (totalMinutes >= openTime && totalMinutes < closeTime) {
           const timeLeft = closeTime - totalMinutes;
-          const hours = Math.floor(timeLeft / 60);
-          const mins = timeLeft % 60;
-          marketStatus.textContent = `Market closes in ${hours}h ${mins}m`;
+          marketStatus.textContent = 'Market closes in ' + Math.floor(timeLeft/60) + 'h ' + (timeLeft%60) + 'm';
       } else {
-          // If before opening (even on same day), or after close (next day)
-          let timeUntilOpen;
-          if (totalMinutes < openTime) {
-             timeUntilOpen = openTime - totalMinutes;
-          } else {
-             // Calculate time until 9:30 AM next day
-             // Minutes remaining in current day + opening time
-             timeUntilOpen = (24 * 60 - totalMinutes) + openTime;
-          }
-          const hours = Math.floor(timeUntilOpen / 60);
-          const mins = timeUntilOpen % 60;
-          marketStatus.textContent = `Market opens in ${hours}h ${mins}m`;
+          const timeUntilOpen = totalMinutes < openTime ? openTime - totalMinutes : (24*60 - totalMinutes) + openTime;
+          marketStatus.textContent = 'Market opens in ' + Math.floor(timeUntilOpen/60) + 'h ' + (timeUntilOpen%60) + 'm';
       }
     }
-
-    // Clock Script
     function updateClock() {
-      const now = new Date();
-      // Use toLocaleTimeString for PST specifically
-      document.getElementById('clock').textContent = now.toLocaleTimeString('en-US', {
-        timeZone: 'America/Los_Angeles',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        hour12: true
-      });
+      document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', { timeZone: 'America/Los_Angeles', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
       updateMarketStatus();
     }
-
-    // Initial calls
-    fetchSentiment();
-    setInterval(updateClock, 1000);
-    updateClock();
-
+    fetchSentiment(); setInterval(updateClock, 1000); updateClock();
     const quotes = [
       "I’m not lazy, I’m just on energy saving mode.",
       "My bed is a magical place where I suddenly remember everything I forgot to do.",

@@ -141,7 +141,9 @@
   <script type="module">
     import { API_KEY } from '../config.js';
     window.API_KEY = API_KEY;
+  </script>
 
+  <script>
     window.loadStream = function() {
       const inputElement = document.getElementById('streamUrl');
       const input = inputElement.value.trim();
@@ -177,8 +179,8 @@
             if (body && body.innerText.includes('disabled')) {
               chat.style.display = 'none';
             } else {
-        chat.style.display = 'block';
-    }
+                chat.style.display = 'block';
+            }
           } catch(e) {
             chat.style.display = 'block';
     }
@@ -191,7 +193,6 @@
         inputElement.value = "You are Watching: " + videoId;
       } else {
         const channel = input.includes('twitch.tv/') ? input.split('twitch.tv/').pop().split('/')[0] : input;
-
         player.innerHTML = '<iframe src="https://player.twitch.tv/?channel=' + channel + '&parent=' + window.location.hostname + '&autoplay=true&muted=false" allow="autoplay; fullscreen" allowfullscreen></iframe>';
         chat.innerHTML = '<iframe src="https://www.twitch.tv/embed/' + channel + '/chat?parent=' + window.location.hostname + '&darkpopout"></iframe>';
         chat.style.display = 'block';
@@ -210,7 +211,7 @@
       loadStream();
     };
 
-    window.renderList = async function() {
+    async function renderList() {
         let list = JSON.parse(localStorage.getItem('myStreamers')) || [{name: 'hutchmf', url: 'hutchmf'}, {name: 'shroud', url: 'shroud'}];
         const streamerStatuses = await Promise.all(list.map(async (item) => {
             const isOnline = await getTwitchStatus(item.url);
@@ -234,7 +235,7 @@
                     >×</button>
                 </div>`;
         });
-    };
+    }
 
     async function getTwitchStatus(url) {
         if (url.includes('youtube')) return false;
@@ -269,12 +270,6 @@
 
     document.getElementById('streamUrl').addEventListener('focus', function() {
       if (this.dataset.lastInput) this.value = this.dataset.lastInput;
-    });
-
-    document.addEventListener("visibilitychange", function() {
-        if (document.hidden) {
-            console.log("Tab is hidden, but stream should continue...");
-        }
     });
 
     window.onload = renderList;
