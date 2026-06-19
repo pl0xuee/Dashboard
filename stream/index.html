@@ -50,10 +50,10 @@
     .controls {
       display: flex;
       gap: 10px;
-      padding: 10px;
-      background: var(--surface);
+      /* padding: 10px; */ /* Removed */
+      background: transparent; /* Removed background */
       border-radius: 20px;
-      margin-bottom: 5px;
+      margin-bottom: 0; /* Adjusted */
     }
 
         /* Dropdown Styles */
@@ -103,9 +103,9 @@
     }
   </style>
 </head>
-<body>
+<body class="stream-page">
   <div class="page">
-    <header>
+    <header class="page-header">
       <div class="header-left">
         <a href="../" class="home-button">Home</a>
         <a href="../dashboard/" class="home-button">Dashboard</a>
@@ -114,18 +114,17 @@
       </div>
 
       <!-- Controls moved back to the header on the right -->
-      <div class="controls" style="display: inline-flex; justify-content: flex-start; margin-left: auto;">
-        <input type="text" id="streamUrl" placeholder="YouTube URL or Twitch Channel Name" onkeydown="if(event.key === 'Enter') loadStream()" style="width: 350px; padding: 8px 16px; border-radius: 999px; border: 1px solid var(--border); background: rgba(0,0,0,0.2); color: #fff; outline: none; font-size: 13px;">
-        <button onclick="loadStream()" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; margin-left: 5px; font-weight: 500; transition: all 180ms ease;">Load</button>
-        <button onclick="toggleChat()" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; margin-left: 5px; font-weight: 500; transition: all 180ms ease;">Toggle Chat</button>
-
+      <div class="controls">
+        <input type="text" id="streamUrl" placeholder="YouTube URL or Twitch Channel Name" onkeydown="if(event.key === 'Enter') loadStream()" style="width: 350px; height: 38px; padding: 0 12px; margin: 0 4px;">
+        <button onclick="loadStream()" class="home-button" style="height: 38px; padding: 0 12px;">Load</button>
+        <button onclick="toggleChat()" class="home-button" style="height: 38px; padding: 0 12px;">Toggle Chat</button>
         <!-- Streamer Dropdown -->
-        <div class="dropdown" style="margin-left: 5px;">
-          <button class="dropbtn" style="padding: 8px 16px; border-radius: 999px; background: rgba(109, 140, 255, 0.16); color: #e9f0ff; border: 1px solid rgba(109, 140, 255, 0.18); cursor: pointer; font-size: 13px; font-weight: 500;">My Streamers ▼</button>
+        <div class="dropdown">
+          <button class="dropbtn home-button">My Streamers ▼</button>
           <div class="dropdown-content" id="streamerList">
             <div id="listItems"></div>
             <div style="border-top: 1px solid var(--border); margin: 5px 0;"></div>
-            <a href="#" onclick="addStreamer()" style="color: var(--accent);">Add Streamer...</a>
+            <a href="#" onclick="addStreamer()" class="home-button" style="width: 100%; border: none; background: transparent; text-align: center; color: var(--accent);">Add Streamer...</a>
           </div>
         </div>
       </div>

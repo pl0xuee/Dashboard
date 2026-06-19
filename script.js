@@ -6,7 +6,7 @@ const tvTickerInputs = [
 ];
 // Removed unused statusText const
 const defaultTvTickers = ['GOOGL', 'SPCX', 'SPY', 'BTCUSD'];
-
+const TWELVE_DATA_API_KEY = 'e113279daa094cf29e24802ff56566e2';
 function setStatus(message) {
   // Status bar removed
 }
@@ -214,7 +214,7 @@ function createTradingViewWidget(index, symbol) {
 
 async function loadChartData(ticker, candleSeries, volumeSeries, chart, index) {
     try {
-        const response = await fetch(`../proxy.php?symbol=${ticker}&interval=1min&outputsize=100`);
+        const response = await fetch(`https://api.twelvedata.com/time_series?symbol=${ticker}&interval=1min&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`);
             const json = await response.json();
 
         if (json.values && json.values.length > 0) {
@@ -296,9 +296,7 @@ function fallbackToTradingView(index, symbol) {
 
 async function updateChartPrice(ticker, candleSeries, index) {
     try {
-        // Using the proxy to fetch current price.
-        // Twelve Data price endpoint expects "symbol" as a param.
-        const res = await fetch(`../proxy.php?symbol=${ticker}`);
+        const res = await fetch(`https://api.twelvedata.com/price?symbol=${ticker}&apikey=${TWELVE_DATA_API_KEY}`);
         const data = await res.json();
         if (data.price) {
             const currentPrice = parseFloat(data.price);

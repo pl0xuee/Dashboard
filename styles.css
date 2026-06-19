@@ -1,103 +1,157 @@
 :root {
   color-scheme: dark;
-  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
-  color: #e8ecef;
-  background: #090b10;
-  --bg: #0d1117;
-  --surface: rgba(22, 28, 36, 0.92);
-  --surface-strong: rgba(12, 23, 31, 0.98);
-  --border: rgba(148, 163, 184, 0.14);
-  --text-muted: #8b95a1;
-  --accent: #6d8cff;
-  --accent-soft: rgba(109, 140, 255, 0.18);
-  --shadow: 0 32px 120px rgba(0, 0, 0, 0.38);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  color: #e2e8f0;
+  background: #0a0c10;
+  --bg: #0a0c10;
+  --surface: rgba(22, 25, 32, 0.95);
+  --border: rgba(255, 255, 255, 0.12);
+  --text-muted: #a0aec0;
+  --accent: #4f8bf9;
+  --accent-glow: rgba(79, 139, 249, 0.2);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 }
 
-* {
-  box-sizing: border-box;
-}
-
+* { box-sizing: border-box; }
 /* Apply consistent button styles globally */
 button, .home-button, .load-button {
-  height: 36px;
-  padding: 0 16px;
-  border-radius: 999px;
-  background: rgba(109, 140, 255, 0.16);
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 16px;
+  background: var(--surface);
   color: #e9f0ff;
-  border: 1px solid rgba(109, 140, 255, 0.18);
+  border: 1px solid var(--border);
   cursor: pointer;
   font-size: 14px;
-  font-weight: 500;
-  transition: all 180ms ease;
+  font-weight: 600;
+  transition: all 0.3s ease;
   white-space: nowrap;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
   line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 button:hover, .home-button:hover, .load-button:hover {
-  border-color: rgba(109, 140, 255, 0.45);
-  background: rgba(109, 140, 255, 0.14);
-  color: #f6f8ff;
-  transform: translateY(-1px);
+  border-color: var(--accent);
+  background: rgba(109, 140, 255, 0.1);
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
 }
+
+.home-button {
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.home-button:hover { background: rgba(255,255,255,0.05); }
 
 html, body {
   min-height: 100%;
   margin: 0;
   padding: 0;
-  background: radial-gradient(circle at top left, rgba(109, 140, 255, 0.14), transparent 28%),
-              radial-gradient(circle at bottom right, rgba(151, 100, 255, 0.12), transparent 30%),
-              linear-gradient(180deg, #070a0f 0%, #0c1017 100%);
-  /* Changed from overflow-y: auto to ensure the document itself scrolls */
   overflow-y: auto;
 }
 
-/* Reverting to stable layout for pages that need to fill the screen */
+/* Standard body padding and box-sizing for all pages */
 body {
-  display: flex;
-  align-items: stretch;
-  justify-content: center;
-  font-size: 16px;
-  line-height: 1.6;
-  padding: 15px;
-  color: var(--text-muted);
-  min-height: 100vh; /* Changed from height: 100vh */
-  overflow-y: auto; /* Allow the body to scroll everywhere */
+  padding: 20px;
   box-sizing: border-box;
+    margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(circle at top right, rgba(30, 41, 59, 0.5), transparent 50%),
+              linear-gradient(180deg, #050608 0%, #0a0c10 100%);
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-muted);
 }
 
-.home-page {
-  /* Allow scrolling only on home page */
-  overflow-y: auto;
+/* Reset body and page containers to strictly fill viewport without overflow */
+body:has(.dashboard-header),
+body.stream-page {
+    margin: 0;
+  padding: 0;
+    height: 100vh;
+  overflow: hidden;
+    box-sizing: border-box;
 }
-.page {
-  width: 100%;
-  max-width: 84%;
-  margin: 0 auto;
-  min-height: calc(100vh - 30px); /* Fill screen minus padding */
+
+body:has(.dashboard-header) .page,
+.stream-page .page {
+    height: 100vh;
+    width: 100vw;
+  margin: 0;
+    padding: 20px; /* Internal padding only */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  gap: 5px;
-  overflow: visible; /* Let content determine height */
+    box-sizing: border-box;
+}
+
+/* Home page retains its own overflow behavior and higher padding */
+.home-page {
+  padding: 20px;
+    overflow-y: auto !important;
+}
+
+/* Update .page to fill the remaining screen space */
+.page {
+  width: 100%;
+  margin: 0 auto;
+  display: flex;
+    flex-direction: column;
+  height: calc(100vh - 40px); /* 100vh minus 20px padding top/bottom */
+  padding-bottom: 20px;
   }
 
-/* Home page override to allow scrolling */
+/* Home page override to allow scrolling and wider content */
 .home-page .page {
   height: auto;
   min-height: 100%;
   overflow: visible;
+  max-width: 1400px;
+  width: 95%;
+  margin: 0 auto;
 }
 
-header {
+/* Dashboard/Stream page specific main height fix */
+body:has(.dashboard-header) .main,
+.stream-page .main {
+    flex: 1;
+  overflow: hidden;
+    min-height: 0;
+    padding-bottom: 0;
+}
+
+/* Dashboard specific width */
+body:has(.dashboard-header) .page {
+  max-width: 82%;
+  margin: 0 auto;
+}
+
+/* Stream page width */
+.stream-page .page {
+    max-width: 95%;
+    margin: 0 auto;
+  }
+  header {
   display: flex;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  height: 56px; /* Updated standard header height to 56px */
+  padding: 10px 20px; /* Matching the home page header padding */
+  height: 56px;
   border: 1px solid var(--border);
   border-radius: 20px;
   background: var(--surface);
@@ -107,13 +161,58 @@ header {
   z-index: 10;
   flex: 0 0 auto;
   gap: 15px;
+  margin-bottom: 10px; /* Reduced from 25px */
 }
 
-/* Specific height for the dashboard header */
+/* Update all headers to use consistent padding */
+header, .dashboard-header, .page-header {
+  padding: 10px 20px !important;
+}
+
+/* Remove absolute positioning and revert to standard layout */
+.controls {
+    display: inline-flex;
+    justify-content: flex-end; /* Move to the right */
+    align-items: center;
+    gap: 8px;
+    position: static; /* Remove absolute positioning */
+    transform: none;
+    margin-left: auto; /* Push to the right */
+    padding: 0; /* Padding removed */
+}
+
+/* Specific height for the dashboard header - horizontal layout */
 .dashboard-header {
-  height: 80px;
+  height: 86px; /* Updated height to 86px */
+  flex-direction: row;
+  justify-content: flex-start;
 }
 
+.dashboard-header .header-left {
+  padding-left: 12px;
+}
+
+.dashboard-header .ticker-container {
+  flex: 1;
+  height: 86px; /* Match header height */
+  margin-left: 20px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  padding: 2px; /* Padding reduced to 2px */
+  border-radius: 16px; /* Added rounded corners */
+}
+
+/* Also round the ticker itself */
+.dashboard-header .ticker-container tv-ticker-tape {
+    border-radius: 14px;
+  overflow: hidden;
+}
+
+/* New header height for Stream/other pages */
+.page-header {
+  height: 56px;
+}
 .ticker-container {
   flex: 1;
   min-width: 0;
@@ -158,26 +257,49 @@ tv-ticker-tape {
   width: 100%;
 }
 
+/* Unified Card Style */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; width: 4px; height: 100%;
+  background: var(--accent);
+}
+
 .link-group {
   margin-bottom: 20px;
   text-align: center;
   width: 100%;
+  background: var(--surface);
+  padding: 15px 25px; /* Reduced vertical padding */
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
 }
 
-.link-group h2 {
-  font-size: 1.1rem;
-  color: #fff;
-  margin-bottom: 10px;
+.link-group h2, h2 {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  margin: 0 0 15px 0;
 }
 
 .quick-links-list {
   list-style: none !important;
   padding: 0;
   margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Force equal 2-column width */
+  gap: 10px; /* Slightly more consistent gap */
   width: 100%;
 }
 
@@ -185,26 +307,32 @@ tv-ticker-tape {
   list-style: none !important;
   padding: 0;
   margin: 0;
+  display: flex; /* Ensures items fill the grid cell */
 }
 
 .quick-links-list li a {
-  display: block;
-  padding: 10px 20px;
-  background: rgba(22, 28, 36, 0.6);
+  flex: 1; /* Ensures buttons are same size */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+    padding: 10px;
+  background: rgba(0,0,0,0.2);
   border: 1px solid var(--border);
-  border-radius: 999px;
-  color: #e8ecef;
+  border-radius: 12px;
+  color: #fff;
   text-decoration: none;
   transition: all 0.3s ease;
   text-align: center;
-  font-weight: 500;
-  font-size: 13px;
-}
+  font-weight: 600;
+  font-size: 0.75rem; /* Slightly smaller for tighter uniform look */
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  }
 
 .quick-links-list li a:hover {
-  border-color: rgba(109, 140, 255, 0.45);
-  background: rgba(109, 140, 255, 0.14);
-  color: #f6f8ff;
+  border-color: var(--accent);
+  background: rgba(109, 140, 255, 0.15);
+  color: #fff;
   transform: translateY(-1px);
 }
 
@@ -251,7 +379,7 @@ tv-ticker-tape {
 .tv-panel-header input {
   flex: 1;
   min-width: 0;
-  height: 36px;
+  height: 42px; /* Uniform height */
   padding: 0 16px;
   border-radius: 18px;
   border: 1px solid rgba(255,255,255,0.08);
@@ -391,5 +519,119 @@ tv-ticker-tape {
     align-items: stretch;
     padding: 10px;
   }
+}
+/* Streamer Dropdown - custom style adjustments */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px; /* Matching your button radius */
+  width: max-content;
+  min-width: 180px;
+  z-index: 20;
+  padding: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  right: 0;
+  top: 110%;
+}
+
+.dropdown-content a {
+  display: block;
+  padding: 10px 12px;
+  text-decoration: none;
+  color: #e8ecef;
+  border-radius: 8px;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.dropdown-content a:hover {
+  background: rgba(109, 140, 255, 0.15);
+  color: #fff;
+}
+
+/* Dropdown button override */
+.dropbtn {
+  height: 42px;
+  padding: 0 20px;
+    border-radius: 16px; /* New button style */
+  background: var(--surface);
+    color: #e9f0ff;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+}
+
+.dropbtn:hover {
+    border-color: var(--accent);
+    background: rgba(109, 140, 255, 0.1);
+    color: #fff;
+}
+
+/* Style for all text inputs */
+input[type="text"] {
+  height: 42px;
+  padding: 0 20px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+input[type="text"]:focus {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 2px var(--accent-glow);
+}
+
+/* Input override for Stream Header - ensure it matches without extra colors */
+.stream-page .page-header input[type="text"] {
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border);
+    color: #fff;
+    box-shadow: none;
+    font-size: 0.85rem;
+}
+
+/* Reduced height input and button in Stream header to fit within 56px header */
+.controls input[type="text"],
+.controls .home-button {
+  height: 38px !important;
+  line-height: 38px !important;
+  padding: 0 12px !important;
+  margin: 0 2px !important;
+  font-size: 0.85rem !important;
+}
+
+/* Adjust Streamer Dropdown to fit */
+.controls .dropdown .dropbtn {
+  height: 38px !important;
+  line-height: 38px !important;
+  padding: 0 16px !important;
+}
+
+/* Streamer Dropdown button override */
+.controls .dropdown .dropbtn {
+  height: 42px !important; /* Restore to global button height */
+  line-height: 42px !important;
+  padding: 0 20px !important;
+  background: var(--surface) !important;
+  border: 1px solid var(--border) !important;
+  color: #e9f0ff !important;
+  text-transform: uppercase !important;
+  font-weight: 600 !important;
+}
+
+.controls .dropdown .dropbtn:hover {
+  border-color: var(--accent) !important;
+  background: rgba(109, 140, 255, 0.1) !important;
 }
 
