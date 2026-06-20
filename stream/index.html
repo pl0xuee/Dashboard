@@ -127,6 +127,7 @@
           <div class="dropdown-content" id="streamerList">
             <div style="padding:4px 6px 2px; font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(200,210,255,0.45);">My Streamers</div>
             <div style="padding:0 6px 6px; font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:rgba(0,220,120,0.75);">Live Channels Only</div>
+            <div id="youtubeScanStatus" style="padding:0 6px 6px; font-size:10px; color:rgba(255,180,140,0.75); min-height:14px;"></div>
             <div id="listItems"></div>
             <div style="border-top: 1px solid var(--border); margin: 6px 0 4px;"></div>
             <a id="twitchConnectBtn" href="#" style="display:block; text-align:center; padding:6px 10px; font-size:12px; font-weight:600; color:#a970ff; text-decoration:none; border-radius:8px; transition:background 0.15s;" onmouseover="this.style.background='rgba(169,112,255,0.12)'" onmouseout="this.style.background='transparent'">+ Connect Twitch</a>
@@ -161,7 +162,6 @@
     const DROPDOWN_REFRESH_COOLDOWN_MS = 15000;
     const YOUTUBE_LIVE_CACHE_TTL_MS = 120000;
     const YOUTUBE_SUBS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
-    const YOUTUBE_LIVE_SCAN_LIMIT = 60;
     let lastDropdownRefreshAt = 0;
     let dropdownRefreshInFlight = false;
 
@@ -290,6 +290,12 @@
       localStorage.setItem(key, JSON.stringify(value));
     }
 
+    function setYouTubeScanStatus(text) {
+      const el = document.getElementById('youtubeScanStatus');
+      if (!el) return;
+      el.textContent = text || '';
+    }
+
     async function ytApi(path, token) {
       const resp = await fetch(`https://www.googleapis.com/youtube/v3/${path}`, {
         headers: { 'Authorization': `Bearer ${token}` }
@@ -336,12 +342,14 @@
 
       const liveCache = getCachedJson('youtubeLiveCache');
       if (liveCache && Array.isArray(liveCache.items) && Date.now() - liveCache.updatedAt < YOUTUBE_LIVE_CACHE_TTL_MS) {
+        setYouTubeScanStatus('');
         return liveCache.items;
       }
 
+      setYouTubeScanStatus('Scanning all YouTube subscriptions...');
       try {
         const subscriptions = await getYouTubeSubscriptions();
-        const subset = subscriptions.slice(0, YOUTUBE_LIVE_SCAN_LIMIT);
+        const subset = subscriptions;
 
         const searchResults = await mapWithConcurrency(subset, async (sub) => {
           try {
@@ -382,6 +390,8 @@
       } catch (e) {
         console.error('YouTube live fetch error', e);
         return [];
+      } finally {
+        setYouTubeScanStatus('');
       }
     }
 
