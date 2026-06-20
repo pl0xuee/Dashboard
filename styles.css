@@ -362,11 +362,28 @@ tv-ticker-tape {
   height: 42px; /* Uniform height */
   padding: 0 16px;
   border-radius: 18px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(0,0,0,0.2);
-  color: #f5f8ff;
+  border: 1px solid rgba(167, 188, 255, 0.22);
+  background: linear-gradient(180deg, rgba(18, 24, 34, 0.95) 0%, rgba(12, 17, 25, 0.95) 100%);
+  color: #e9f0ff;
+  font-family: inherit;
   outline: none;
   font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 16px rgba(0, 0, 0, 0.28);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.tv-panel-header input::placeholder {
+  color: #95a2bc;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.tv-panel-header input:focus {
+  border-color: rgba(120, 159, 255, 0.85);
+  background: linear-gradient(180deg, rgba(22, 31, 45, 0.98) 0%, rgba(15, 22, 34, 0.98) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 2px rgba(79, 139, 249, 0.25), 0 8px 20px rgba(0, 0, 0, 0.35);
 }
 
 .tv-widget {
@@ -493,28 +510,39 @@ input[type="text"] {
   height: 42px;
   padding: 0 20px;
   border-radius: 16px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: #fff;
+  border: 1px solid rgba(167, 188, 255, 0.22);
+  background: linear-gradient(180deg, rgba(18, 24, 34, 0.95) 0%, rgba(12, 17, 25, 0.95) 100%);
+  color: #e9f0ff;
+  font-family: inherit;
   font-size: 0.85rem;
-  font-weight: 500;
-  transition: all 0.3s ease;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
   outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 16px rgba(0, 0, 0, 0.28);
+}
+
+input[type="text"]::placeholder {
+  color: #95a2bc;
+  font-weight: 600;
+  letter-spacing: 0.03em;
 }
 
 input[type="text"]:focus {
-  border-color: var(--accent);
-  background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 0 0 2px var(--accent-glow);
+  border-color: rgba(120, 159, 255, 0.85);
+  background: linear-gradient(180deg, rgba(22, 31, 45, 0.98) 0%, rgba(15, 22, 34, 0.98) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 0 2px rgba(79, 139, 249, 0.25), 0 8px 20px rgba(0, 0, 0, 0.35);
 }
 
 /* Input override for Stream Header - ensure it matches without extra colors */
 .stream-page .page-header input[type="text"] {
-  background: rgba(0, 0, 0, 0.2);
-  border: 1px solid var(--border);
-  color: #fff;
+  background: linear-gradient(180deg, rgba(18, 24, 34, 0.95) 0%, rgba(12, 17, 25, 0.95) 100%);
+  border: 1px solid rgba(167, 188, 255, 0.22);
+  color: #e9f0ff;
   box-shadow: none;
   font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 /* Reduced height input and button in Stream header to fit within 56px header */
