@@ -125,6 +125,66 @@
     .clock-value {
       font-family: 'Inter', monospace;
     }
+    .nascar-meta {
+      display: grid;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .nascar-tabs {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 6px;
+      margin: 4px 0 10px 0;
+    }
+    .nascar-tab-btn {
+      min-height: 36px;
+      height: auto;
+      padding: 6px 8px;
+      font-size: 0.68rem;
+      letter-spacing: 0.01em;
+      line-height: 1.2;
+      text-transform: none;
+      white-space: normal;
+      text-align: center;
+    }
+    .nascar-tab-btn.wide {
+      grid-column: 1 / -1;
+    }
+    .nascar-tab-btn.active {
+      border-color: var(--accent);
+      background: rgba(110, 161, 255, 0.15);
+      color: #fff;
+      box-shadow: 0 0 0 1px rgba(110, 161, 255, 0.35);
+    }
+    .nascar-line {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      text-align: left;
+    }
+    .nascar-race-name {
+      font-size: 1rem;
+      margin: 4px 0 8px 0;
+      line-height: 1.25;
+      letter-spacing: 0.005em;
+    }
+    .nascar-label {
+      font-size: 0.68rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+    .nascar-value {
+      font-size: 0.82rem;
+      color: #eef4ff;
+      font-weight: 600;
+      line-height: 1.3;
+    }
     .weather-box {
       text-align: center;
       width: 100%;
@@ -217,6 +277,11 @@
 
             <!-- Left Side: Links -->
             <section class="home-links-col">
+              <section class="card info-card">
+                <h2 class="home-box-title">Market Sentiment</h2>
+                <p id="sentiment-val" class="info-value">Loading...</p>
+                <p id="market-status" class="info-subtext"></p>
+              </section>
               <section class="card">
             <h2 class="home-box-title">Entertainment</h2>
             <ul class="quick-links-list">
@@ -267,6 +332,7 @@
                 <h2 class="home-box-title center">📰 Live News Feed</h2>
                 <div class="news-controls">
                   <button onclick="showNews('usa')" id="btn-usa" class="home-button" title="USA news">🇺🇸 USA</button>
+                  <button onclick="showNews('local')" id="btn-local" class="home-button" title="Local news">📍 Local</button>
                   <button onclick="showNews('world')" id="btn-world" class="home-button" title="World news">🌍 World</button>
                   <button onclick="showNews('finance')" id="btn-finance" class="home-button" title="Finance news">📈 Finance</button>
       </div>
@@ -280,13 +346,31 @@
             <!-- Right Side: Stats -->
             <section class="home-stats-col">
               <section class="card info-card">
-                <h2 class="home-box-title">Market Sentiment</h2>
-                <p id="sentiment-val" class="info-value">Loading...</p>
-                <p id="market-status" class="info-subtext"></p>
-              </section>
-              <section class="card info-card">
                 <h2 class="home-box-title">Time (PST)</h2>
                 <p id="clock" class="info-value clock-value"></p>
+              </section>
+              <section class="card info-card">
+                <h2 class="home-box-title">🏁 Next NASCAR Race</h2>
+                <div class="nascar-tabs">
+                  <button id="nascar-tab-cup" type="button" class="home-button nascar-tab-btn active" onclick="showNascarSeries('cup')">Cup</button>
+                  <button id="nascar-tab-truck" type="button" class="home-button nascar-tab-btn" onclick="showNascarSeries('truck')">Truck</button>
+                  <button id="nascar-tab-oreilly" type="button" class="home-button nascar-tab-btn wide" onclick="showNascarSeries('oreilly')">O'Reilly Auto Parts Series</button>
+                </div>
+                <p id="nascar-race" class="info-value nascar-race-name">Loading...</p>
+                <div class="nascar-meta">
+                  <div class="nascar-line">
+                    <span class="nascar-label">Track</span>
+                    <span id="nascar-track" class="nascar-value">--</span>
+                  </div>
+                  <div class="nascar-line">
+                    <span class="nascar-label">When</span>
+                    <span id="nascar-when" class="nascar-value">--</span>
+                  </div>
+                  <div class="nascar-line">
+                    <span class="nascar-label">Broadcast</span>
+                    <span id="nascar-broadcast" class="nascar-value">--</span>
+                  </div>
+                </div>
               </section>
               <section class="card info-card">
                 <h2 class="home-box-title">Weather</h2>
@@ -298,7 +382,7 @@
                     <!-- Weekly items will be injected here -->
                   </div>
                 </div>
-            </section>
+              </section>
             </section>
       </div>
       </div>
@@ -307,6 +391,34 @@
   <script>
     let allNewsItems = [];
     let showAll = false;
+
+    async function getAreaNewsFeedUrl() {
+      const fallback = 'https://news.google.com/rss/search?q=' + encodeURIComponent('regional news us') + '&hl=en-US&gl=US&ceid=US:en';
+
+      if (!navigator.geolocation) return fallback;
+
+      try {
+        const position = await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 7000 });
+        });
+
+        const { latitude, longitude } = position.coords;
+        const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+        const geo = await geoRes.json();
+
+        // Use broader area only (state/region + country), not pinpoint city/locality.
+        const region = geo.principalSubdivision || geo.principalSubdivisionCode || '';
+        const country = geo.countryName || geo.countryCode || 'US';
+        const query = [region, country, 'regional news'].filter(Boolean).join(' ');
+
+        if (!query) return fallback;
+
+        return 'https://news.google.com/rss/search?q=' + encodeURIComponent(query) + '&hl=en-US&gl=US&ceid=US:en';
+      } catch (e) {
+        return fallback;
+      }
+    }
+
     async function showNews(type) {
       const container = document.getElementById('news-container');
       const toggleBtn = document.getElementById('toggle-news');
@@ -315,13 +427,21 @@
       toggleBtn.style.display = 'none';
       try {
         let feedUrl = 'https://news.google.com/rss?gl=US&hl=en-US&ceid=US:en';
-        if (type === 'world') feedUrl = 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en';
+        if (type === 'local') feedUrl = await getAreaNewsFeedUrl();
+        else if (type === 'world') feedUrl = 'https://news.google.com/rss/headlines/section/topic/WORLD?hl=en-US&gl=US&ceid=US:en';
         else if (type === 'finance') feedUrl = 'https://news.google.com/rss/headlines/section/topic/BUSINESS?hl=en-US&gl=US&ceid=US:en';
 
         // Remove the &count=50 parameter as it is causing a 422 error
-        const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl));
-        const data = await response.json();
-        allNewsItems = data.items;
+        let response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl));
+        let data = await response.json();
+
+        if (!data.items || !Array.isArray(data.items) || data.items.length === 0) {
+          const fallbackFeed = 'https://news.google.com/rss?gl=US&hl=en-US&ceid=US:en';
+          response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(fallbackFeed));
+          data = await response.json();
+        }
+
+        allNewsItems = Array.isArray(data.items) ? data.items : [];
         renderNews();
       } catch (e) { container.innerHTML = "Could not load news."; }
     }
@@ -504,6 +624,102 @@
       });
     }
     fetchWeather();
+
+    function setNascarTabActive(seriesType) {
+      const tabs = ['cup', 'truck', 'oreilly'];
+      tabs.forEach((tab) => {
+        const el = document.getElementById(`nascar-tab-${tab}`);
+        if (!el) return;
+        if (tab === seriesType) el.classList.add('active');
+        else el.classList.remove('active');
+      });
+    }
+
+    window.showNascarSeries = function(seriesType) {
+      setNascarTabActive(seriesType);
+      fetchNextNascarRace(seriesType);
+    };
+
+    async function fetchNextNascarRace(seriesType = 'cup') {
+      const raceEl = document.getElementById('nascar-race');
+      const trackEl = document.getElementById('nascar-track');
+      const whenEl = document.getElementById('nascar-when');
+      const broadcastEl = document.getElementById('nascar-broadcast');
+
+      const seriesMap = {
+        cup: { key: 'series_1', fallbackLabel: 'Cup' },
+        truck: { key: 'series_3', fallbackLabel: 'Truck' },
+        oreilly: { key: 'series_2', fallbackLabel: "O'Reilly Auto Parts Series" }
+      };
+
+      const selected = seriesMap[seriesType] || seriesMap.cup;
+
+      const setUnavailable = () => {
+        raceEl.textContent = 'Unavailable';
+        trackEl.textContent = '--';
+        whenEl.textContent = '--';
+        broadcastEl.textContent = '--';
+      };
+
+      try {
+        const now = new Date();
+        const yearsToCheck = [now.getFullYear(), now.getFullYear() + 1];
+        let nextRace = null;
+
+        for (const year of yearsToCheck) {
+          const res = await fetch(`https://cf.nascar.com/cacher/${year}/race_list_basic.json`);
+          const data = await res.json();
+          const seriesRaces = Array.isArray(data[selected.key]) ? data[selected.key] : [];
+
+          const upcoming = seriesRaces
+            .map((race) => ({ ...race, raceDateObj: new Date(race.race_date || race.date_scheduled) }))
+            .filter((race) => !isNaN(race.raceDateObj.getTime()) && race.raceDateObj >= now)
+            .sort((a, b) => a.raceDateObj - b.raceDateObj);
+
+          if (upcoming.length > 0) {
+            nextRace = upcoming[0];
+            break;
+          }
+        }
+
+        if (!nextRace) {
+          setUnavailable();
+          return;
+        }
+
+        const displayDate = nextRace.raceDateObj.toLocaleDateString('en-US', {
+          timeZone: 'America/New_York',
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric'
+        });
+
+        const displayTimeET = nextRace.raceDateObj.toLocaleTimeString('en-US', {
+          timeZone: 'America/New_York',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+
+        const displayTimePT = nextRace.raceDateObj.toLocaleTimeString('en-US', {
+          timeZone: 'America/Los_Angeles',
+          hour: 'numeric',
+          minute: '2-digit',
+          hour12: true
+        });
+
+        const tv = nextRace.television_broadcaster || 'TBA';
+
+        raceEl.textContent = nextRace.race_name || `Next ${selected.fallbackLabel} Event`;
+        trackEl.textContent = nextRace.track_name || '--';
+        whenEl.textContent = `${displayDate} | PT: ${displayTimePT} | ET: ${displayTimeET}`;
+        broadcastEl.textContent = `TV: ${tv}`;
+      } catch (e) {
+        setUnavailable();
+      }
+    }
+
+    fetchNextNascarRace('cup');
   </script>
 </body>
 </html>
