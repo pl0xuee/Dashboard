@@ -7,13 +7,6 @@ const tvTickerInputs = [
 // Removed unused statusText const
 const defaultTvTickers = ['GOOGL', 'SPCX', 'SPY', 'BTCUSD'];
 const TWELVE_DATA_API_KEY = 'e113279daa094cf29e24802ff56566e2';
-function setStatus(message) {
-  // Status bar removed
-}
-
-function normalizeTradingViewSymbol(symbol) {
-  return symbol.trim().toUpperCase();
-}
 function getYouTubeEmbedUrl(videoId) {
   if (!videoId) return null;
 
@@ -332,8 +325,7 @@ function initializeTradingViewPage() {
     const symbolInput = tvTickerInputs[index];
     const symbol = symbolInput ? symbolInput.value.trim() : '';
 
-    // Check if the input is in "Loaded: " state and revert it if necessary
-    const actualSymbol = symbol.startsWith("Loaded: ") ? symbolInput.dataset.lastInput : symbol;
+    const actualSymbol = symbol;
     if (actualSymbol) {
       // Save current input to data attribute
       symbolInput.dataset.lastInput = actualSymbol;

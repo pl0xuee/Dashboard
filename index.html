@@ -98,9 +98,9 @@
               <div class="card news-card" style="flex: 1; min-height: 400px;">
                 <h2 style="text-align: center; margin-bottom: 15px; margin-top: 0;">📰 Live News Feed</h2>
                 <div style="display: flex; gap: 10px; margin-bottom: 15px; justify-content: center;">
-                  <button onclick="showNews('usa', this)" id="btn-usa" class="home-button" title="USA news">🇺🇸 USA</button>
-                  <button onclick="showNews('world', this)" id="btn-world" class="home-button" title="World news">🌍 World</button>
-                  <button onclick="showNews('finance', this)" id="btn-finance" class="home-button" title="Finance news">📈 Finance</button>
+                  <button onclick="showNews('usa')" id="btn-usa" class="home-button" title="USA news">🇺🇸 USA</button>
+                  <button onclick="showNews('world')" id="btn-world" class="home-button" title="World news">🌍 World</button>
+                  <button onclick="showNews('finance')" id="btn-finance" class="home-button" title="Finance news">📈 Finance</button>
       </div>
                 <div id="news-container" style="text-align: left;">
                 <p>Loading headlines...</p>
@@ -139,7 +139,7 @@
   <script>
     let allNewsItems = [];
     let showAll = false;
-    async function showNews(type, btn) {
+    async function showNews(type) {
       const container = document.getElementById('news-container');
       const toggleBtn = document.getElementById('toggle-news');
       container.innerHTML = "Loading...";
@@ -267,7 +267,6 @@
 
     // Weather Script
     async function fetchWeather() {
-      const weatherEl = document.getElementById('weather');
       const descEl = document.getElementById('weather-desc');
       const rangeEl = document.getElementById('weather-range');
       const summaryEl = document.getElementById('weather-summary');

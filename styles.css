@@ -68,7 +68,6 @@ html, body {
 body {
   padding: 20px;
   box-sizing: border-box;
-    margin: 0;
   min-height: 100vh;
   background: radial-gradient(circle at top right, rgba(30, 41, 59, 0.5), transparent 50%),
               linear-gradient(180deg, #050608 0%, #0a0c10 100%);
@@ -80,29 +79,29 @@ body {
 /* Reset body and page containers to strictly fill viewport without overflow */
 body:has(.dashboard-header),
 body.stream-page {
-    margin: 0;
+  margin: 0;
   padding: 0;
-    height: 100vh;
+  height: 100vh;
   overflow: hidden;
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 body:has(.dashboard-header) .page,
 .stream-page .page {
-    height: 100vh;
-    width: 100vw;
+  height: 100vh;
+  width: 100vw;
   margin: 0;
-    padding: 20px; /* Internal padding only */
+  padding: 20px; /* Internal padding only */
   overflow: hidden;
   display: flex;
   flex-direction: column;
-    box-sizing: border-box;
+  box-sizing: border-box;
 }
 
 /* Home page retains its own overflow behavior and higher padding */
 .home-page {
   padding: 20px;
-    overflow-y: auto !important;
+  overflow-y: auto !important;
 }
 
 /* Update .page to fill the remaining screen space */
@@ -110,10 +109,10 @@ body:has(.dashboard-header) .page,
   width: 100%;
   margin: 0 auto;
   display: flex;
-    flex-direction: column;
+  flex-direction: column;
   height: calc(100vh - 40px); /* 100vh minus 20px padding top/bottom */
   padding-bottom: 20px;
-  }
+}
 
 /* Home page override to allow scrolling and wider content */
 .home-page .page {
@@ -128,10 +127,10 @@ body:has(.dashboard-header) .page,
 /* Dashboard/Stream page specific main height fix */
 body:has(.dashboard-header) .main,
 .stream-page .main {
-    flex: 1;
+  flex: 1;
   overflow: hidden;
-    min-height: 0;
-    padding-bottom: 0;
+  min-height: 0;
+  padding-bottom: 0;
 }
 
 /* Dashboard specific width */
@@ -142,10 +141,11 @@ body:has(.dashboard-header) .page {
 
 /* Stream page width */
 .stream-page .page {
-    max-width: 95%;
-    margin: 0 auto;
-  }
-  header {
+  max-width: 95%;
+  margin: 0 auto;
+}
+
+header {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -171,14 +171,14 @@ header, .dashboard-header, .page-header {
 
 /* Remove absolute positioning and revert to standard layout */
 .controls {
-    display: inline-flex;
-    justify-content: flex-end; /* Move to the right */
-    align-items: center;
-    gap: 8px;
-    position: static; /* Remove absolute positioning */
-    transform: none;
-    margin-left: auto; /* Push to the right */
-    padding: 0; /* Padding removed */
+  display: inline-flex;
+  justify-content: flex-end; /* Move to the right */
+  align-items: center;
+  gap: 8px;
+  position: static; /* Remove absolute positioning */
+  transform: none;
+  margin-left: auto; /* Push to the right */
+  padding: 0; /* Padding removed */
 }
 
 /* Specific height for the dashboard header - horizontal layout */
@@ -205,7 +205,7 @@ header, .dashboard-header, .page-header {
 
 /* Also round the ticker itself */
 .dashboard-header .ticker-container tv-ticker-tape {
-    border-radius: 14px;
+  border-radius: 14px;
   overflow: hidden;
 }
 
@@ -274,17 +274,6 @@ tv-ticker-tape {
   background: var(--accent);
 }
 
-.link-group {
-  margin-bottom: 20px;
-  text-align: center;
-  width: 100%;
-  background: var(--surface);
-  padding: 15px 25px; /* Reduced vertical padding */
-  border-radius: 24px;
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--accent);
-}
-
 .link-group h2, h2 {
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -315,7 +304,7 @@ tv-ticker-tape {
   display: flex;
   align-items: center;
   justify-content: center;
-    padding: 10px;
+  padding: 10px;
   background: rgba(0,0,0,0.2);
   border: 1px solid var(--border);
   border-radius: 12px;
@@ -327,7 +316,7 @@ tv-ticker-tape {
   font-size: 0.75rem; /* Slightly smaller for tighter uniform look */
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  }
+}
 
 .quick-links-list li a:hover {
   border-color: var(--accent);
@@ -426,24 +415,9 @@ tv-ticker-tape {
 .home-container {
   display: flex;
   gap: 40px;
-    align-items: stretch;
+  align-items: stretch;
   justify-content: center;
   margin-bottom: 60px;
-  }
-
-.news-section {
-  max-width: 600px;
-  flex: 2;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.news-controls {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
-  justify-content: flex-start;
 }
 
 #news-container {
@@ -453,55 +427,6 @@ tv-ticker-tape {
   border: 1px solid var(--border);
   text-align: left;
   flex: 1;
-}
-
-.stats-group {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  flex: 1;
-}
-
-.stat-card {
-  background: var(--surface);
-  padding: 20px;
-  border-radius: 24px;
-  border: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-}
-
-.stat-title {
-  margin: 0 0 5px 0;
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
-.stat-value {
-  color: var(--accent);
-  font-size: 1.1rem;
-  margin: 0;
-  font-weight: 600;
-}
-
-.search-form {
-  margin-bottom: 40px;
-  width: 100%;
-  display: flex;
-  justify-content: center;
-}
-
-.search-input {
-  width: 100%;
-  max-width: 500px;
-  padding: 14px 24px;
-  border-radius: 999px;
-  border: 1px solid var(--border);
-  background: rgba(255,255,255,0.05);
-  color: #fff;
-  outline: none;
-  font-size: 16px;
 }
 
 @media (max-width: 900px) {
@@ -555,21 +480,21 @@ tv-ticker-tape {
 .dropbtn {
   height: 42px;
   padding: 0 20px;
-    border-radius: 16px; /* New button style */
+  border-radius: 16px; /* New button style */
   background: var(--surface);
-    color: #e9f0ff;
-    border: 1px solid var(--border);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-    transition: all 0.3s ease;
+  color: #e9f0ff;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  transition: all 0.3s ease;
 }
 
 .dropbtn:hover {
-    border-color: var(--accent);
-    background: rgba(109, 140, 255, 0.1);
-    color: #fff;
+  border-color: var(--accent);
+  background: rgba(109, 140, 255, 0.1);
+  color: #fff;
 }
 
 /* Style for all text inputs */
@@ -594,11 +519,11 @@ input[type="text"]:focus {
 
 /* Input override for Stream Header - ensure it matches without extra colors */
 .stream-page .page-header input[type="text"] {
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid var(--border);
-    color: #fff;
-    box-shadow: none;
-    font-size: 0.85rem;
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  color: #fff;
+  box-shadow: none;
+  font-size: 0.85rem;
 }
 
 /* Reduced height input and button in Stream header to fit within 56px header */
@@ -609,13 +534,6 @@ input[type="text"]:focus {
   padding: 0 12px !important;
   margin: 0 2px !important;
   font-size: 0.85rem !important;
-}
-
-/* Adjust Streamer Dropdown to fit */
-.controls .dropdown .dropbtn {
-  height: 38px !important;
-  line-height: 38px !important;
-  padding: 0 16px !important;
 }
 
 /* Streamer Dropdown button override */

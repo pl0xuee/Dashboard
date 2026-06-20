@@ -43,7 +43,7 @@
             // Note: This relies on the server supporting CORS, which Jellyfin might block.
             // If it shows "Offline" even when online, it's a browser security restriction.
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            setTimeout(() => controller.abort(), 5000);
 
             const response = await fetch('http://192.168.1.212:8096/web/index.html', { mode: 'no-cors', signal: controller.signal });
             statusEl.innerHTML = '<span style="color: #00ff00;">●</span> Online';
