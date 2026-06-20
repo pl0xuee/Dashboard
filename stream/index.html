@@ -130,6 +130,7 @@
             <div id="listItems"></div>
             <div style="border-top: 1px solid var(--border); margin: 6px 0 4px;"></div>
             <a id="twitchConnectBtn" href="#" style="display:block; text-align:center; padding:6px 10px; font-size:12px; font-weight:600; color:#a970ff; text-decoration:none; border-radius:8px; transition:background 0.15s;" onmouseover="this.style.background='rgba(169,112,255,0.12)'" onmouseout="this.style.background='transparent'">+ Connect Twitch</a>
+            <a id="youtubeConnectBtn" href="#" style="display:block; text-align:center; padding:6px 10px; font-size:12px; font-weight:600; color:#ff6a4a; text-decoration:none; border-radius:8px; transition:background 0.15s;" onmouseover="this.style.background='rgba(255,106,74,0.12)'" onmouseout="this.style.background='transparent'">+ Connect YouTube</a>
           </div>
         </div>
       </div>
@@ -143,17 +144,24 @@
   </div>
   <script src="../script.js"></script>
   <script type="module">
-    import { API_KEY, TWITCH_CLIENT_ID } from '../config.js';
+    import { API_KEY, TWITCH_CLIENT_ID, YOUTUBE_CLIENT_ID } from '../config.js';
     window.API_KEY = API_KEY;
     window.TWITCH_CLIENT_ID = TWITCH_CLIENT_ID;
+    window.YOUTUBE_CLIENT_ID = YOUTUBE_CLIENT_ID;
     // Now that clientId is set, complete any pending OAuth callback
     if (window._twitchJustConnected) {
       fetchTwitchFollows();
+    }
+    if (window._youtubeJustConnected) {
+      fetchYouTubeSubscriptions();
     }
   </script>
 
   <script>
     const DROPDOWN_REFRESH_COOLDOWN_MS = 15000;
+    const YOUTUBE_LIVE_CACHE_TTL_MS = 120000;
+    const YOUTUBE_SUBS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+    const YOUTUBE_LIVE_SCAN_LIMIT = 60;
     let lastDropdownRefreshAt = 0;
     let dropdownRefreshInFlight = false;
 
@@ -238,16 +246,149 @@
       loadStream();
     };
 
-    async function renderList() {
-        const manual   = JSON.parse(localStorage.getItem('myStreamers'))   || [{name: 'hutchmf', url: 'hutchmf'}, {name: 'shroud', url: 'shroud'}];
-        const followed = JSON.parse(localStorage.getItem('twitchFollowed')) || [];
+    function formatViewerCount(n) {
+      if (!Number.isFinite(n) || n < 0) return '0';
+      if (n >= 1000000) return `${(n / 1000000).toFixed(n >= 10000000 ? 0 : 1)}M`;
+      if (n >= 1000) return `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}K`;
+      return `${Math.round(n)}`;
+    }
 
-      function formatViewerCount(n) {
-        if (!Number.isFinite(n) || n < 0) return '0';
-        if (n >= 1000000) return `${(n / 1000000).toFixed(n >= 10000000 ? 0 : 1)}M`;
-        if (n >= 1000) return `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}K`;
-        return `${Math.round(n)}`;
+    function getOAuthRedirect() {
+      return window.location.origin + window.location.pathname;
+    }
+
+    function makeOAuthState(provider) {
+      const nonce = Math.random().toString(36).slice(2);
+      return `${provider}-${Date.now()}-${nonce}`;
+    }
+
+    async function mapWithConcurrency(items, worker, limit = 8) {
+      const results = [];
+      let index = 0;
+
+      async function runner() {
+        while (index < items.length) {
+          const currentIndex = index++;
+          results[currentIndex] = await worker(items[currentIndex], currentIndex);
+        }
       }
+
+      const workers = Array.from({ length: Math.min(limit, items.length) }, () => runner());
+      await Promise.all(workers);
+      return results;
+    }
+
+    function getCachedJson(key) {
+      try {
+        return JSON.parse(localStorage.getItem(key) || 'null');
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function setCachedJson(key, value) {
+      localStorage.setItem(key, JSON.stringify(value));
+    }
+
+    async function ytApi(path, token) {
+      const resp = await fetch(`https://www.googleapis.com/youtube/v3/${path}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (resp.status === 401 || resp.status === 403) {
+        youtubeLogout();
+        throw new Error('YouTube auth expired');
+      }
+      if (!resp.ok) {
+        throw new Error(`YouTube API error ${resp.status}`);
+      }
+      return await resp.json();
+    }
+
+    async function getYouTubeSubscriptions() {
+      const token = localStorage.getItem('youtubeToken');
+      if (!token) return [];
+
+      const cached = getCachedJson('youtubeSubscriptionsCache');
+      if (cached && Array.isArray(cached.items) && Date.now() - cached.updatedAt < YOUTUBE_SUBS_CACHE_TTL_MS) {
+        return cached.items;
+      }
+
+      let items = [];
+      let pageToken = '';
+      do {
+        const data = await ytApi(`subscriptions?part=snippet&mine=true&maxResults=50${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`, token);
+        const pageItems = (data.items || []).map(s => ({
+          name: s.snippet?.title || 'YouTube Channel',
+          channelId: s.snippet?.resourceId?.channelId || '',
+          platform: 'youtube'
+        })).filter(i => i.channelId);
+        items = items.concat(pageItems);
+        pageToken = data.nextPageToken || '';
+      } while (pageToken);
+
+      setCachedJson('youtubeSubscriptionsCache', { updatedAt: Date.now(), items });
+      return items;
+    }
+
+    async function fetchYouTubeLiveStreams() {
+      const token = localStorage.getItem('youtubeToken');
+      if (!token) return [];
+
+      const liveCache = getCachedJson('youtubeLiveCache');
+      if (liveCache && Array.isArray(liveCache.items) && Date.now() - liveCache.updatedAt < YOUTUBE_LIVE_CACHE_TTL_MS) {
+        return liveCache.items;
+      }
+
+      try {
+        const subscriptions = await getYouTubeSubscriptions();
+        const subset = subscriptions.slice(0, YOUTUBE_LIVE_SCAN_LIMIT);
+
+        const searchResults = await mapWithConcurrency(subset, async (sub) => {
+          try {
+            const data = await ytApi(`search?part=snippet&channelId=${encodeURIComponent(sub.channelId)}&eventType=live&type=video&maxResults=1`, token);
+            const item = data.items?.[0];
+            if (!item?.id?.videoId) return null;
+            return {
+              name: item.snippet?.channelTitle || sub.name,
+              url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
+              videoId: item.id.videoId,
+              platform: 'youtube',
+              isOnline: true,
+              viewers: 0
+            };
+          } catch (_) {
+            return null;
+          }
+        }, 8);
+
+        const liveItems = searchResults.filter(Boolean);
+
+        if (liveItems.length > 0) {
+          const ids = liveItems.map(i => i.videoId);
+          for (let i = 0; i < ids.length; i += 50) {
+            const batch = ids.slice(i, i + 50).join(',');
+            try {
+              const data = await ytApi(`videos?part=liveStreamingDetails&id=${encodeURIComponent(batch)}`, token);
+              const viewerMap = new Map((data.items || []).map(v => [v.id, Number(v.liveStreamingDetails?.concurrentViewers) || 0]));
+              liveItems.forEach(item => {
+                if (viewerMap.has(item.videoId)) item.viewers = viewerMap.get(item.videoId);
+              });
+            } catch (_) {}
+          }
+        }
+
+        setCachedJson('youtubeLiveCache', { updatedAt: Date.now(), items: liveItems });
+        return liveItems;
+      } catch (e) {
+        console.error('YouTube live fetch error', e);
+        return [];
+      }
+    }
+
+    async function renderList() {
+        const manual   = JSON.parse(localStorage.getItem('myStreamers')) || [{name: 'hutchmf', url: 'hutchmf'}, {name: 'shroud', url: 'shroud'}];
+        const followed = JSON.parse(localStorage.getItem('twitchFollowed')) || [];
+        const youtubeLive = await fetchYouTubeLiveStreams();
 
         // Merge manual + followed, dedupe by lowercase url/login
         const seen = new Set();
@@ -293,12 +434,21 @@
           const login = item.url.toLowerCase();
           return {
             ...item,
+            platform: 'twitch',
             isOnline: onlineSet.has(login),
             viewers: viewersByLogin.get(login) || 0
           };
         });
-        const liveOnly = withStatus.filter(item => item.isOnline);
-        liveOnly.sort((a, b) => {
+        const liveOnly = withStatus.filter(item => item.isOnline).concat(youtubeLive);
+
+        const liveDedup = new Map();
+        liveOnly.forEach(item => {
+          const key = `${item.platform}:${item.url.toLowerCase()}`;
+          if (!liveDedup.has(key)) liveDedup.set(key, item);
+        });
+
+        const liveRows = Array.from(liveDedup.values());
+        liveRows.sort((a, b) => {
           if (b.viewers !== a.viewers) return b.viewers - a.viewers;
           return a.name.localeCompare(b.name);
         });
@@ -306,18 +456,22 @@
         const container = document.getElementById('listItems');
         container.innerHTML = '';
 
-        if (liveOnly.length === 0) {
+        if (liveRows.length === 0) {
           container.innerHTML = `<div style="padding:8px 10px; font-size:12px; color:rgba(200,210,255,0.4); text-align:center;">No one is live right now</div>`;
         } else {
-          liveOnly.forEach((item) => {
+          liveRows.forEach((item) => {
             const isManual = manual.some(m => m.url.toLowerCase() === item.url.toLowerCase());
             const viewersText = `(${formatViewerCount(item.viewers)})`;
+            const platformBadge = item.platform === 'youtube'
+              ? '<span style="font-size:10px; color:#ff6a4a; font-weight:700; letter-spacing:0.04em;">YT</span>'
+              : '<span style="font-size:10px; color:#a970ff; font-weight:700; letter-spacing:0.04em;">TW</span>';
             const removeBtn = isManual
               ? `<button onclick="removeStreamer('${item.name}')" style="background:none; border:none; color:rgba(255,80,80,0.5); cursor:pointer; font-size:16px; margin-left:6px; padding:0 2px; flex-shrink:0; transition:all 0.2s;" onmouseover="this.style.color='rgba(255,80,80,1)'; this.style.transform='scale(1.2)';" onmouseout="this.style.color='rgba(255,80,80,0.5)'; this.style.transform='scale(1)';">×</button>`
               : '';
             container.innerHTML += `
               <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; margin-bottom:4px; background:rgba(0,200,80,0.18); border:1px solid rgba(0,200,80,0.45); border-radius:8px; transition:filter 0.15s;" onmouseover="this.style.filter='brightness(1.25)'" onmouseout="this.style.filter='brightness(1)'">
                 <a href="#" onclick="loadStreamDirect('${item.url}')" style="display:flex; align-items:center; gap:8px; text-decoration:none; color:#e8ecef; flex-grow:1; min-width:0;">
+                  ${platformBadge}
                   <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:600; text-transform:capitalize; letter-spacing:0.02em;">${item.name} <span style="font-size:11px; color:rgba(230,255,235,0.82);">${viewersText}</span></span>
                 </a>
                 ${removeBtn}
@@ -325,7 +479,7 @@
           });
         }
 
-        updateConnectButton();
+        updateConnectButtons();
     }
 
     async function getTwitchStatus(url) {
@@ -347,8 +501,10 @@
             alert('Set your TWITCH_CLIENT_ID in config.js first.\n\nRegister a free app at: https://dev.twitch.tv/console/apps');
             return;
         }
-        const redirect = window.location.origin + window.location.pathname;
-        window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=user:read:follows`;
+      const state = makeOAuthState('tw');
+      localStorage.setItem('twitchOAuthState', state);
+      const redirect = getOAuthRedirect();
+      window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=user:read:follows&state=${encodeURIComponent(state)}`;
     }
 
     function twitchLogout() {
@@ -357,19 +513,55 @@
         renderList();
     }
 
-    function updateConnectButton() {
-        const btn = document.getElementById('twitchConnectBtn');
-        if (!btn) return;
-        const token = localStorage.getItem('twitchToken');
-        if (token) {
-            btn.textContent = 'Disconnect Twitch';
-            btn.onclick = (e) => { e.preventDefault(); twitchLogout(); };
-            btn.style.color = 'rgba(200,210,255,0.4)';
+    function youtubeLogin() {
+      const clientId = window.YOUTUBE_CLIENT_ID;
+      if (!clientId || clientId === 'YOUR_YOUTUBE_CLIENT_ID') {
+        alert('Set your YOUTUBE_CLIENT_ID in config.js first.\n\nCreate an OAuth client ID at: https://console.cloud.google.com/');
+        return;
+      }
+      const state = makeOAuthState('yt');
+      localStorage.setItem('youtubeOAuthState', state);
+      const redirect = getOAuthRedirect();
+      const scope = 'https://www.googleapis.com/auth/youtube.readonly';
+      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${encodeURIComponent(scope)}&include_granted_scopes=true&prompt=consent&state=${encodeURIComponent(state)}`;
+    }
+
+    function youtubeLogout() {
+      localStorage.removeItem('youtubeToken');
+      localStorage.removeItem('youtubeSubscriptionsCache');
+      localStorage.removeItem('youtubeLiveCache');
+      renderList();
+    }
+
+    function updateConnectButtons() {
+      const twitchBtn = document.getElementById('twitchConnectBtn');
+      const youtubeBtn = document.getElementById('youtubeConnectBtn');
+
+      if (twitchBtn) {
+        const twitchToken = localStorage.getItem('twitchToken');
+        if (twitchToken) {
+          twitchBtn.textContent = 'Disconnect Twitch';
+          twitchBtn.onclick = (e) => { e.preventDefault(); twitchLogout(); };
+          twitchBtn.style.color = 'rgba(200,210,255,0.4)';
         } else {
-            btn.textContent = '+ Connect Twitch';
-            btn.onclick = (e) => { e.preventDefault(); twitchLogin(); };
-            btn.style.color = '#a970ff';
+          twitchBtn.textContent = '+ Connect Twitch';
+          twitchBtn.onclick = (e) => { e.preventDefault(); twitchLogin(); };
+          twitchBtn.style.color = '#a970ff';
         }
+      }
+
+      if (youtubeBtn) {
+        const youtubeToken = localStorage.getItem('youtubeToken');
+        if (youtubeToken) {
+          youtubeBtn.textContent = 'Disconnect YouTube';
+          youtubeBtn.onclick = (e) => { e.preventDefault(); youtubeLogout(); };
+          youtubeBtn.style.color = 'rgba(200,210,255,0.4)';
+        } else {
+          youtubeBtn.textContent = '+ Connect YouTube';
+          youtubeBtn.onclick = (e) => { e.preventDefault(); youtubeLogin(); };
+          youtubeBtn.style.color = '#ff6a4a';
+        }
+      }
     }
 
     async function fetchTwitchFollows() {
@@ -405,16 +597,41 @@
         }
     }
 
-    // Handle OAuth redirect — runs immediately, but defers fetch until module sets TWITCH_CLIENT_ID
+        async function fetchYouTubeSubscriptions() {
+          const token = localStorage.getItem('youtubeToken');
+          if (!token) return;
+          try {
+            await getYouTubeSubscriptions();
+            // Force next live refresh to include YouTube after connect
+            localStorage.removeItem('youtubeLiveCache');
+            renderList();
+          } catch (e) {
+            console.error('YouTube subscriptions fetch error', e);
+          }
+        }
+
+        // Handle OAuth redirect — runs immediately, but defers provider fetch until module sets client IDs
     (function handleOAuthCallback() {
         const hash = window.location.hash;
         if (hash.includes('access_token=')) {
             const params = new URLSearchParams(hash.slice(1));
             const token = params.get('access_token');
+            const state = params.get('state') || '';
             if (token) {
+              const twitchState = localStorage.getItem('twitchOAuthState') || '';
+              const youtubeState = localStorage.getItem('youtubeOAuthState') || '';
+
+              if ((state && twitchState && state === twitchState) || state.startsWith('tw-')) {
                 localStorage.setItem('twitchToken', token);
+                window._twitchJustConnected = true;
+                localStorage.removeItem('twitchOAuthState');
+              } else if ((state && youtubeState && state === youtubeState) || state.startsWith('yt-')) {
+                localStorage.setItem('youtubeToken', token);
+                window._youtubeJustConnected = true;
+                localStorage.removeItem('youtubeOAuthState');
+              }
+
                 history.replaceState(null, '', window.location.pathname);
-                window._twitchJustConnected = true; // module script will call fetchTwitchFollows()
             }
         }
     })();
