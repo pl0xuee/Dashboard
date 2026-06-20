@@ -23,6 +23,9 @@
     }
     .news-card {
       padding: 12px 15px; /* Reduced vertical and horizontal padding */
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
     }
     .home-main {
       width: 100%;
@@ -43,15 +46,64 @@
       text-transform: uppercase;
       text-align: center;
     }
+    .header-brand {
+      margin-left: auto;
+      padding: 8px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: #e9f0ff;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      line-height: 1;
+      white-space: nowrap;
+    }
+    .home-search-wrap {
+      width: 100%;
+      max-width: 880px;
+      margin: 4px auto 22px auto;
+      padding: 2px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.03);
+      box-shadow: var(--shadow);
+    }
     .home-search-form {
-      margin-bottom: 40px;
+      margin: 0;
       width: 100%;
       display: flex;
       justify-content: center;
     }
     .home-search-input {
       width: 100%;
-      max-width: 800px;
+      max-width: none;
+      min-width: 0;
+      height: 46px;
+      border-radius: 14px;
+      border: 1px solid rgba(167, 188, 255, 0.28);
+      background: linear-gradient(180deg, rgba(26, 34, 48, 0.98) 0%, rgba(18, 24, 35, 0.98) 100%);
+      color: #f2f7ff;
+      font-size: 0.95rem;
+      font-weight: 600;
+      letter-spacing: 0.015em;
+      padding: 0 14px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 20px rgba(0, 0, 0, 0.28);
+      transition: border-color 0.25s ease, box-shadow 0.25s ease, transform 0.2s ease;
+    }
+    .home-search-input::placeholder {
+      color: #9eabc2;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .home-search-input:focus {
+      border-color: rgba(120, 159, 255, 0.9);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.11), 0 0 0 2px rgba(110, 161, 255, 0.25), 0 10px 24px rgba(0, 0, 0, 0.35);
+      transform: translateY(-1px);
+    }
+    .home-search-input:hover {
+      border-color: rgba(140, 176, 255, 0.5);
     }
     .home-columns {
       display: flex;
@@ -73,6 +125,7 @@
       flex: 2;
       display: flex;
       flex-direction: column;
+      min-height: 0;
     }
     .home-stats-col {
       flex: 1;
@@ -97,6 +150,10 @@
     }
     .news-container {
       text-align: left;
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 6px;
     }
     .news-toggle {
       display: none;
@@ -132,23 +189,23 @@
     }
     .nascar-tabs {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 6px;
-      margin: 4px 0 10px 0;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 4px;
+      margin: 2px 0 8px 0;
     }
     .nascar-tab-btn {
-      min-height: 36px;
-      height: auto;
-      padding: 6px 8px;
+      height: 34px;
+      min-height: 34px;
+      padding: 0 6px;
       font-size: 0.68rem;
       letter-spacing: 0.01em;
-      line-height: 1.2;
+      line-height: 1;
       text-transform: none;
-      white-space: normal;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
       text-align: center;
-    }
-    .nascar-tab-btn.wide {
-      grid-column: 1 / -1;
+      border-radius: 10px;
     }
     .nascar-tab-btn.active {
       border-color: var(--accent);
@@ -251,6 +308,9 @@
       .home-stats-col {
         max-width: none;
       }
+      .header-brand {
+        display: none;
+      }
     }
   </style>
 </head>
@@ -263,16 +323,16 @@
         <a href="../stream/" class="home-button">Stream</a>
         <a href="../media-portal/" class="home-button">Media</a>
       </div>
+      <div class="header-brand">Command Center</div>
     </header>
     <main class="main home-main">
       <div class="welcome home-welcome">
         <div class="welcome-inner home-welcome-inner">
-          <h1 class="home-title">Command Center</h1>
-
-          <form action="https://search.brave.com/search" method="get" target="_blank" class="home-search-form">
-            <input type="text" name="q" placeholder="Search the web..." class="home-search-input">
-          </form>
-
+          <div class="home-search-wrap">
+            <form action="https://search.brave.com/search" method="get" target="_blank" class="home-search-form">
+              <input type="text" name="q" placeholder="🔎 Search Brave..." class="home-search-input">
+            </form>
+          </div>
           <div class="home-container home-columns">
 
             <!-- Left Side: Links -->
@@ -328,7 +388,7 @@
 
             <!-- Middle: News -->
             <section class="home-news-col">
-              <div class="card news-card" style="flex: 1; min-height: 400px;">
+              <div class="card news-card" style="flex: 1;">
                 <h2 class="home-box-title center">📰 Live News Feed</h2>
                 <div class="news-controls">
                   <button onclick="showNews('usa')" id="btn-usa" class="home-button" title="USA news">🇺🇸 USA</button>
@@ -354,7 +414,7 @@
                 <div class="nascar-tabs">
                   <button id="nascar-tab-cup" type="button" class="home-button nascar-tab-btn active" onclick="showNascarSeries('cup')">Cup</button>
                   <button id="nascar-tab-truck" type="button" class="home-button nascar-tab-btn" onclick="showNascarSeries('truck')">Truck</button>
-                  <button id="nascar-tab-oreilly" type="button" class="home-button nascar-tab-btn wide" onclick="showNascarSeries('oreilly')">O'Reilly Auto Parts Series</button>
+                  <button id="nascar-tab-oreilly" type="button" class="home-button nascar-tab-btn" onclick="showNascarSeries('oreilly')">O'Reilly Series</button>
                 </div>
                 <p id="nascar-race" class="info-value nascar-race-name">Loading...</p>
                 <div class="nascar-meta">
@@ -449,7 +509,7 @@
     function renderNews() {
       const container = document.getElementById('news-container');
       const toggleBtn = document.getElementById('toggle-news');
-      const limit = showAll ? allNewsItems.length : 8;
+      const limit = allNewsItems.length;
 
       let html = '<ul style="padding-left: 0; margin: 0; list-style: none;">';
       allNewsItems.slice(0, limit).forEach(item => {
@@ -474,13 +534,7 @@
       html += '</ul>';
       container.innerHTML = html;
 
-      // Toggle button visibility based on whether more items are available
-      if (allNewsItems.length > 8) {
-          toggleBtn.style.display = 'block';
-      toggleBtn.textContent = showAll ? 'Show Less' : 'Show More';
-        } else {
-          toggleBtn.style.display = 'none';
-        }
+      toggleBtn.style.display = 'none';
     }
     function toggleNews() {
       showAll = !showAll;
