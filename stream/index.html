@@ -72,16 +72,22 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      width: max-content; /* Shrink-to-fit content */
+      width: max-content;
       min-width: 180px;
       max-width: 240px;
       z-index: 20;
       padding: 6px;
       box-shadow: 0 8px 16px rgba(0,0,0,0.3);
-      right: 0; /* Anchor to the right edge of the button */
-      top: 100%; /* Position below the button */
-      margin-top: 0px; /* Reduced from 5px to 0px to close the gap */
+      right: 0;
+      top: 100%;
+      margin-top: 0px;
+      max-height: 70vh;
+      overflow-y: auto;
+      overflow-x: hidden;
     }
+    .dropdown-content::-webkit-scrollbar { width: 4px; }
+    .dropdown-content::-webkit-scrollbar-track { background: transparent; }
+    .dropdown-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
     .dropdown:hover .dropdown-content { display: block; }
 
