@@ -73,8 +73,8 @@
       border: 1px solid var(--border);
       border-radius: 12px;
       width: max-content; /* Shrink-to-fit content */
-      min-width: 140px; /* Smaller minimum */
-      max-width: 200px; /* Tighter maximum */
+      min-width: 180px;
+      max-width: 240px;
       z-index: 20;
       padding: 6px;
       box-shadow: 0 8px 16px rgba(0,0,0,0.3);
@@ -119,9 +119,11 @@
         <div class="dropdown">
           <button class="dropbtn home-button">My Streamers ▼</button>
           <div class="dropdown-content" id="streamerList">
+            <div style="padding:4px 6px 6px; font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(200,210,255,0.45);">My Streamers</div>
             <div id="listItems"></div>
-            <div style="border-top: 1px solid var(--border); margin: 5px 0;"></div>
-            <a href="#" onclick="addStreamer()" class="home-button" style="width: 100%;">Add Streamer...</a>
+            <div style="border-top: 1px solid var(--border); margin: 6px 0 4px;"></div>
+            <a href="#" onclick="addStreamer()" style="display:block; text-align:center; padding:6px 10px; font-size:12px; font-weight:600; color:var(--accent); text-decoration:none; border-radius:8px; transition:background 0.15s;" onmouseover="this.style.background='rgba(110,161,255,0.12)'" onmouseout="this.style.background='transparent'">+ Add Streamer</a>
+            <a id="twitchConnectBtn" href="#" style="display:block; text-align:center; padding:6px 10px; font-size:12px; font-weight:600; color:#a970ff; text-decoration:none; border-radius:8px; transition:background 0.15s;" onmouseover="this.style.background='rgba(169,112,255,0.12)'" onmouseout="this.style.background='transparent'">+ Connect Twitch</a>
           </div>
         </div>
       </div>
@@ -135,8 +137,9 @@
   </div>
   <script src="../script.js"></script>
   <script type="module">
-    import { API_KEY } from '../config.js';
+    import { API_KEY, TWITCH_CLIENT_ID } from '../config.js';
     window.API_KEY = API_KEY;
+    window.TWITCH_CLIENT_ID = TWITCH_CLIENT_ID;
   </script>
 
   <script>
@@ -208,29 +211,67 @@
     };
 
     async function renderList() {
-        let list = JSON.parse(localStorage.getItem('myStreamers')) || [{name: 'hutchmf', url: 'hutchmf'}, {name: 'shroud', url: 'shroud'}];
-        const streamerStatuses = await Promise.all(list.map(async (item) => {
-            const isOnline = await getTwitchStatus(item.url);
-            return { ...item, isOnline };
-        }));
-        streamerStatuses.sort((a, b) => b.isOnline - a.isOnline);
+        const manual   = JSON.parse(localStorage.getItem('myStreamers'))   || [{name: 'hutchmf', url: 'hutchmf'}, {name: 'shroud', url: 'shroud'}];
+        const followed = JSON.parse(localStorage.getItem('twitchFollowed')) || [];
+
+        // Merge manual + followed, dedupe by lowercase url/login
+        const seen = new Set();
+        const combined = [];
+        for (const item of [...manual, ...followed]) {
+            const key = item.url.toLowerCase();
+            if (!seen.has(key)) { seen.add(key); combined.push(item); }
+        }
+
+        // Batch status check via Helix if token available, else fall back to decapi
+        const token    = localStorage.getItem('twitchToken');
+        const clientId = window.TWITCH_CLIENT_ID;
+        const onlineSet = new Set();
+
+        if (token && clientId && clientId !== 'YOUR_TWITCH_CLIENT_ID') {
+            const twitchItems = combined.filter(i => !i.url.includes('youtube'));
+            for (let i = 0; i < twitchItems.length; i += 100) {
+                const batch = twitchItems.slice(i, i + 100);
+                const query = batch.map(b => `user_login=${encodeURIComponent(b.url)}`).join('&');
+                try {
+                    const resp = await fetch(`https://api.twitch.tv/helix/streams?${query}`, {
+                        headers: { 'Client-Id': clientId, 'Authorization': `Bearer ${token}` }
+                    });
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        data.data.forEach(s => onlineSet.add(s.user_login.toLowerCase()));
+                    } else if (resp.status === 401) {
+                        twitchLogout();
+                    }
+                } catch(e) {}
+            }
+        } else {
+            const statuses = await Promise.all(combined.map(item => getTwitchStatus(item.url)));
+            statuses.forEach((s, i) => { if (s) onlineSet.add(combined[i].url.toLowerCase()); });
+        }
+
+        const withStatus = combined.map(item => ({ ...item, isOnline: onlineSet.has(item.url.toLowerCase()) }));
+        withStatus.sort((a, b) => b.isOnline - a.isOnline);
+
         const container = document.getElementById('listItems');
         container.innerHTML = '';
-        streamerStatuses.forEach((item, index) => {
-            const statusColor = item.isOnline ? "#00ff00" : "#ff3333";
+        withStatus.forEach((item) => {
+            const bg    = item.isOnline ? "rgba(0,200,80,0.18)"  : "rgba(220,40,40,0.18)";
+            const bdClr = item.isOnline ? "rgba(0,200,80,0.45)"  : "rgba(220,40,40,0.45)";
+            // Only show remove button for manually added streamers
+            const isManual = manual.some(m => m.url.toLowerCase() === item.url.toLowerCase());
+            const removeBtn = isManual
+                ? `<button onclick="removeStreamer('${item.name}')" style="background:none; border:none; color:rgba(255,80,80,0.5); cursor:pointer; font-size:16px; margin-left:6px; padding:0 2px; flex-shrink:0; transition:all 0.2s;" onmouseover="this.style.color='rgba(255,80,80,1)'; this.style.transform='scale(1.2)';" onmouseout="this.style.color='rgba(255,80,80,0.5)'; this.style.transform='scale(1)';">×</button>`
+                : '';
             container.innerHTML += `
-                <div style="display: flex; align-items: center; justify-content: space-between; padding: 2px 4px;">
-                    <a href="#" onclick="loadStreamDirect('${item.url}')" style="display: flex; align-items: center; text-decoration: none; color: #e8ecef; flex-grow: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        <span id="dot-${index}" style="margin-right: 6px; font-size: 8px; color: ${statusColor}; flex-shrink: 0;">●</span>
-                        <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</span>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; margin-bottom:4px; background:${bg}; border:1px solid ${bdClr}; border-radius:8px; transition:filter 0.15s;" onmouseover="this.style.filter='brightness(1.25)'" onmouseout="this.style.filter='brightness(1)'">
+                    <a href="#" onclick="loadStreamDirect('${item.url}')" style="display:flex; align-items:center; gap:8px; text-decoration:none; color:#e8ecef; flex-grow:1; min-width:0;">
+                        <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:600; text-transform:capitalize; letter-spacing:0.02em;">${item.name}</span>
                     </a>
-                    <button onclick="removeStreamer('${item.name}')"
-                            style="background:none; border:none; color:rgba(255,50,50,0.5); cursor:pointer; font-size: 16px; margin-left: 8px; padding: 0 4px; flex-shrink: 0; transition: all 0.2s;"
-                            onmouseover="this.style.color='rgba(255,50,50,1)'; this.style.transform='scale(1.2)';"
-                            onmouseout="this.style.color='rgba(255,50,50,0.5)'; this.style.transform='scale(1)';"
-                    >×</button>
+                    ${removeBtn}
                 </div>`;
         });
+
+        updateConnectButton();
     }
 
     async function getTwitchStatus(url) {
@@ -244,6 +285,85 @@
             return false;
         }
     }
+
+    // --- Twitch OAuth ---
+    function twitchLogin() {
+        const clientId = window.TWITCH_CLIENT_ID;
+        if (!clientId || clientId === 'YOUR_TWITCH_CLIENT_ID') {
+            alert('Set your TWITCH_CLIENT_ID in config.js first.\n\nRegister a free app at: https://dev.twitch.tv/console/apps');
+            return;
+        }
+        const redirect = window.location.origin + window.location.pathname;
+        window.location.href = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=user:read:follows`;
+    }
+
+    function twitchLogout() {
+        localStorage.removeItem('twitchToken');
+        localStorage.removeItem('twitchFollowed');
+        renderList();
+    }
+
+    function updateConnectButton() {
+        const btn = document.getElementById('twitchConnectBtn');
+        if (!btn) return;
+        const token = localStorage.getItem('twitchToken');
+        if (token) {
+            btn.textContent = 'Disconnect Twitch';
+            btn.onclick = (e) => { e.preventDefault(); twitchLogout(); };
+            btn.style.color = 'rgba(200,210,255,0.4)';
+        } else {
+            btn.textContent = '+ Connect Twitch';
+            btn.onclick = (e) => { e.preventDefault(); twitchLogin(); };
+            btn.style.color = '#a970ff';
+        }
+    }
+
+    async function fetchTwitchFollows() {
+        const token    = localStorage.getItem('twitchToken');
+        const clientId = window.TWITCH_CLIENT_ID;
+        if (!token || !clientId || clientId === 'YOUR_TWITCH_CLIENT_ID') return;
+        try {
+            const userResp = await fetch('https://api.twitch.tv/helix/users', {
+                headers: { 'Client-Id': clientId, 'Authorization': `Bearer ${token}` }
+            });
+            if (!userResp.ok) { twitchLogout(); return; }
+            const userData = await userResp.json();
+            const userId = userData.data[0].id;
+
+            let follows = [], cursor = '';
+            do {
+                const url = `https://api.twitch.tv/helix/channels/followed?user_id=${userId}&first=100${cursor ? '&after=' + cursor : ''}`;
+                const resp = await fetch(url, {
+                    headers: { 'Client-Id': clientId, 'Authorization': `Bearer ${token}` }
+                });
+                if (!resp.ok) break;
+                const data = await resp.json();
+                follows = follows.concat(data.data);
+                cursor = data.pagination?.cursor || '';
+            } while (cursor);
+
+            localStorage.setItem('twitchFollowed', JSON.stringify(
+                follows.map(f => ({ name: f.broadcaster_name, url: f.broadcaster_login }))
+            ));
+            renderList();
+        } catch (e) {
+            console.error('Twitch follow fetch error', e);
+        }
+    }
+
+    // Handle OAuth redirect — runs immediately
+    (function handleOAuthCallback() {
+        const hash = window.location.hash;
+        if (hash.includes('access_token=')) {
+            const params = new URLSearchParams(hash.slice(1));
+            const token = params.get('access_token');
+            if (token) {
+                localStorage.setItem('twitchToken', token);
+                history.replaceState(null, '', window.location.pathname);
+                fetchTwitchFollows();
+            }
+        }
+    })();
 
     window.removeStreamer = function(name) {
         let list = JSON.parse(localStorage.getItem('myStreamers'));
