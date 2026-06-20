@@ -179,6 +179,91 @@
       margin: 0;
       line-height: 1.35;
     }
+    .market-index-list {
+      margin-top: 10px;
+      display: grid;
+      gap: 4px;
+      width: 100%;
+    }
+    .market-index-row {
+      display: grid;
+      grid-template-columns: minmax(0, 0.75fr) minmax(0, 0.65fr) minmax(0, 1.05fr) minmax(0, 1.55fr);
+      align-items: center;
+      justify-items: center;
+      gap: 0;
+      padding: 5px 3px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.03);
+      font-size: 0.71rem;
+      line-height: 1.1;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .market-index-name {
+      color: #eaf0ff;
+      font-weight: 700;
+      white-space: nowrap;
+      text-align: center;
+    }
+    .market-index-state {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px;
+      justify-self: center;
+      padding: 0;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      font-size: 0.5rem;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+    .market-index-state.live {
+      color: #6dff85;
+      border-color: rgba(109, 255, 133, 0.45);
+      background: rgba(109, 255, 133, 0.1);
+    }
+    .market-index-state.last {
+      color: #ffd46d;
+      border-color: rgba(255, 212, 109, 0.4);
+      background: rgba(255, 212, 109, 0.1);
+    }
+    .market-index-state.na {
+      color: #a8b4cc;
+      border-color: rgba(168, 180, 204, 0.35);
+      background: rgba(168, 180, 204, 0.08);
+    }
+    .market-index-price {
+      color: #d8e2f7;
+      font-weight: 600;
+      text-align: center;
+      font-family: monospace;
+      font-size: 0.68rem;
+      min-width: 0;
+      white-space: nowrap;
+      line-height: 1;
+    }
+    .market-index-change {
+      font-family: monospace;
+      font-weight: 700;
+      font-size: 0.67rem;
+      min-width: 0;
+      text-align: center;
+      white-space: nowrap;
+      line-height: 1;
+    }
+    .market-index-change.up {
+      color: #6dff85;
+    }
+    .market-index-change.down {
+      color: #ff6d6d;
+    }
+    .market-index-change.flat {
+      color: #a8b4cc;
+    }
     .clock-value {
       font-family: 'Inter', monospace;
     }
@@ -341,6 +426,26 @@
                 <h2 class="home-box-title">Market Sentiment</h2>
                 <p id="sentiment-val" class="info-value">Loading...</p>
                 <p id="market-status" class="info-subtext"></p>
+                <div class="market-index-list">
+                  <div class="market-index-row">
+                    <span class="market-index-name">Dow</span>
+                    <span id="idx-dji-state" class="market-index-state na">--</span>
+                    <span id="idx-dji-price" class="market-index-price">--</span>
+                    <span id="idx-dji-change" class="market-index-change flat">--</span>
+                  </div>
+                  <div class="market-index-row">
+                    <span class="market-index-name">Nasdaq</span>
+                    <span id="idx-ixic-state" class="market-index-state na">--</span>
+                    <span id="idx-ixic-price" class="market-index-price">--</span>
+                    <span id="idx-ixic-change" class="market-index-change flat">--</span>
+                  </div>
+                  <div class="market-index-row">
+                    <span class="market-index-name">S&amp;P 500</span>
+                    <span id="idx-gspc-state" class="market-index-state na">--</span>
+                    <span id="idx-gspc-price" class="market-index-price">--</span>
+                    <span id="idx-gspc-change" class="market-index-change flat">--</span>
+                  </div>
+                </div>
               </section>
               <section class="card">
             <h2 class="home-box-title">Entertainment</h2>
@@ -558,6 +663,90 @@
         }
       } catch (e) { document.getElementById('sentiment-val').textContent = "Unavailable"; }
     }
+
+    function isUsMarketOpenNow() {
+      const now = new Date();
+      const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+      const day = estNow.getDay();
+      if (day === 0 || day === 6) return false;
+
+      const minutes = estNow.getHours() * 60 + estNow.getMinutes();
+      const openMinutes = 9 * 60 + 30;
+      const closeMinutes = 16 * 60;
+      return minutes >= openMinutes && minutes < closeMinutes;
+    }
+
+    const TWELVE_DATA_API_KEY = 'e113279daa094cf29e24802ff56566e2';
+
+    function isQuoteLive(quote) {
+      if (!quote || quote.is_market_open === undefined || quote.is_market_open === null) {
+        return isUsMarketOpenNow();
+      }
+
+      if (typeof quote.is_market_open === 'boolean') return quote.is_market_open;
+      if (typeof quote.is_market_open === 'number') return quote.is_market_open === 1;
+      if (typeof quote.is_market_open === 'string') {
+        const value = quote.is_market_open.trim().toLowerCase();
+        return value === 'true' || value === '1' || value === 'yes';
+      }
+
+      return isUsMarketOpenNow();
+    }
+
+    function updateIndexRow(prefix, quote) {
+      const priceEl = document.getElementById(`${prefix}-price`);
+      const changeEl = document.getElementById(`${prefix}-change`);
+      const stateEl = document.getElementById(`${prefix}-state`);
+      if (!priceEl || !changeEl || !stateEl) return;
+
+      if (!quote) {
+        priceEl.textContent = '--';
+        changeEl.textContent = '--';
+        changeEl.className = 'market-index-change flat';
+        stateEl.textContent = '--';
+        stateEl.className = 'market-index-state na';
+        return;
+      }
+
+      const price = parseFloat(quote.close);
+      const change = parseFloat(quote.change);
+      const pct = parseFloat(quote.percent_change);
+
+      if (Number.isNaN(price) || Number.isNaN(change) || Number.isNaN(pct)) {
+        priceEl.textContent = '--';
+        changeEl.textContent = '--';
+        changeEl.className = 'market-index-change flat';
+        stateEl.textContent = '--';
+        stateEl.className = 'market-index-state na';
+        return;
+      }
+
+      priceEl.textContent = price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+      const sign = change > 0 ? '+' : change < 0 ? '-' : '';
+      const changeText = `${sign}${Math.abs(change).toFixed(2)} | ${sign}${Math.abs(pct).toFixed(2)}%`;
+      changeEl.textContent = changeText;
+      changeEl.className = `market-index-change ${change > 0 ? 'up' : change < 0 ? 'down' : 'flat'}`;
+
+      const quoteIsLive = isQuoteLive(quote);
+      stateEl.textContent = quoteIsLive ? 'Live' : 'Last';
+      stateEl.className = `market-index-state ${quoteIsLive ? 'live' : 'last'}`;
+    }
+
+    async function fetchMajorIndexes() {
+      try {
+        const res = await fetch(`https://api.twelvedata.com/quote?symbol=DIA,QQQ,SPY&apikey=${TWELVE_DATA_API_KEY}`);
+        const data = await res.json();
+
+        updateIndexRow('idx-dji', data.DIA || null);
+        updateIndexRow('idx-ixic', data.QQQ || null);
+        updateIndexRow('idx-gspc', data.SPY || null);
+      } catch (e) {
+        updateIndexRow('idx-dji', null);
+        updateIndexRow('idx-ixic', null);
+        updateIndexRow('idx-gspc', null);
+      }
+    }
     function updateMarketStatus() {
       const now = new Date();
       // Adjust to EST for accurate market time
@@ -605,7 +794,11 @@
       document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', options);
       updateMarketStatus();
     }
-    fetchSentiment(); setInterval(updateClock, 1000); updateClock();
+    fetchSentiment();
+    fetchMajorIndexes();
+    setInterval(fetchMajorIndexes, 120000);
+    setInterval(updateClock, 1000);
+    updateClock();
 
     // Weather Script
     async function fetchWeather() {
