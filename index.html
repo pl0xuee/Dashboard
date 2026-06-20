@@ -180,46 +180,48 @@
       line-height: 1.35;
     }
     .market-index-list {
-      margin-top: 10px;
+      margin-top: 12px;
       display: grid;
-      gap: 4px;
+      gap: 6px;
       width: 100%;
     }
     .market-index-row {
       display: grid;
-      grid-template-columns: minmax(0, 0.68fr) minmax(0, 0.56fr) minmax(0, 1.1fr) minmax(0, 1.66fr);
-      align-items: center;
-      justify-items: center;
-      gap: 0;
-      padding: 7px 3px;
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.03);
-      font-size: 0.76rem;
-      line-height: 1.1;
-      width: 100%;
-      box-sizing: border-box;
+       grid-template-columns: repeat(4, minmax(0, 1fr));
+       align-items: center;
+       justify-items: center;
+       gap: 6px;
+       padding: 10px 8px;
+       border: 1px solid rgba(167, 188, 255, 0.2);
+       border-radius: 12px;
+       background: rgba(255, 255, 255, 0.05);
+       font-size: 0.78rem;
+       line-height: 1.2;
+       width: 100%;
+       box-sizing: border-box;
+       overflow: hidden;
     }
     .market-index-name {
-      color: #eaf0ff;
+      color: #e4f0ff;
       font-weight: 700;
       white-space: nowrap;
       text-align: center;
+      font-size: 0.81rem;
     }
     .market-index-state {
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 26px;
+      width: 28px;
       justify-self: center;
-      padding: 0;
+      padding: 2px;
       border-radius: 999px;
-      border: 1px solid var(--border);
-      font-size: 0.55rem;
+      border: 1px solid rgba(167, 188, 255, 0.3);
+      font-size: 0.56rem;
       font-weight: 700;
-      letter-spacing: 0.01em;
+      letter-spacing: 0.02em;
       text-transform: uppercase;
-      line-height: 1;
+      line-height: 1.1;
     }
     .market-index-state.live {
       color: #6dff85;
@@ -237,23 +239,23 @@
       background: rgba(168, 180, 204, 0.08);
     }
     .market-index-price {
-      color: #d8e2f7;
+      color: #dce8ff;
       font-weight: 600;
       text-align: center;
       font-family: monospace;
-      font-size: 0.74rem;
+      font-size: 0.77rem;
       min-width: 0;
       white-space: nowrap;
-      line-height: 1;
+      line-height: 1.1;
     }
     .market-index-change {
       font-family: monospace;
       font-weight: 700;
-      font-size: 0.73rem;
+      font-size: 0.76rem;
       min-width: 0;
       text-align: center;
       white-space: nowrap;
-      line-height: 1;
+      line-height: 1.1;
     }
     .market-index-change.up {
       color: #6dff85;
@@ -434,7 +436,7 @@
                     <span id="idx-dji-change" class="market-index-change flat">--</span>
                   </div>
                   <div class="market-index-row">
-                    <span class="market-index-name">Nasdaq</span>
+                    <span class="market-index-name">NASDAQ</span>
                     <span id="idx-ixic-state" class="market-index-state na">--</span>
                     <span id="idx-ixic-price" class="market-index-price">--</span>
                     <span id="idx-ixic-change" class="market-index-change flat">--</span>
@@ -646,22 +648,45 @@
       renderNews();
     }
     showNews('usa');
-    async function fetchSentiment() {
-      try {
-        const res = await fetch('https://api.alternative.me/fng/');
-        const data = await res.json();
-        const val = data.data[0].value_classification;
-        const el = document.getElementById('sentiment-val');
-        el.textContent = val;
-
-        if (val.toLowerCase().includes('fear')) {
-          el.style.color = '#ff6d6d';
-        } else if (val.toLowerCase().includes('greed')) {
-          el.style.color = '#6dff85';
-        } else {
-          el.style.color = '#ffffff';
-        }
-      } catch (e) { document.getElementById('sentiment-val').textContent = "Unavailable"; }
+    function fetchSentiment() {
+      const el = document.getElementById('sentiment-val');
+      
+      // Derive sentiment from market indices that are already fetched
+      const djiRow = document.querySelector('#idx-dji .change');
+      const ixicRow = document.querySelector('#idx-ixic .change');
+      const gspcRow = document.querySelector('#idx-gspc .change');
+      
+      if (!djiRow || !ixicRow || !gspcRow) {
+        el.textContent = "Loading...";
+        return;
+      }
+      
+      const djiChange = parseFloat(djiRow.textContent);
+      const ixicChange = parseFloat(ixicRow.textContent);
+      const gspcChange = parseFloat(gspcRow.textContent);
+      
+      let upsCount = 0;
+      if (djiChange > 0) upsCount++;
+      if (ixicChange > 0) upsCount++;
+      if (gspcChange > 0) upsCount++;
+      
+      let sentiment, color;
+      if (upsCount === 3) {
+        sentiment = 'Strong Greed';
+        color = '#6dff85';
+      } else if (upsCount === 2) {
+        sentiment = 'Greed';
+        color = '#6dff85';
+      } else if (upsCount === 1) {
+        sentiment = 'Mixed';
+        color = '#ffffff';
+      } else {
+        sentiment = 'Strong Fear';
+        color = '#ff6d6d';
+      }
+      
+      el.textContent = sentiment;
+      el.style.color = color;
     }
 
     function isUsMarketOpenNow() {
@@ -724,7 +749,7 @@
       priceEl.textContent = price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
       const sign = change > 0 ? '+' : change < 0 ? '-' : '';
-      const changeText = `${sign}${Math.abs(change).toFixed(2)} | ${sign}${Math.abs(pct).toFixed(2)}%`;
+      const changeText = `${sign}${Math.abs(pct).toFixed(2)}%`;
       changeEl.textContent = changeText;
       changeEl.className = `market-index-change ${change > 0 ? 'up' : change < 0 ? 'down' : 'flat'}`;
 
@@ -735,12 +760,29 @@
 
     async function fetchMajorIndexes() {
       try {
-        const res = await fetch(`https://api.twelvedata.com/quote?symbol=DIA,QQQ,SPY&apikey=${TWELVE_DATA_API_KEY}`);
-        const data = await res.json();
+        const isUsableQuote = (quote) => quote && quote.status !== 'error' && quote.close !== undefined;
 
-        updateIndexRow('idx-dji', data.DIA || null);
-        updateIndexRow('idx-ixic', data.QQQ || null);
-        updateIndexRow('idx-gspc', data.SPY || null);
+        // Requested symbols first: .DJI (Dow), .SPX (Index), .IXIC (Nasdaq)
+        const requestedRes = await fetch(`https://api.twelvedata.com/quote?symbol=.DJI,.SPX,.IXIC&apikey=${TWELVE_DATA_API_KEY}`);
+        const requestedData = await requestedRes.json();
+
+        let djiQuote = requestedData['.DJI'] || null;
+        let ixicQuote = requestedData['.IXIC'] || null;
+        let spxQuote = requestedData['.SPX'] || null;
+
+        // Twelve Data currently rejects these dotted index symbols, so fall back to liquid ETF proxies.
+        if (!isUsableQuote(djiQuote) || !isUsableQuote(ixicQuote) || !isUsableQuote(spxQuote)) {
+          const fallbackRes = await fetch(`https://api.twelvedata.com/quote?symbol=DIA,QQQ,SPY&apikey=${TWELVE_DATA_API_KEY}`);
+          const fallbackData = await fallbackRes.json();
+
+          if (!isUsableQuote(djiQuote)) djiQuote = fallbackData.DIA || null;
+          if (!isUsableQuote(ixicQuote)) ixicQuote = fallbackData.QQQ || null;
+          if (!isUsableQuote(spxQuote)) spxQuote = fallbackData.SPY || null;
+        }
+
+        updateIndexRow('idx-dji', djiQuote);
+        updateIndexRow('idx-ixic', ixicQuote);
+        updateIndexRow('idx-gspc', spxQuote);
       } catch (e) {
         updateIndexRow('idx-dji', null);
         updateIndexRow('idx-ixic', null);
@@ -756,7 +798,11 @@
 
       // Check if weekend
       if (day === 0 || day === 6) {
-          marketStatus.textContent = "Market Closed (Weekend)";
+          const totalMinutes = estTime.getHours() * 60 + estTime.getMinutes();
+          const openTime = 9 * 60 + 30;
+          let daysUntilOpen = day === 6 ? 2 : 1; // Saturday -> 2 days to Monday, Sunday -> 1 day to Monday
+          const minutesUntilOpen = ((24 * 60 - totalMinutes) + openTime) + ((daysUntilOpen - 1) * 24 * 60);
+          marketStatus.textContent = 'Weekend · Opens in ' + Math.floor(minutesUntilOpen / 60 / 24) + 'd ' + Math.floor((minutesUntilOpen / 60) % 24) + 'h';
           return;
       }
 
