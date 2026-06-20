@@ -130,6 +130,7 @@
             <div id="youtubeScanStatus" style="padding:0 6px 6px; font-size:10px; color:rgba(255,180,140,0.75); min-height:14px;"></div>
             <div id="listItems"></div>
             <div style="border-top: 1px solid var(--border); margin: 6px 0 4px;"></div>
+            <a id="addStreamerBtn" href="#" style="display:block; text-align:center; padding:6px 10px; font-size:12px; font-weight:600; color:#7dd3fc; text-decoration:none; border-radius:8px; transition:background 0.15s;" onmouseover="this.style.background='rgba(125,211,252,0.12)'" onmouseout="this.style.background='transparent'">+ Add Streamer</a>
             <a id="twitchConnectBtn" href="#" style="display:block; text-align:center; padding:6px 10px; font-size:12px; font-weight:600; color:#a970ff; text-decoration:none; border-radius:8px; transition:background 0.15s;" onmouseover="this.style.background='rgba(169,112,255,0.12)'" onmouseout="this.style.background='transparent'">+ Connect Twitch</a>
             <a id="youtubeConnectBtn" href="#" style="display:block; text-align:center; padding:6px 10px; font-size:12px; font-weight:600; color:#ff6a4a; text-decoration:none; border-radius:8px; transition:background 0.15s;" onmouseover="this.style.background='rgba(255,106,74,0.12)'" onmouseout="this.style.background='transparent'">+ Connect YouTube</a>
           </div>
@@ -335,6 +336,27 @@
       const el = document.getElementById('youtubeScanStatus');
       if (!el) return;
       el.textContent = text || '';
+    }
+
+    function getManualStreamers() {
+      const saved = getCachedJson('myStreamers');
+      return Array.isArray(saved) ? saved : [];
+    }
+
+    function normalizeTwitchChannelInput(value) {
+      const raw = (value || '').trim();
+      if (!raw) return null;
+
+      let channel = raw;
+      if (channel.includes('twitch.tv/')) {
+        channel = channel.split('twitch.tv/').pop().split('/')[0];
+      }
+
+      channel = channel.trim().replace(/^@+/, '').toLowerCase();
+      channel = channel.replace(/[^a-z0-9_]/g, '');
+      if (!channel) return null;
+
+      return { name: channel, url: channel };
     }
 
     async function ytApi(path, token) {
@@ -559,7 +581,7 @@
     }
 
     async function renderList() {
-        const manual   = JSON.parse(localStorage.getItem('myStreamers')) || [{name: 'hutchmf', url: 'hutchmf'}, {name: 'shroud', url: 'shroud'}];
+      const manual   = getManualStreamers();
         const followed = JSON.parse(localStorage.getItem('twitchFollowed')) || [];
         const youtubeLive = await fetchYouTubeLiveStreams();
 
@@ -635,7 +657,11 @@
         container.innerHTML = '';
 
         if (liveRows.length === 0) {
-          container.innerHTML = `<div style="padding:8px 10px; font-size:12px; color:rgba(200,210,255,0.4); text-align:center;">No one is live right now</div>`;
+          const hasConnectedTwitch = !!localStorage.getItem('twitchToken');
+          const emptyMessage = hasConnectedTwitch
+            ? 'No one is live right now'
+            : 'No live channels yet. Add a streamer or connect Twitch.';
+          container.innerHTML = `<div style="padding:8px 10px; font-size:12px; color:rgba(200,210,255,0.4); text-align:center;">${emptyMessage}</div>`;
         } else {
           const rowHtml = (item) => {
             const isManual = item.platform === 'twitch' && manual.some(m => m.url.toLowerCase() === item.url.toLowerCase());
@@ -848,11 +874,28 @@
     })();
 
     window.removeStreamer = function(name) {
-        let list = JSON.parse(localStorage.getItem('myStreamers'));
+        let list = getManualStreamers();
         list = list.filter(item => item.name !== name);
         localStorage.setItem('myStreamers', JSON.stringify(list));
         renderList();
         event.stopPropagation();
+    };
+
+    window.addStreamer = function() {
+      const input = window.prompt('Enter a Twitch channel name or Twitch URL:');
+      const normalized = normalizeTwitchChannelInput(input);
+      if (!normalized) return;
+
+      const list = getManualStreamers();
+      const exists = list.some(item => item.url.toLowerCase() === normalized.url);
+      if (exists) {
+        renderList();
+        return;
+      }
+
+      list.push(normalized);
+      localStorage.setItem('myStreamers', JSON.stringify(list));
+      renderList();
     };
 
     document.getElementById('streamUrl').addEventListener('focus', function() {
@@ -874,6 +917,14 @@
     const streamerDropdown = document.querySelector('.dropdown');
     if (streamerDropdown) {
       streamerDropdown.addEventListener('mouseenter', refreshListOnDropdownHover);
+    }
+
+    const addStreamerBtn = document.getElementById('addStreamerBtn');
+    if (addStreamerBtn) {
+      addStreamerBtn.onclick = (e) => {
+        e.preventDefault();
+        addStreamer();
+      };
     }
 
     window.onload = async function() {
