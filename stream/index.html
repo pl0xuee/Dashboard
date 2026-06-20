@@ -300,10 +300,34 @@
       const resp = await fetch(`https://www.googleapis.com/youtube/v3/${path}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      if (resp.status === 401 || resp.status === 403) {
+
+      let errorPayload = null;
+      if (!resp.ok) {
+        try {
+          errorPayload = await resp.json();
+        } catch (_) {
+          errorPayload = null;
+        }
+      }
+
+      if (resp.status === 401) {
         youtubeLogout();
         throw new Error('YouTube auth expired');
       }
+
+      if (resp.status === 403) {
+        const reason = errorPayload?.error?.errors?.[0]?.reason || 'forbidden';
+        const message = errorPayload?.error?.message || 'YouTube API access denied';
+
+        // Only force logout on true token/scope auth failures.
+        if (reason === 'authError' || reason === 'insufficientPermissions') {
+          youtubeLogout();
+          throw new Error(`YouTube auth error (${reason}): ${message}`);
+        }
+
+        throw new Error(`YouTube API 403 (${reason}): ${message}`);
+      }
+
       if (!resp.ok) {
         throw new Error(`YouTube API error ${resp.status}`);
       }
@@ -347,6 +371,7 @@
       }
 
       setYouTubeScanStatus('Scanning all YouTube subscriptions...');
+      let completedSuccessfully = false;
       try {
         const subscriptions = await getYouTubeSubscriptions();
         const latestByChannel = await mapWithConcurrency(subscriptions, async (sub) => {
@@ -411,12 +436,24 @@
           .map(([channelId, item]) => ({ ...item, name: item.name || subsById.get(channelId) }));
 
         setCachedJson('youtubeLiveCache', { updatedAt: Date.now(), items: liveItems });
+        completedSuccessfully = true;
         return liveItems;
       } catch (e) {
         console.error('YouTube live fetch error', e);
+        if (String(e.message || '').includes('insufficientPermissions')) {
+          setYouTubeScanStatus('YouTube scope missing. Disconnect + reconnect YouTube.');
+        } else if (String(e.message || '').includes('accessNotConfigured') || String(e.message || '').includes('serviceDisabled')) {
+          setYouTubeScanStatus('Enable YouTube Data API v3 in Google Cloud.');
+        } else if (String(e.message || '').includes('quotaExceeded') || String(e.message || '').includes('dailyLimitExceeded')) {
+          setYouTubeScanStatus('YouTube API quota exceeded. Try later.');
+        } else {
+          setYouTubeScanStatus('YouTube scan failed. Try reconnecting.');
+        }
         return [];
       } finally {
-        setYouTubeScanStatus('');
+        if (completedSuccessfully) {
+          setYouTubeScanStatus('');
+        }
       }
     }
 
@@ -662,6 +699,13 @@
             renderList();
           } catch (e) {
             console.error('YouTube subscriptions fetch error', e);
+            if (String(e.message || '').includes('insufficientPermissions')) {
+              setYouTubeScanStatus('YouTube scope missing. Disconnect + reconnect YouTube.');
+            } else if (String(e.message || '').includes('accessNotConfigured') || String(e.message || '').includes('serviceDisabled')) {
+              setYouTubeScanStatus('Enable YouTube Data API v3 in Google Cloud.');
+            } else {
+              setYouTubeScanStatus('Unable to read subscriptions. Check OAuth/API setup.');
+            }
           }
         }
 
