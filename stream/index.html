@@ -163,6 +163,7 @@
     const YOUTUBE_LIVE_CACHE_TTL_MS = 120000;
     const YOUTUBE_SUBS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
     const YOUTUBE_ERROR_COOLDOWN_MS = 60000;
+    const YOUTUBE_FEED_PROXY = 'https://api.allorigins.win/raw?url=';
     let lastDropdownRefreshAt = 0;
     let dropdownRefreshInFlight = false;
     let youtubeSubsInFlight = null;
@@ -402,7 +403,8 @@
           const subscriptions = await getYouTubeSubscriptions();
         const latestByChannel = await mapWithConcurrency(subscriptions, async (sub) => {
           try {
-            const feedResp = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(sub.channelId)}`);
+            const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(sub.channelId)}`;
+            const feedResp = await fetch(`${YOUTUBE_FEED_PROXY}${encodeURIComponent(feedUrl)}`);
             if (!feedResp.ok) return null;
             const xml = await feedResp.text();
 
