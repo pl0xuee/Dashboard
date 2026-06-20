@@ -163,6 +163,21 @@
     const YOUTUBE_LIVE_CACHE_TTL_MS = 120000;
     const YOUTUBE_SUBS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
     const YOUTUBE_ERROR_COOLDOWN_MS = 60000;
+    const STREAM_BUILD_ID = 'stream-2026-06-20-ytapi-v2';
+    console.info(`[stream] build ${STREAM_BUILD_ID}`);
+
+    (function installLegacyYouTubeFeedFetchBlocker() {
+      const nativeFetch = window.fetch.bind(window);
+      window.fetch = function(input, init) {
+        const url = typeof input === 'string' ? input : (input && input.url) || '';
+        if (typeof url === 'string' && url.includes('youtube.com/feeds/videos.xml')) {
+          console.error(`[stream ${STREAM_BUILD_ID}] blocked legacy feed fetch`, url);
+          return Promise.reject(new Error('Legacy YouTube feed fetch blocked in current build. Hard refresh the page.'));
+        }
+        return nativeFetch(input, init);
+      };
+    })();
+
     let lastDropdownRefreshAt = 0;
     let dropdownRefreshInFlight = false;
     let youtubeSubsInFlight = null;
