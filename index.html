@@ -647,30 +647,6 @@
       renderNews();
     }
     showNews('usa');
-    function deriveSentimentFromIndexes() {
-      const djiRow = document.getElementById('idx-dji-change');
-      const ixicRow = document.getElementById('idx-ixic-change');
-      const gspcRow = document.getElementById('idx-gspc-change');
-
-      if (!djiRow || !ixicRow || !gspcRow) return null;
-
-      const djiChange = parseFloat(djiRow.textContent);
-      const ixicChange = parseFloat(ixicRow.textContent);
-      const gspcChange = parseFloat(gspcRow.textContent);
-
-      if (Number.isNaN(djiChange) || Number.isNaN(ixicChange) || Number.isNaN(gspcChange)) return null;
-
-      let upsCount = 0;
-      if (djiChange > 0) upsCount++;
-      if (ixicChange > 0) upsCount++;
-      if (gspcChange > 0) upsCount++;
-
-      if (upsCount === 3) return { label: 'Strong Greed', color: '#6dff85' };
-      if (upsCount === 2) return { label: 'Greed', color: '#6dff85' };
-      if (upsCount === 1) return { label: 'Mixed', color: '#ffffff' };
-      return { label: 'Strong Fear', color: '#ff6d6d' };
-    }
-
     async function fetchSentiment() {
       const el = document.getElementById('sentiment-val');
       if (!el) return;
@@ -695,22 +671,34 @@
           else if (rounded < 75) color = '#9eff6b';
           else color = '#6dff85';
 
-          el.textContent = `${rounded} (${label})`;
+          const valueText = `${rounded} (${label})`;
+          el.textContent = valueText;
           el.style.color = color;
+
+          localStorage.setItem('cnnSentimentCache', JSON.stringify({
+            valueText,
+            color,
+            updatedAt: Date.now()
+          }));
           return;
         }
       } catch (e) {
-        // Fall through to index-based estimate
+        // Fall through to cached CNN value
       }
 
-      const fallback = deriveSentimentFromIndexes();
-      if (fallback) {
-        el.textContent = fallback.label;
-        el.style.color = fallback.color;
-      } else {
-        el.textContent = 'Loading...';
-        el.style.color = '';
+      try {
+        const cached = JSON.parse(localStorage.getItem('cnnSentimentCache') || 'null');
+        if (cached && cached.valueText) {
+          el.textContent = `${cached.valueText} (Cached)`;
+          el.style.color = cached.color || '#ffffff';
+          return;
+        }
+      } catch (_) {
+        // ignore broken cache and show unavailable
       }
+
+      el.textContent = 'Unavailable';
+      el.style.color = 'rgba(255,255,255,0.65)';
     }
 
     function isUsMarketOpenNow() {
