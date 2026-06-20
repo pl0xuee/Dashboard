@@ -553,7 +553,7 @@
       localStorage.setItem('youtubeOAuthState', state);
       const redirect = getOAuthRedirect();
       const scope = 'https://www.googleapis.com/auth/youtube.readonly';
-      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${encodeURIComponent(scope)}&include_granted_scopes=true&prompt=consent&state=${encodeURIComponent(state)}`;
+      window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${encodeURIComponent(clientId)}&redirect_uri=${encodeURIComponent(redirect)}&response_type=token&scope=${encodeURIComponent(scope)}&include_granted_scopes=true&state=${encodeURIComponent(state)}`;
     }
 
     function youtubeLogout() {
