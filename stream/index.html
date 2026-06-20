@@ -160,15 +160,28 @@
 
   <script>
     const DROPDOWN_REFRESH_COOLDOWN_MS = 15000;
+    const TWITCH_FOLLOW_SYNC_INTERVAL_MS = 120000;
     const YOUTUBE_LIVE_CACHE_TTL_MS = 120000;
     const YOUTUBE_SUBS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
     const YOUTUBE_ERROR_COOLDOWN_MS = 60000;
 
     let lastDropdownRefreshAt = 0;
     let dropdownRefreshInFlight = false;
+    let twitchFollowsSyncInFlight = false;
     let youtubeSubsInFlight = null;
     let youtubeLiveInFlight = null;
     let youtubeRetryAfter = 0;
+
+    function getLastTwitchFollowSyncAt() {
+      const raw = Number(localStorage.getItem('twitchFollowedLastSyncedAt') || '0');
+      return Number.isFinite(raw) ? raw : 0;
+    }
+
+    function shouldSyncTwitchFollows(now = Date.now()) {
+      const token = localStorage.getItem('twitchToken');
+      if (!token) return false;
+      return now - getLastTwitchFollowSyncAt() >= TWITCH_FOLLOW_SYNC_INTERVAL_MS;
+    }
 
     async function refreshListOnDropdownHover() {
       const now = Date.now();
@@ -177,6 +190,9 @@
 
       dropdownRefreshInFlight = true;
       try {
+        if (shouldSyncTwitchFollows(now)) {
+          await fetchTwitchFollows({ skipRender: true });
+        }
         await renderList();
         lastDropdownRefreshAt = Date.now();
       } finally {
@@ -667,6 +683,7 @@
     function twitchLogout() {
         localStorage.removeItem('twitchToken');
         localStorage.removeItem('twitchFollowed');
+      localStorage.removeItem('twitchFollowedLastSyncedAt');
         renderList();
     }
 
@@ -721,10 +738,15 @@
       }
     }
 
-    async function fetchTwitchFollows() {
+    async function fetchTwitchFollows(options = {}) {
+      const { skipRender = false } = options;
+      if (twitchFollowsSyncInFlight) return;
+
         const token    = localStorage.getItem('twitchToken');
         const clientId = window.TWITCH_CLIENT_ID;
         if (!token || !clientId || clientId === 'YOUR_TWITCH_CLIENT_ID') return;
+
+      twitchFollowsSyncInFlight = true;
         try {
             const userResp = await fetch('https://api.twitch.tv/helix/users', {
                 headers: { 'Client-Id': clientId, 'Authorization': `Bearer ${token}` }
@@ -748,9 +770,14 @@
             localStorage.setItem('twitchFollowed', JSON.stringify(
                 follows.map(f => ({ name: f.broadcaster_name, url: f.broadcaster_login }))
             ));
-            renderList();
+      localStorage.setItem('twitchFollowedLastSyncedAt', String(Date.now()));
+      if (!skipRender) {
+        renderList();
+      }
         } catch (e) {
             console.error('Twitch follow fetch error', e);
+    } finally {
+      twitchFollowsSyncInFlight = false;
         }
     }
 
@@ -818,6 +845,9 @@
     }
 
     window.onload = async function() {
+      if (shouldSyncTwitchFollows()) {
+        await fetchTwitchFollows({ skipRender: true });
+      }
       await renderList();
       lastDropdownRefreshAt = Date.now();
     };
