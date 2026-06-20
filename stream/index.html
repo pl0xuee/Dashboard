@@ -77,17 +77,6 @@
 
     .dropdown:hover .dropdown-content { display: block; }
 
-    .dropbtn {
-      cursor: pointer;
-      padding: 8px 16px;
-      border-radius: 999px;
-      background: rgba(109, 140, 255, 0.16);
-      color: #e9f0ff;
-      border: 1px solid rgba(109, 140, 255, 0.18);
-      font-size: 13px;
-      font-weight: 500;
-    }
-
     .dropdown-content a {
       display: block;
       padding: 8px 12px;
@@ -116,15 +105,15 @@
       <!-- Controls moved back to the header on the right -->
       <div class="controls">
         <input type="text" id="streamUrl" placeholder="YouTube URL or Twitch Channel Name" onkeydown="if(event.key === 'Enter') loadStream()" style="width: 350px; height: 38px; padding: 0 12px; margin: 0 4px;">
-        <button onclick="loadStream()" class="home-button" style="height: 38px; padding: 0 12px;">Load</button>
-        <button onclick="toggleChat()" class="home-button" style="height: 38px; padding: 0 12px;">Toggle Chat</button>
+        <button onclick="loadStream()" class="home-button">Load</button>
+        <button onclick="toggleChat()" class="home-button">Toggle Chat</button>
         <!-- Streamer Dropdown -->
         <div class="dropdown">
           <button class="dropbtn home-button">My Streamers ▼</button>
           <div class="dropdown-content" id="streamerList">
             <div id="listItems"></div>
             <div style="border-top: 1px solid var(--border); margin: 5px 0;"></div>
-            <a href="#" onclick="addStreamer()" class="home-button" style="width: 100%; border: none; background: transparent; text-align: center; color: var(--accent);">Add Streamer...</a>
+            <a href="#" onclick="addStreamer()" class="home-button" style="width: 100%;">Add Streamer...</a>
           </div>
         </div>
       </div>

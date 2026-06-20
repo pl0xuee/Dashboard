@@ -46,16 +46,7 @@ button:hover, .home-button:hover, .load-button:hover {
 .home-button {
   color: #fff;
   text-decoration: none;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 8px 16px;
-  border-radius: 8px;
-  transition: all 0.2s;
 }
-
-.home-button:hover { background: rgba(255,255,255,0.05); }
 
 html, body {
   min-height: 100%;
@@ -529,10 +520,13 @@ input[type="text"]:focus {
 /* Reduced height input and button in Stream header to fit within 56px header */
 .controls input[type="text"],
 .controls .home-button {
+  margin: 0 2px !important;
+}
+
+.controls input[type="text"] {
   height: 38px !important;
   line-height: 38px !important;
   padding: 0 12px !important;
-  margin: 0 2px !important;
   font-size: 0.85rem !important;
 }
 
