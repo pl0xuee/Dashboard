@@ -162,8 +162,12 @@
     const DROPDOWN_REFRESH_COOLDOWN_MS = 15000;
     const YOUTUBE_LIVE_CACHE_TTL_MS = 120000;
     const YOUTUBE_SUBS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+    const YOUTUBE_ERROR_COOLDOWN_MS = 60000;
     let lastDropdownRefreshAt = 0;
     let dropdownRefreshInFlight = false;
+    let youtubeSubsInFlight = null;
+    let youtubeLiveInFlight = null;
+    let youtubeRetryAfter = 0;
 
     async function refreshListOnDropdownHover() {
       const now = Date.now();
@@ -338,42 +342,64 @@
       const token = localStorage.getItem('youtubeToken');
       if (!token) return [];
 
-      const cached = getCachedJson('youtubeSubscriptionsCache');
-      if (cached && Array.isArray(cached.items) && Date.now() - cached.updatedAt < YOUTUBE_SUBS_CACHE_TTL_MS) {
-        return cached.items;
+      if (Date.now() < youtubeRetryAfter) {
+        throw new Error('YouTube cooldown active');
       }
 
-      let items = [];
-      let pageToken = '';
-      do {
-        const data = await ytApi(`subscriptions?part=snippet&mine=true&maxResults=50${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`, token);
-        const pageItems = (data.items || []).map(s => ({
-          name: s.snippet?.title || 'YouTube Channel',
-          channelId: s.snippet?.resourceId?.channelId || '',
-          platform: 'youtube'
-        })).filter(i => i.channelId);
-        items = items.concat(pageItems);
-        pageToken = data.nextPageToken || '';
-      } while (pageToken);
+      if (youtubeSubsInFlight) return await youtubeSubsInFlight;
 
-      setCachedJson('youtubeSubscriptionsCache', { updatedAt: Date.now(), items });
-      return items;
+      youtubeSubsInFlight = (async () => {
+        const cached = getCachedJson('youtubeSubscriptionsCache');
+        if (cached && Array.isArray(cached.items) && Date.now() - cached.updatedAt < YOUTUBE_SUBS_CACHE_TTL_MS) {
+          return cached.items;
+        }
+
+        let items = [];
+        let pageToken = '';
+        do {
+          const data = await ytApi(`subscriptions?part=snippet&mine=true&maxResults=50${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`, token);
+          const pageItems = (data.items || []).map(s => ({
+            name: s.snippet?.title || 'YouTube Channel',
+            channelId: s.snippet?.resourceId?.channelId || '',
+            platform: 'youtube'
+          })).filter(i => i.channelId);
+          items = items.concat(pageItems);
+          pageToken = data.nextPageToken || '';
+        } while (pageToken);
+
+        setCachedJson('youtubeSubscriptionsCache', { updatedAt: Date.now(), items });
+        return items;
+      })();
+
+      try {
+        return await youtubeSubsInFlight;
+      } finally {
+        youtubeSubsInFlight = null;
+      }
     }
 
     async function fetchYouTubeLiveStreams() {
       const token = localStorage.getItem('youtubeToken');
       if (!token) return [];
 
-      const liveCache = getCachedJson('youtubeLiveCache');
-      if (liveCache && Array.isArray(liveCache.items) && Date.now() - liveCache.updatedAt < YOUTUBE_LIVE_CACHE_TTL_MS) {
-        setYouTubeScanStatus('');
-        return liveCache.items;
+      if (Date.now() < youtubeRetryAfter) {
+        setYouTubeScanStatus('YouTube temporarily paused after error. Retrying soon...');
+        return [];
       }
 
-      setYouTubeScanStatus('Scanning all YouTube subscriptions...');
-      let completedSuccessfully = false;
-      try {
-        const subscriptions = await getYouTubeSubscriptions();
+      if (youtubeLiveInFlight) return await youtubeLiveInFlight;
+
+      youtubeLiveInFlight = (async () => {
+        const liveCache = getCachedJson('youtubeLiveCache');
+        if (liveCache && Array.isArray(liveCache.items) && Date.now() - liveCache.updatedAt < YOUTUBE_LIVE_CACHE_TTL_MS) {
+          setYouTubeScanStatus('');
+          return liveCache.items;
+        }
+
+        setYouTubeScanStatus('Scanning all YouTube subscriptions...');
+        let completedSuccessfully = false;
+        try {
+          const subscriptions = await getYouTubeSubscriptions();
         const latestByChannel = await mapWithConcurrency(subscriptions, async (sub) => {
           try {
             const feedResp = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(sub.channelId)}`);
@@ -438,22 +464,32 @@
         setCachedJson('youtubeLiveCache', { updatedAt: Date.now(), items: liveItems });
         completedSuccessfully = true;
         return liveItems;
-      } catch (e) {
-        console.error('YouTube live fetch error', e);
-        if (String(e.message || '').includes('insufficientPermissions')) {
-          setYouTubeScanStatus('YouTube scope missing. Disconnect + reconnect YouTube.');
-        } else if (String(e.message || '').includes('accessNotConfigured') || String(e.message || '').includes('serviceDisabled')) {
-          setYouTubeScanStatus('Enable YouTube Data API v3 in Google Cloud.');
-        } else if (String(e.message || '').includes('quotaExceeded') || String(e.message || '').includes('dailyLimitExceeded')) {
-          setYouTubeScanStatus('YouTube API quota exceeded. Try later.');
-        } else {
-          setYouTubeScanStatus('YouTube scan failed. Try reconnecting.');
+        } catch (e) {
+          console.error('YouTube live fetch error', e);
+          youtubeRetryAfter = Date.now() + YOUTUBE_ERROR_COOLDOWN_MS;
+          if (String(e.message || '').includes('insufficientPermissions')) {
+            setYouTubeScanStatus('YouTube scope missing. Disconnect + reconnect YouTube.');
+          } else if (String(e.message || '').includes('accessNotConfigured') || String(e.message || '').includes('serviceDisabled')) {
+            setYouTubeScanStatus('Enable YouTube Data API v3 in Google Cloud.');
+          } else if (String(e.message || '').includes('quotaExceeded') || String(e.message || '').includes('dailyLimitExceeded')) {
+            setYouTubeScanStatus('YouTube API quota exceeded. Try later.');
+          } else if (String(e.message || '').includes('cooldown')) {
+            setYouTubeScanStatus('YouTube temporarily paused after error. Retrying soon...');
+          } else {
+            setYouTubeScanStatus('YouTube scan failed. Try reconnecting.');
+          }
+          return [];
+        } finally {
+          if (completedSuccessfully) {
+            setYouTubeScanStatus('');
+          }
         }
-        return [];
+      })();
+
+      try {
+        return await youtubeLiveInFlight;
       } finally {
-        if (completedSuccessfully) {
-          setYouTubeScanStatus('');
-        }
+        youtubeLiveInFlight = null;
       }
     }
 
