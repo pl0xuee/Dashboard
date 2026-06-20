@@ -140,6 +140,10 @@
     import { API_KEY, TWITCH_CLIENT_ID } from '../config.js';
     window.API_KEY = API_KEY;
     window.TWITCH_CLIENT_ID = TWITCH_CLIENT_ID;
+    // Now that clientId is set, complete any pending OAuth callback
+    if (window._twitchJustConnected) {
+      fetchTwitchFollows();
+    }
   </script>
 
   <script>
@@ -351,7 +355,7 @@
         }
     }
 
-    // Handle OAuth redirect — runs immediately
+    // Handle OAuth redirect — runs immediately, but defers fetch until module sets TWITCH_CLIENT_ID
     (function handleOAuthCallback() {
         const hash = window.location.hash;
         if (hash.includes('access_token=')) {
@@ -360,7 +364,7 @@
             if (token) {
                 localStorage.setItem('twitchToken', token);
                 history.replaceState(null, '', window.location.pathname);
-                fetchTwitchFollows();
+                window._twitchJustConnected = true; // module script will call fetchTwitchFollows()
             }
         }
     })();
