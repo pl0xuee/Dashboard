@@ -163,7 +163,6 @@
     const YOUTUBE_LIVE_CACHE_TTL_MS = 120000;
     const YOUTUBE_SUBS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
     const YOUTUBE_ERROR_COOLDOWN_MS = 60000;
-    const YOUTUBE_FEED_PROXY = 'https://api.allorigins.win/raw?url=';
     let lastDropdownRefreshAt = 0;
     let dropdownRefreshInFlight = false;
     let youtubeSubsInFlight = null;
@@ -397,34 +396,26 @@
           return liveCache.items;
         }
 
-        setYouTubeScanStatus('Scanning all YouTube subscriptions...');
+        setYouTubeScanStatus('Scanning YouTube live activity...');
         let completedSuccessfully = false;
         try {
           const subscriptions = await getYouTubeSubscriptions();
-        const latestByChannel = await mapWithConcurrency(subscriptions, async (sub) => {
-          try {
-            const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(sub.channelId)}`;
-            const feedResp = await fetch(`${YOUTUBE_FEED_PROXY}${encodeURIComponent(feedUrl)}`);
-            if (!feedResp.ok) return null;
-            const xml = await feedResp.text();
+          const subsById = new Map(subscriptions.map(s => [s.channelId, s.name]));
 
-            // Read top 3 recent video IDs per channel for a better chance at capturing current live streams.
-            const idMatches = Array.from(xml.matchAll(/<yt:videoId>([^<]+)<\/yt:videoId>/g)).slice(0, 3);
-            const videoIds = idMatches.map(m => m[1]).filter(Boolean);
-            if (videoIds.length === 0) return null;
-
-            return {
-              channelId: sub.channelId,
-              channelName: sub.name,
-              videoIds
-            };
-          } catch (_) {
-            return null;
+          // Pull recent subscription activity pages and extract uploaded video IDs.
+          const candidateIds = new Set();
+          let pageToken = '';
+          for (let i = 0; i < 5; i++) {
+            const data = await ytApi(`activities?part=snippet,contentDetails&home=true&maxResults=50${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`, token);
+            (data.items || []).forEach((item) => {
+              const vid = item?.contentDetails?.upload?.videoId;
+              if (vid) candidateIds.add(vid);
+            });
+            pageToken = data.nextPageToken || '';
+            if (!pageToken) break;
           }
-        }, 10);
 
-        const channelVideoCandidates = latestByChannel.filter(Boolean);
-        const uniqueVideoIds = Array.from(new Set(channelVideoCandidates.flatMap(c => c.videoIds)));
+          const uniqueVideoIds = Array.from(candidateIds);
 
         const liveByChannel = new Map();
         for (let i = 0; i < uniqueVideoIds.length; i += 50) {
@@ -445,8 +436,11 @@
               const channelId = snippet.channelId;
               if (!channelId || liveByChannel.has(channelId)) return;
 
+              // Keep only channels the user is subscribed to.
+              if (!subsById.has(channelId)) return;
+
               liveByChannel.set(channelId, {
-                name: snippet.channelTitle || 'YouTube Channel',
+                name: snippet.channelTitle || subsById.get(channelId) || 'YouTube Channel',
                 url: `https://www.youtube.com/watch?v=${video.id}`,
                 videoId: video.id,
                 platform: 'youtube',
@@ -457,11 +451,7 @@
           } catch (_) {}
         }
 
-        // Prefer channels the user is subscribed to and preserve their display names when needed.
-        const subsById = new Map(subscriptions.map(s => [s.channelId, s.name]));
-        const liveItems = Array.from(liveByChannel.entries())
-          .filter(([channelId]) => subsById.has(channelId))
-          .map(([channelId, item]) => ({ ...item, name: item.name || subsById.get(channelId) }));
+          const liveItems = Array.from(liveByChannel.values());
 
         setCachedJson('youtubeLiveCache', { updatedAt: Date.now(), items: liveItems });
         completedSuccessfully = true;
