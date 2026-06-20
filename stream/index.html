@@ -349,41 +349,66 @@
       setYouTubeScanStatus('Scanning all YouTube subscriptions...');
       try {
         const subscriptions = await getYouTubeSubscriptions();
-        const subset = subscriptions;
-
-        const searchResults = await mapWithConcurrency(subset, async (sub) => {
+        const latestByChannel = await mapWithConcurrency(subscriptions, async (sub) => {
           try {
-            const data = await ytApi(`search?part=snippet&channelId=${encodeURIComponent(sub.channelId)}&eventType=live&type=video&maxResults=1`, token);
-            const item = data.items?.[0];
-            if (!item?.id?.videoId) return null;
+            const feedResp = await fetch(`https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(sub.channelId)}`);
+            if (!feedResp.ok) return null;
+            const xml = await feedResp.text();
+
+            // Read top 3 recent video IDs per channel for a better chance at capturing current live streams.
+            const idMatches = Array.from(xml.matchAll(/<yt:videoId>([^<]+)<\/yt:videoId>/g)).slice(0, 3);
+            const videoIds = idMatches.map(m => m[1]).filter(Boolean);
+            if (videoIds.length === 0) return null;
+
             return {
-              name: item.snippet?.channelTitle || sub.name,
-              url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-              videoId: item.id.videoId,
-              platform: 'youtube',
-              isOnline: true,
-              viewers: 0
+              channelId: sub.channelId,
+              channelName: sub.name,
+              videoIds
             };
           } catch (_) {
             return null;
           }
-        }, 8);
+        }, 10);
 
-        const liveItems = searchResults.filter(Boolean);
+        const channelVideoCandidates = latestByChannel.filter(Boolean);
+        const uniqueVideoIds = Array.from(new Set(channelVideoCandidates.flatMap(c => c.videoIds)));
 
-        if (liveItems.length > 0) {
-          const ids = liveItems.map(i => i.videoId);
-          for (let i = 0; i < ids.length; i += 50) {
-            const batch = ids.slice(i, i + 50).join(',');
-            try {
-              const data = await ytApi(`videos?part=liveStreamingDetails&id=${encodeURIComponent(batch)}`, token);
-              const viewerMap = new Map((data.items || []).map(v => [v.id, Number(v.liveStreamingDetails?.concurrentViewers) || 0]));
-              liveItems.forEach(item => {
-                if (viewerMap.has(item.videoId)) item.viewers = viewerMap.get(item.videoId);
+        const liveByChannel = new Map();
+        for (let i = 0; i < uniqueVideoIds.length; i += 50) {
+          const batchIds = uniqueVideoIds.slice(i, i + 50);
+          try {
+            const data = await ytApi(`videos?part=snippet,liveStreamingDetails&id=${encodeURIComponent(batchIds.join(','))}`, token);
+            (data.items || []).forEach((video) => {
+              const snippet = video.snippet || {};
+              const live = video.liveStreamingDetails || {};
+
+              const isLive =
+                snippet.liveBroadcastContent === 'live' ||
+                (live.actualStartTime && !live.actualEndTime) ||
+                live.concurrentViewers !== undefined;
+
+              if (!isLive) return;
+
+              const channelId = snippet.channelId;
+              if (!channelId || liveByChannel.has(channelId)) return;
+
+              liveByChannel.set(channelId, {
+                name: snippet.channelTitle || 'YouTube Channel',
+                url: `https://www.youtube.com/watch?v=${video.id}`,
+                videoId: video.id,
+                platform: 'youtube',
+                isOnline: true,
+                viewers: Number(live.concurrentViewers) || 0
               });
-            } catch (_) {}
-          }
+            });
+          } catch (_) {}
         }
+
+        // Prefer channels the user is subscribed to and preserve their display names when needed.
+        const subsById = new Map(subscriptions.map(s => [s.channelId, s.name]));
+        const liveItems = Array.from(liveByChannel.entries())
+          .filter(([channelId]) => subsById.has(channelId))
+          .map(([channelId, item]) => ({ ...item, name: item.name || subsById.get(channelId) }));
 
         setCachedJson('youtubeLiveCache', { updatedAt: Date.now(), items: liveItems });
         return liveItems;
