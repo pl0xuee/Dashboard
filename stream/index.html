@@ -164,6 +164,7 @@
     const YOUTUBE_LIVE_CACHE_TTL_MS = 120000;
     const YOUTUBE_SUBS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
     const YOUTUBE_ERROR_COOLDOWN_MS = 60000;
+    const TWITCH_TAB_RESUME_MIN_HIDDEN_MS = 2500;
 
     let lastDropdownRefreshAt = 0;
     let dropdownRefreshInFlight = false;
@@ -171,6 +172,28 @@
     let youtubeSubsInFlight = null;
     let youtubeLiveInFlight = null;
     let youtubeRetryAfter = 0;
+    let lastHiddenAt = 0;
+    let activeStream = { platform: null, id: '' };
+
+    function loadTwitchEmbed(channel, options = {}) {
+      const { keepInputText = false } = options;
+      const cleanChannel = (channel || '').trim().toLowerCase();
+      if (!cleanChannel) return;
+
+      const inputElement = document.getElementById('streamUrl');
+      const player = document.getElementById('player');
+      const chat = document.getElementById('chat');
+
+      player.innerHTML = `<iframe src="https://player.twitch.tv/?channel=${encodeURIComponent(cleanChannel)}&parent=${window.location.hostname}&autoplay=true&muted=false" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+      chat.innerHTML = `<iframe src="https://www.twitch.tv/embed/${encodeURIComponent(cleanChannel)}/chat?parent=${window.location.hostname}&darkpopout"></iframe>`;
+      chat.style.display = 'block';
+
+      activeStream = { platform: 'twitch', id: cleanChannel };
+      inputElement.dataset.lastInput = cleanChannel;
+      if (!keepInputText) {
+        inputElement.value = 'You are Watching: ' + cleanChannel;
+      }
+    }
 
     function getLastTwitchFollowSyncAt() {
       const raw = Number(localStorage.getItem('twitchFollowedLastSyncedAt') || '0');
@@ -208,6 +231,7 @@
       
       if (!input) return;
       if (input.includes('youtube.com') || input.includes('youtu.be') || input.includes('@')) {
+        activeStream = { platform: 'youtube', id: '' };
         let videoId = "";
         if (input.includes('v=')) {
           videoId = input.split('v=')[1].split('&')[0];
@@ -249,11 +273,7 @@
         inputElement.value = "You are Watching: " + videoId;
       } else {
         const channel = input.includes('twitch.tv/') ? input.split('twitch.tv/').pop().split('/')[0] : input;
-        player.innerHTML = '<iframe src="https://player.twitch.tv/?channel=' + channel + '&parent=' + window.location.hostname + '&autoplay=true&muted=false" allow="autoplay; fullscreen" allowfullscreen></iframe>';
-        chat.innerHTML = '<iframe src="https://www.twitch.tv/embed/' + channel + '/chat?parent=' + window.location.hostname + '&darkpopout"></iframe>';
-        chat.style.display = 'block';
-        inputElement.dataset.lastInput = channel;
-        inputElement.value = "You are Watching: " + channel;
+        loadTwitchEmbed(channel);
       }
     };
 
@@ -837,6 +857,18 @@
 
     document.getElementById('streamUrl').addEventListener('focus', function() {
       if (this.dataset.lastInput) this.value = this.dataset.lastInput;
+    });
+
+    document.addEventListener('visibilitychange', function() {
+      if (document.visibilityState === 'hidden') {
+        lastHiddenAt = Date.now();
+        return;
+      }
+
+      if (activeStream.platform !== 'twitch' || !activeStream.id) return;
+      if (Date.now() - lastHiddenAt < TWITCH_TAB_RESUME_MIN_HIDDEN_MS) return;
+
+      loadTwitchEmbed(activeStream.id, { keepInputText: true });
     });
 
     const streamerDropdown = document.querySelector('.dropdown');
