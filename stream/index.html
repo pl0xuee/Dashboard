@@ -413,72 +413,107 @@
 
         setYouTubeScanStatus('Scanning subscribed YouTube channels...');
         let completedSuccessfully = false;
+        let clearStatusOnSuccess = true;
         try {
           const subscriptions = await getYouTubeSubscriptions();
           const subsById = new Map(subscriptions.map(s => [s.channelId, s.name]));
 
-          // Query each subscribed channel's recent activity to find current live video candidates.
-          const recentByChannel = await mapWithConcurrency(subscriptions, async (sub) => {
-            try {
-              const data = await ytApi(`activities?part=snippet,contentDetails&channelId=${encodeURIComponent(sub.channelId)}&maxResults=5`, token);
-              const videoIds = (data.items || [])
-                .map(item => item?.contentDetails?.upload?.videoId)
-                .filter(Boolean)
-                .slice(0, 3);
-
-              if (videoIds.length === 0) return null;
-              return { channelId: sub.channelId, videoIds };
-            } catch (_) {
-              return null;
-            }
-          }, 12);
-
           const candidateIds = new Set();
-          recentByChannel.filter(Boolean).forEach(entry => {
-            entry.videoIds.forEach(id => candidateIds.add(id));
-          });
+
+          // Phase 1: pull recent items from the user's home activity feed.
+          let homePageToken = '';
+          for (let i = 0; i < 6; i++) {
+            const data = await ytApi(`activities?part=snippet,contentDetails&home=true&maxResults=50${homePageToken ? `&pageToken=${encodeURIComponent(homePageToken)}` : ''}`, token);
+            (data.items || []).forEach((item) => {
+              const vid = item?.contentDetails?.upload?.videoId;
+              if (vid) candidateIds.add(vid);
+            });
+            homePageToken = data.nextPageToken || '';
+            if (!homePageToken) break;
+          }
+
+          // Phase 2 fallback: if home feed is sparse, sample channel activity directly.
+          let channelScanned = 0;
+          let channelScanErrors = 0;
+          if (candidateIds.size < 30 && subscriptions.length > 0) {
+            const channelsToScan = subscriptions.slice(0, 180);
+            setYouTubeScanStatus(`Scanning subscribed YouTube channels... (${candidateIds.size} candidates, fallback ${channelsToScan.length} channels)`);
+            const recentByChannel = await mapWithConcurrency(channelsToScan, async (sub) => {
+              try {
+                channelScanned += 1;
+                const data = await ytApi(`activities?part=snippet,contentDetails&channelId=${encodeURIComponent(sub.channelId)}&maxResults=10`, token);
+                const videoIds = (data.items || [])
+                  .map(item => item?.contentDetails?.upload?.videoId)
+                  .filter(Boolean)
+                  .slice(0, 5);
+
+                if (videoIds.length === 0) return null;
+                return { channelId: sub.channelId, videoIds };
+              } catch (_) {
+                channelScanErrors += 1;
+                return null;
+              }
+            }, 8);
+
+            recentByChannel.filter(Boolean).forEach(entry => {
+              entry.videoIds.forEach(id => candidateIds.add(id));
+            });
+
+            if (candidateIds.size === 0) {
+              clearStatusOnSuccess = false;
+              setYouTubeScanStatus(`No YouTube video candidates found (subs: ${subscriptions.length}, scanned: ${channelScanned}, errors: ${channelScanErrors}).`);
+            }
+          }
 
           const uniqueVideoIds = Array.from(candidateIds);
 
-        const liveByChannel = new Map();
-        for (let i = 0; i < uniqueVideoIds.length; i += 50) {
-          const batchIds = uniqueVideoIds.slice(i, i + 50);
-          try {
-            const data = await ytApi(`videos?part=snippet,liveStreamingDetails&id=${encodeURIComponent(batchIds.join(','))}`, token);
-            (data.items || []).forEach((video) => {
-              const snippet = video.snippet || {};
-              const live = video.liveStreamingDetails || {};
+          const liveByChannel = new Map();
+          let videoBatchErrors = 0;
+          for (let i = 0; i < uniqueVideoIds.length; i += 50) {
+            const batchIds = uniqueVideoIds.slice(i, i + 50);
+            try {
+              const data = await ytApi(`videos?part=snippet,liveStreamingDetails&id=${encodeURIComponent(batchIds.join(','))}`, token);
+              (data.items || []).forEach((video) => {
+                const snippet = video.snippet || {};
+                const live = video.liveStreamingDetails || {};
 
-              const isLive =
-                snippet.liveBroadcastContent === 'live' ||
-                (live.actualStartTime && !live.actualEndTime) ||
-                live.concurrentViewers !== undefined;
+                const isLive =
+                  snippet.liveBroadcastContent === 'live' ||
+                  (live.actualStartTime && !live.actualEndTime) ||
+                  live.concurrentViewers !== undefined;
 
-              if (!isLive) return;
+                if (!isLive) return;
 
-              const channelId = snippet.channelId;
-              if (!channelId || liveByChannel.has(channelId)) return;
+                const channelId = snippet.channelId;
+                if (!channelId || liveByChannel.has(channelId)) return;
 
-              // Keep only channels the user is subscribed to.
-              if (!subsById.has(channelId)) return;
+                // Keep only channels the user is subscribed to.
+                if (!subsById.has(channelId)) return;
 
-              liveByChannel.set(channelId, {
-                name: snippet.channelTitle || subsById.get(channelId) || 'YouTube Channel',
-                url: `https://www.youtube.com/watch?v=${video.id}`,
-                videoId: video.id,
-                platform: 'youtube',
-                isOnline: true,
-                viewers: Number(live.concurrentViewers) || 0
+                liveByChannel.set(channelId, {
+                  name: snippet.channelTitle || subsById.get(channelId) || 'YouTube Channel',
+                  url: `https://www.youtube.com/watch?v=${video.id}`,
+                  videoId: video.id,
+                  platform: 'youtube',
+                  isOnline: true,
+                  viewers: Number(live.concurrentViewers) || 0
+                });
               });
-            });
-          } catch (_) {}
-        }
+            } catch (_) {
+              videoBatchErrors += 1;
+            }
+          }
 
           const liveItems = Array.from(liveByChannel.values());
 
-        setCachedJson('youtubeLiveCache', { updatedAt: Date.now(), items: liveItems });
-        completedSuccessfully = true;
-        return liveItems;
+          if (liveItems.length === 0) {
+            clearStatusOnSuccess = false;
+            setYouTubeScanStatus(`No live YouTube streams found right now (subs: ${subscriptions.length}, candidates: ${uniqueVideoIds.length}, batch errors: ${videoBatchErrors}).`);
+          }
+
+          setCachedJson('youtubeLiveCache', { updatedAt: Date.now(), items: liveItems });
+          completedSuccessfully = true;
+          return liveItems;
         } catch (e) {
           console.error('YouTube live fetch error', e);
           youtubeRetryAfter = Date.now() + YOUTUBE_ERROR_COOLDOWN_MS;
@@ -495,7 +530,7 @@
           }
           return [];
         } finally {
-          if (completedSuccessfully) {
+          if (completedSuccessfully && clearStatusOnSuccess) {
             setYouTubeScanStatus('');
           }
         }
