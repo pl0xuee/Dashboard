@@ -233,7 +233,7 @@
         inputElement.value = "You are Watching: " + videoId;
       } else {
         const channel = input.includes('twitch.tv/') ? input.split('twitch.tv/').pop().split('/')[0] : input;
-        player.innerHTML = '<iframe src="https://player.twitch.tv/?channel=' + channel + '&parent=' + window.location.hostname + '&autoplay=true&muted=true" allow="autoplay; fullscreen" allowfullscreen></iframe>';
+        player.innerHTML = '<iframe src="https://player.twitch.tv/?channel=' + channel + '&parent=' + window.location.hostname + '&autoplay=true&muted=false" allow="autoplay; fullscreen" allowfullscreen></iframe>';
         chat.innerHTML = '<iframe src="https://www.twitch.tv/embed/' + channel + '/chat?parent=' + window.location.hostname + '&darkpopout"></iframe>';
         chat.style.display = 'block';
         inputElement.dataset.lastInput = channel;
