@@ -242,6 +242,13 @@
         const manual   = JSON.parse(localStorage.getItem('myStreamers'))   || [{name: 'hutchmf', url: 'hutchmf'}, {name: 'shroud', url: 'shroud'}];
         const followed = JSON.parse(localStorage.getItem('twitchFollowed')) || [];
 
+      function formatViewerCount(n) {
+        if (!Number.isFinite(n) || n < 0) return '0';
+        if (n >= 1000000) return `${(n / 1000000).toFixed(n >= 10000000 ? 0 : 1)}M`;
+        if (n >= 1000) return `${(n / 1000).toFixed(n >= 100000 ? 0 : 1)}K`;
+        return `${Math.round(n)}`;
+      }
+
         // Merge manual + followed, dedupe by lowercase url/login
         const seen = new Set();
         const combined = [];
@@ -304,6 +311,7 @@
         } else {
           liveOnly.forEach((item) => {
             const isManual = manual.some(m => m.url.toLowerCase() === item.url.toLowerCase());
+            const viewersText = `${formatViewerCount(item.viewers)} viewers`;
             const removeBtn = isManual
               ? `<button onclick="removeStreamer('${item.name}')" style="background:none; border:none; color:rgba(255,80,80,0.5); cursor:pointer; font-size:16px; margin-left:6px; padding:0 2px; flex-shrink:0; transition:all 0.2s;" onmouseover="this.style.color='rgba(255,80,80,1)'; this.style.transform='scale(1.2)';" onmouseout="this.style.color='rgba(255,80,80,0.5)'; this.style.transform='scale(1)';">×</button>`
               : '';
@@ -311,6 +319,7 @@
               <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; margin-bottom:4px; background:rgba(0,200,80,0.18); border:1px solid rgba(0,200,80,0.45); border-radius:8px; transition:filter 0.15s;" onmouseover="this.style.filter='brightness(1.25)'" onmouseout="this.style.filter='brightness(1)'">
                 <a href="#" onclick="loadStreamDirect('${item.url}')" style="display:flex; align-items:center; gap:8px; text-decoration:none; color:#e8ecef; flex-grow:1; min-width:0;">
                   <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:600; text-transform:capitalize; letter-spacing:0.02em;">${item.name}</span>
+                  <span style="font-size:11px; color:rgba(230,255,235,0.82); margin-left:auto; padding-left:8px; white-space:nowrap;">${viewersText}</span>
                 </a>
                 ${removeBtn}
               </div>`;
