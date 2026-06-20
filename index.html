@@ -648,45 +648,70 @@
       renderNews();
     }
     showNews('usa');
-    function fetchSentiment() {
-      const el = document.getElementById('sentiment-val');
-      
-      // Derive sentiment from market indices that are already fetched
-      const djiRow = document.querySelector('#idx-dji .change');
-      const ixicRow = document.querySelector('#idx-ixic .change');
-      const gspcRow = document.querySelector('#idx-gspc .change');
-      
-      if (!djiRow || !ixicRow || !gspcRow) {
-        el.textContent = "Loading...";
-        return;
-      }
-      
+    function deriveSentimentFromIndexes() {
+      const djiRow = document.getElementById('idx-dji-change');
+      const ixicRow = document.getElementById('idx-ixic-change');
+      const gspcRow = document.getElementById('idx-gspc-change');
+
+      if (!djiRow || !ixicRow || !gspcRow) return null;
+
       const djiChange = parseFloat(djiRow.textContent);
       const ixicChange = parseFloat(ixicRow.textContent);
       const gspcChange = parseFloat(gspcRow.textContent);
-      
+
+      if (Number.isNaN(djiChange) || Number.isNaN(ixicChange) || Number.isNaN(gspcChange)) return null;
+
       let upsCount = 0;
       if (djiChange > 0) upsCount++;
       if (ixicChange > 0) upsCount++;
       if (gspcChange > 0) upsCount++;
-      
-      let sentiment, color;
-      if (upsCount === 3) {
-        sentiment = 'Strong Greed';
-        color = '#6dff85';
-      } else if (upsCount === 2) {
-        sentiment = 'Greed';
-        color = '#6dff85';
-      } else if (upsCount === 1) {
-        sentiment = 'Mixed';
-        color = '#ffffff';
-      } else {
-        sentiment = 'Strong Fear';
-        color = '#ff6d6d';
+
+      if (upsCount === 3) return { label: 'Strong Greed', color: '#6dff85' };
+      if (upsCount === 2) return { label: 'Greed', color: '#6dff85' };
+      if (upsCount === 1) return { label: 'Mixed', color: '#ffffff' };
+      return { label: 'Strong Fear', color: '#ff6d6d' };
+    }
+
+    async function fetchSentiment() {
+      const el = document.getElementById('sentiment-val');
+      if (!el) return;
+
+      try {
+        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://production.dataviz.cnn.io/index/fearandgreed/graphdata');
+        const res = await fetch(proxyUrl, { cache: 'no-store' });
+        if (!res.ok) throw new Error('CNN sentiment fetch failed');
+
+        const data = await res.json();
+        const score = data?.fear_and_greed?.score;
+        const rating = data?.fear_and_greed?.rating;
+
+        if (typeof score === 'number' && typeof rating === 'string') {
+          const rounded = Math.round(score);
+          const label = rating.replace(/\b\w/g, c => c.toUpperCase());
+
+          let color = '#ffffff';
+          if (rounded <= 25) color = '#ff4f4f';
+          else if (rounded <= 45) color = '#ff9c4f';
+          else if (rounded < 55) color = '#ffffff';
+          else if (rounded < 75) color = '#9eff6b';
+          else color = '#6dff85';
+
+          el.textContent = `${rounded} (${label})`;
+          el.style.color = color;
+          return;
+        }
+      } catch (e) {
+        // Fall through to index-based estimate
       }
-      
-      el.textContent = sentiment;
-      el.style.color = color;
+
+      const fallback = deriveSentimentFromIndexes();
+      if (fallback) {
+        el.textContent = fallback.label;
+        el.style.color = fallback.color;
+      } else {
+        el.textContent = 'Loading...';
+        el.style.color = '';
+      }
     }
 
     function isUsMarketOpenNow() {
@@ -783,10 +808,12 @@
         updateIndexRow('idx-dji', djiQuote);
         updateIndexRow('idx-ixic', ixicQuote);
         updateIndexRow('idx-gspc', spxQuote);
+        fetchSentiment();
       } catch (e) {
         updateIndexRow('idx-dji', null);
         updateIndexRow('idx-ixic', null);
         updateIndexRow('idx-gspc', null);
+        fetchSentiment();
       }
     }
     function updateMarketStatus() {
@@ -840,7 +867,6 @@
       document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', options);
       updateMarketStatus();
     }
-    fetchSentiment();
     fetchMajorIndexes();
     setInterval(fetchMajorIndexes, 120000);
     setInterval(updateClock, 1000);
