@@ -72,9 +72,9 @@
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
-      width: max-content;
-      min-width: 180px;
-      max-width: 240px;
+      width: min(88vw, 520px);
+      min-width: min(420px, 88vw);
+      max-width: 520px;
       z-index: 20;
       padding: 6px;
       box-shadow: 0 8px 16px rgba(0,0,0,0.3);
@@ -464,33 +464,39 @@
         if (liveRows.length === 0) {
           container.innerHTML = `<div style="padding:8px 10px; font-size:12px; color:rgba(200,210,255,0.4); text-align:center;">No one is live right now</div>`;
         } else {
-          const renderSection = (title, titleColor, rows) => {
-            container.innerHTML += `<div style="padding:6px 8px 4px; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:${titleColor};">${title}</div>`;
+          const rowHtml = (item) => {
+            const isManual = item.platform === 'twitch' && manual.some(m => m.url.toLowerCase() === item.url.toLowerCase());
+            const viewersText = `(${formatViewerCount(item.viewers)})`;
+            const removeBtn = isManual
+              ? `<button onclick="removeStreamer('${item.name}')" style="background:none; border:none; color:rgba(255,80,80,0.5); cursor:pointer; font-size:16px; margin-left:6px; padding:0 2px; flex-shrink:0; transition:all 0.2s;" onmouseover="this.style.color='rgba(255,80,80,1)'; this.style.transform='scale(1.2)';" onmouseout="this.style.color='rgba(255,80,80,0.5)'; this.style.transform='scale(1)';">×</button>`
+              : '';
 
-            if (rows.length === 0) {
-              container.innerHTML += `<div style="padding:6px 10px 8px; font-size:11px; color:rgba(200,210,255,0.4);">No live channels</div>`;
-              return;
-            }
-
-            rows.forEach((item) => {
-              const isManual = item.platform === 'twitch' && manual.some(m => m.url.toLowerCase() === item.url.toLowerCase());
-              const viewersText = `(${formatViewerCount(item.viewers)})`;
-              const removeBtn = isManual
-                ? `<button onclick="removeStreamer('${item.name}')" style="background:none; border:none; color:rgba(255,80,80,0.5); cursor:pointer; font-size:16px; margin-left:6px; padding:0 2px; flex-shrink:0; transition:all 0.2s;" onmouseover="this.style.color='rgba(255,80,80,1)'; this.style.transform='scale(1.2)';" onmouseout="this.style.color='rgba(255,80,80,0.5)'; this.style.transform='scale(1)';">×</button>`
-                : '';
-              container.innerHTML += `
-                <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; margin-bottom:4px; background:rgba(0,200,80,0.18); border:1px solid rgba(0,200,80,0.45); border-radius:8px; transition:filter 0.15s;" onmouseover="this.style.filter='brightness(1.25)'" onmouseout="this.style.filter='brightness(1)'">
-                  <a href="#" onclick="loadStreamDirect('${item.url}')" style="display:flex; align-items:center; gap:8px; text-decoration:none; color:#e8ecef; flex-grow:1; min-width:0;">
-                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:600; text-transform:capitalize; letter-spacing:0.02em;">${item.name} <span style="font-size:11px; color:rgba(230,255,235,0.82);">${viewersText}</span></span>
-                  </a>
-                  ${removeBtn}
-                </div>`;
-            });
+            return `
+              <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 8px; margin-bottom:4px; background:rgba(0,200,80,0.18); border:1px solid rgba(0,200,80,0.45); border-radius:8px; transition:filter 0.15s;" onmouseover="this.style.filter='brightness(1.25)'" onmouseout="this.style.filter='brightness(1)'">
+                <a href="#" onclick="loadStreamDirect('${item.url}')" style="display:flex; align-items:center; gap:8px; text-decoration:none; color:#e8ecef; flex-grow:1; min-width:0;">
+                  <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:600; text-transform:capitalize; letter-spacing:0.02em;">${item.name} <span style="font-size:10px; color:rgba(230,255,235,0.82);">${viewersText}</span></span>
+                </a>
+                ${removeBtn}
+              </div>`;
           };
 
-          renderSection('Twitch Live', 'rgba(169,112,255,0.95)', twitchRows);
-          container.innerHTML += `<div style="border-top: 1px solid var(--border); margin: 4px 2px 2px;"></div>`;
-          renderSection('YouTube Live', 'rgba(255,106,74,0.95)', youtubeRows);
+          const sectionHtml = (title, titleColor, rows) => {
+            const body = rows.length
+              ? rows.map(rowHtml).join('')
+              : `<div style="padding:6px 8px 8px; font-size:11px; color:rgba(200,210,255,0.4);">No live channels</div>`;
+
+            return `
+              <div style="min-width:0;">
+                <div style="padding:6px 6px 4px; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:${titleColor};">${title}</div>
+                ${body}
+              </div>`;
+          };
+
+          container.innerHTML = `
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; align-items:start;">
+              ${sectionHtml('Twitch Live', 'rgba(169,112,255,0.95)', twitchRows)}
+              ${sectionHtml('YouTube Live', 'rgba(255,106,74,0.95)', youtubeRows)}
+            </div>`;
         }
 
         updateConnectButtons();
