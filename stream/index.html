@@ -448,10 +448,15 @@
         });
 
         const liveRows = Array.from(liveDedup.values());
-        liveRows.sort((a, b) => {
+        const twitchRows = liveRows.filter(r => r.platform === 'twitch');
+        const youtubeRows = liveRows.filter(r => r.platform === 'youtube');
+
+        const sortByViewers = (a, b) => {
           if (b.viewers !== a.viewers) return b.viewers - a.viewers;
           return a.name.localeCompare(b.name);
-        });
+        };
+        twitchRows.sort(sortByViewers);
+        youtubeRows.sort(sortByViewers);
 
         const container = document.getElementById('listItems');
         container.innerHTML = '';
@@ -459,24 +464,33 @@
         if (liveRows.length === 0) {
           container.innerHTML = `<div style="padding:8px 10px; font-size:12px; color:rgba(200,210,255,0.4); text-align:center;">No one is live right now</div>`;
         } else {
-          liveRows.forEach((item) => {
-            const isManual = manual.some(m => m.url.toLowerCase() === item.url.toLowerCase());
-            const viewersText = `(${formatViewerCount(item.viewers)})`;
-            const platformBadge = item.platform === 'youtube'
-              ? '<span style="font-size:10px; color:#ff6a4a; font-weight:700; letter-spacing:0.04em;">YT</span>'
-              : '<span style="font-size:10px; color:#a970ff; font-weight:700; letter-spacing:0.04em;">TW</span>';
-            const removeBtn = isManual
-              ? `<button onclick="removeStreamer('${item.name}')" style="background:none; border:none; color:rgba(255,80,80,0.5); cursor:pointer; font-size:16px; margin-left:6px; padding:0 2px; flex-shrink:0; transition:all 0.2s;" onmouseover="this.style.color='rgba(255,80,80,1)'; this.style.transform='scale(1.2)';" onmouseout="this.style.color='rgba(255,80,80,0.5)'; this.style.transform='scale(1)';">×</button>`
-              : '';
-            container.innerHTML += `
-              <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; margin-bottom:4px; background:rgba(0,200,80,0.18); border:1px solid rgba(0,200,80,0.45); border-radius:8px; transition:filter 0.15s;" onmouseover="this.style.filter='brightness(1.25)'" onmouseout="this.style.filter='brightness(1)'">
-                <a href="#" onclick="loadStreamDirect('${item.url}')" style="display:flex; align-items:center; gap:8px; text-decoration:none; color:#e8ecef; flex-grow:1; min-width:0;">
-                  ${platformBadge}
-                  <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:600; text-transform:capitalize; letter-spacing:0.02em;">${item.name} <span style="font-size:11px; color:rgba(230,255,235,0.82);">${viewersText}</span></span>
-                </a>
-                ${removeBtn}
-              </div>`;
-          });
+          const renderSection = (title, titleColor, rows) => {
+            container.innerHTML += `<div style="padding:6px 8px 4px; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:${titleColor};">${title}</div>`;
+
+            if (rows.length === 0) {
+              container.innerHTML += `<div style="padding:6px 10px 8px; font-size:11px; color:rgba(200,210,255,0.4);">No live channels</div>`;
+              return;
+            }
+
+            rows.forEach((item) => {
+              const isManual = item.platform === 'twitch' && manual.some(m => m.url.toLowerCase() === item.url.toLowerCase());
+              const viewersText = `(${formatViewerCount(item.viewers)})`;
+              const removeBtn = isManual
+                ? `<button onclick="removeStreamer('${item.name}')" style="background:none; border:none; color:rgba(255,80,80,0.5); cursor:pointer; font-size:16px; margin-left:6px; padding:0 2px; flex-shrink:0; transition:all 0.2s;" onmouseover="this.style.color='rgba(255,80,80,1)'; this.style.transform='scale(1.2)';" onmouseout="this.style.color='rgba(255,80,80,0.5)'; this.style.transform='scale(1)';">×</button>`
+                : '';
+              container.innerHTML += `
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 10px; margin-bottom:4px; background:rgba(0,200,80,0.18); border:1px solid rgba(0,200,80,0.45); border-radius:8px; transition:filter 0.15s;" onmouseover="this.style.filter='brightness(1.25)'" onmouseout="this.style.filter='brightness(1)'">
+                  <a href="#" onclick="loadStreamDirect('${item.url}')" style="display:flex; align-items:center; gap:8px; text-decoration:none; color:#e8ecef; flex-grow:1; min-width:0;">
+                    <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:600; text-transform:capitalize; letter-spacing:0.02em;">${item.name} <span style="font-size:11px; color:rgba(230,255,235,0.82);">${viewersText}</span></span>
+                  </a>
+                  ${removeBtn}
+                </div>`;
+            });
+          };
+
+          renderSection('Twitch Live', 'rgba(169,112,255,0.95)', twitchRows);
+          container.innerHTML += `<div style="border-top: 1px solid var(--border); margin: 4px 2px 2px;"></div>`;
+          renderSection('YouTube Live', 'rgba(255,106,74,0.95)', youtubeRows);
         }
 
         updateConnectButtons();
