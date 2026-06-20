@@ -21,6 +21,9 @@
       border-radius: 24px;
       border: 1px solid var(--border);
     }
+    .news-card {
+      padding: 12px 15px; /* Reduced vertical and horizontal padding */
+    }
   </style>
 </head>
 <body class="home-page">
@@ -45,7 +48,7 @@
           <div class="home-container" style="display: flex; gap: 20px; align-items: stretch; justify-content: center; margin-bottom: 40px; width: 100%;">
 
             <!-- Left Side: Links -->
-            <section style="flex: 1; display: flex; flex-direction: column; gap: 20px; max-width: 350px;">
+            <section style="flex: 1; display: flex; flex-direction: column; gap: 20px; max-width: 300px;">
               <section class="card">
             <h2>Entertainment</h2>
             <ul class="quick-links-list">
@@ -91,9 +94,10 @@
               </section>
 
             <!-- Middle: News -->
-            <section style="max-width: 800px; flex: 2; display: flex; flex-direction: column;">
-              <div class="card" style="flex: 1; min-height: 400px;">
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <section style="max-width: 700px; flex: 2; display: flex; flex-direction: column;">
+              <div class="card news-card" style="flex: 1; min-height: 400px;">
+                <h2 style="text-align: center; margin-bottom: 15px; margin-top: 0;">📰 Live News Feed</h2>
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; justify-content: center;">
                   <button onclick="showNews('usa', this)" id="btn-usa" class="home-button">USA</button>
                   <button onclick="showNews('world', this)" id="btn-world" class="home-button">World</button>
                   <button onclick="showNews('finance', this)" id="btn-finance" class="home-button">Finance</button>
@@ -106,7 +110,7 @@
             </section>
 
             <!-- Right Side: Stats -->
-            <section style="flex: 1; display: flex; flex-direction: column; gap: 20px; max-width: 350px;">
+            <section style="flex: 1; display: flex; flex-direction: column; gap: 20px; max-width: 300px;">
               <section class="card">
                 <h2>Market Sentiment</h2>
                 <p id="sentiment-val" style="font-size: 1.8rem; margin: 10px 0; font-weight: 800; color: #fff;">Loading...</p>
@@ -153,22 +157,37 @@
         renderNews();
       } catch (e) { container.innerHTML = "Could not load news."; }
     }
+
     function renderNews() {
       const container = document.getElementById('news-container');
       const toggleBtn = document.getElementById('toggle-news');
-      const limit = showAll ? allNewsItems.length : 20;
+      const limit = showAll ? allNewsItems.length : 8;
 
       let html = '<ul style="padding-left: 0; margin: 0; list-style: none;">';
       allNewsItems.slice(0, limit).forEach(item => {
-        html += `<li style="margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border);">
-                   <a href="${item.link}" target="_blank" style="color: #e8ecef; text-decoration: none; font-size: 0.95rem; display: block; transition: color 0.2s;">${item.title}</a>
+        // Date handling
+        const date = item.pubDate ? new Date(item.pubDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+
+        // Extract the source from the title if it contains " - "
+        let displayTitle = item.title;
+        let displaySource = item.author || 'Google News';
+
+        if (displayTitle.includes(' - ')) {
+            const parts = displayTitle.split(' - ');
+            displaySource = parts.pop();
+            displayTitle = parts.join(' - ');
+        }
+
+        html += `<li style="margin-bottom: 18px; padding-bottom: 12px; border-bottom: 1px solid var(--border);">
+                   <a href="${item.link}" target="_blank" style="color: #e8ecef; text-decoration: none; font-size: 1.05rem; line-height: 1.5; font-weight: 500; display: block; transition: color 0.2s;">${displayTitle}</a>
+                   <div style="font-size: 0.75rem; color: #8892b0; margin-top: 6px; font-family: monospace; letter-spacing: 0.02em;">${displaySource} • ${date}</div>
                  </li>`;
       });
       html += '</ul>';
       container.innerHTML = html;
 
       // Toggle button visibility based on whether more items are available
-      if (allNewsItems.length > 20) {
+      if (allNewsItems.length > 8) {
           toggleBtn.style.display = 'block';
       toggleBtn.textContent = showAll ? 'Show Less' : 'Show More';
         } else {
@@ -199,18 +218,38 @@
     }
     function updateMarketStatus() {
       const now = new Date();
-      const day = now.getDay();
-      const marketStatus = document.getElementById('market-status');
-      if (day === 0 || day === 6) { marketStatus.textContent = "Market Closed"; return; }
+      // Adjust to EST for accurate market time
       const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+      const day = estTime.getDay(); // 0 is Sunday, 6 is Saturday
+      const marketStatus = document.getElementById('market-status');
+
+      // Check if weekend
+      if (day === 0 || day === 6) {
+          marketStatus.textContent = "Market Closed (Weekend)";
+          return;
+      }
+
+      // TODO: Add holiday logic here if needed (e.g., specific dates)
+
       const totalMinutes = estTime.getHours() * 60 + estTime.getMinutes();
       const openTime = 9 * 60 + 30, closeTime = 16 * 60;
+
       if (totalMinutes >= openTime && totalMinutes < closeTime) {
           const timeLeft = closeTime - totalMinutes;
           marketStatus.textContent = 'Market closes in ' + Math.floor(timeLeft/60) + 'h ' + (timeLeft%60) + 'm';
       } else {
-          const timeUntilOpen = totalMinutes < openTime ? openTime - totalMinutes : (24*60 - totalMinutes) + openTime;
-          marketStatus.textContent = 'Market opens in ' + Math.floor(timeUntilOpen/60) + 'h ' + (timeUntilOpen%60) + 'm';
+          // If before 9:30 AM, calculate time until open today
+          if (totalMinutes < openTime) {
+              const timeUntilOpen = openTime - totalMinutes;
+              marketStatus.textContent = 'Market opens in ' + Math.floor(timeUntilOpen/60) + 'h ' + (timeUntilOpen%60) + 'm';
+          } else {
+              // After 4 PM, calculate time until open tomorrow (or Monday)
+              let daysUntilOpen = 1;
+              if (day === 5) daysUntilOpen = 3; // If Friday, open Monday
+
+              const minutesUntilOpen = ((24 * 60 - totalMinutes) + openTime) + ((daysUntilOpen - 1) * 24 * 60);
+              marketStatus.textContent = 'Market opens in ' + Math.floor(minutesUntilOpen / 60) + 'h ' + (minutesUntilOpen % 60) + 'm';
+          }
       }
     }
     function updateClock() {
@@ -254,7 +293,16 @@
             55: "Heavy Drizzle", 61: "Light Rain", 63: "Rain", 65: "Heavy Rain",
             71: "Light Snow", 73: "Snow", 75: "Heavy Snow", 95: "Thunderstorm"
           };
+
+          const icons = {
+            0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
+            45: "🌫️", 48: "🌫️", 51: "🌦️", 53: "🌦️",
+            55: "🌧️", 61: "🌧️", 63: "🌧️", 65: "⛈️",
+            71: "🌨️", 73: "🌨️", 75: "❄️", 95: "⚡"
+          };
+
           const condition = conditions[data.current.weather_code] || "Unknown";
+          const icon = icons[data.current.weather_code] || "🌡️";
 
           // Generate a simple weekly summary
           const dailyCodes = data.daily.weather_code;
@@ -273,7 +321,7 @@
              weekHTML += `<div style="text-align: center;"><strong>${days[dayIndex]}</strong>: ${condition} (${max}°/${min}°)</div>`;
           }
 
-          document.querySelector('#weather p').textContent = `${temp}°F`;
+          document.querySelector('#weather p').textContent = `${icon} ${temp}°F`;
           descEl.textContent = condition;
           rangeEl.textContent = `H: ${max}° L: ${min}°`;
           summaryEl.innerHTML = weekHTML;
