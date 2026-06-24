@@ -745,6 +745,8 @@
 
     const TWELVE_DATA_API_KEY = 'e113279daa094cf29e24802ff56566e2';
     const ALPHA_VANTAGE_API_KEY = 'JUIUIHXXSHB4IAJW';
+    const TWELVE_DATA_BACKOFF_KEY = 'twelveDataBackoffUntil';
+    const TWELVE_DATA_BACKOFF_MS = 12 * 60 * 60 * 1000;
 
     function isQuoteLive(quote) {
       if (!quote || quote.is_market_open === undefined || quote.is_market_open === null) {
@@ -818,6 +820,14 @@
         isUsableQuote(cache.ixic) ||
         isUsableQuote(cache.spx)
       );
+      const getTwelveDataBackoffUntil = () => Number(localStorage.getItem(TWELVE_DATA_BACKOFF_KEY) || '0');
+      const isTwelveDataBackedOff = () => getTwelveDataBackoffUntil() > Date.now();
+      const markTwelveDataBackoff = () => {
+        localStorage.setItem(TWELVE_DATA_BACKOFF_KEY, String(Date.now() + TWELVE_DATA_BACKOFF_MS));
+      };
+      const clearTwelveDataBackoff = () => {
+        localStorage.removeItem(TWELVE_DATA_BACKOFF_KEY);
+      };
 
       // Determine appropriate TTL based on market hours
       const cacheTTL = isUsMarketOpenNow() ? INDEX_CACHE_TTL_LIVE : INDEX_CACHE_TTL_CLOSED;
@@ -848,6 +858,10 @@
         if (!res.ok) throw new Error(`Alpha Vantage ${symbol} ${res.status}`);
 
         const data = await res.json();
+        if (data?.Information || data?.Note || data?.['Error Message']) {
+          throw new Error(`Alpha Vantage ${symbol} unavailable`);
+        }
+
         const quote = data?.['Global Quote'];
         if (!quote || Object.keys(quote).length === 0) {
           throw new Error(`Alpha Vantage ${symbol} missing quote`);
@@ -869,34 +883,76 @@
         };
       }
 
+      // --- Helper: fetch a single ETF proxy quote from Yahoo Finance via r.jina.ai ---
+      async function fetchJinaYahooQuote(symbol) {
+        const url = `https://r.jina.ai/http://https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=2d`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Jina Yahoo ${symbol} ${res.status}`);
+
+        const text = await res.text();
+        const jsonStart = text.indexOf('{');
+        const jsonEnd = text.lastIndexOf('}');
+        if (jsonStart === -1 || jsonEnd === -1 || jsonEnd <= jsonStart) {
+          throw new Error(`Jina Yahoo ${symbol} missing JSON`);
+        }
+
+        const data = JSON.parse(text.slice(jsonStart, jsonEnd + 1));
+        const meta = data?.chart?.result?.[0]?.meta;
+        if (!meta) throw new Error(`Jina Yahoo ${symbol} missing meta`);
+
+        const price = Number(meta.regularMarketPrice);
+        const prevClose = Number(meta.chartPreviousClose ?? meta.previousClose ?? meta.regularMarketPreviousClose);
+        if (Number.isNaN(price) || Number.isNaN(prevClose) || prevClose === 0) {
+          throw new Error(`Jina Yahoo ${symbol} invalid numbers`);
+        }
+
+        const change = price - prevClose;
+        const pct = (change / prevClose) * 100;
+        return {
+          close: price,
+          change,
+          percent_change: pct,
+          is_market_open: isUsMarketOpenNow()
+        };
+      }
+
       // --- Tier 1: Twelve Data ---
       let djiQuote = null, ixicQuote = null, spxQuote = null;
       let twelveDataOk = false;
-      try {
-        const requestedRes = await fetch(`https://api.twelvedata.com/quote?symbol=.DJI,.SPX,.IXIC&apikey=${TWELVE_DATA_API_KEY}`);
-        if (requestedRes.status === 429) throw new Error('Twelve Data rate limited');
-        const requestedData = await requestedRes.json();
+      if (!isTwelveDataBackedOff()) {
+        try {
+          const requestedRes = await fetch(`https://api.twelvedata.com/quote?symbol=.DJI,.SPX,.IXIC&apikey=${TWELVE_DATA_API_KEY}`);
+          if (requestedRes.status === 429) {
+            markTwelveDataBackoff();
+            throw new Error('Twelve Data rate limited');
+          }
+          const requestedData = await requestedRes.json();
 
-        djiQuote = requestedData['.DJI'] || null;
-        ixicQuote = requestedData['.IXIC'] || null;
-        spxQuote = requestedData['.SPX'] || null;
+          djiQuote = requestedData['.DJI'] || null;
+          ixicQuote = requestedData['.IXIC'] || null;
+          spxQuote = requestedData['.SPX'] || null;
 
-        // Twelve Data sometimes rejects dotted index symbols — fall back to ETF proxies
-        if (!isUsableQuote(djiQuote) || !isUsableQuote(ixicQuote) || !isUsableQuote(spxQuote)) {
-          const fallbackRes = await fetch(`https://api.twelvedata.com/quote?symbol=DIA,QQQ,SPY&apikey=${TWELVE_DATA_API_KEY}`);
-          if (fallbackRes.status === 429) throw new Error('Twelve Data rate limited');
-          const fallbackData = await fallbackRes.json();
-          if (!isUsableQuote(djiQuote)) djiQuote = fallbackData.DIA || null;
-          if (!isUsableQuote(ixicQuote)) ixicQuote = fallbackData.QQQ || null;
-          if (!isUsableQuote(spxQuote)) spxQuote = fallbackData.SPY || null;
-        }
+          // Twelve Data sometimes rejects dotted index symbols — fall back to ETF proxies
+          if (!isUsableQuote(djiQuote) || !isUsableQuote(ixicQuote) || !isUsableQuote(spxQuote)) {
+            const fallbackRes = await fetch(`https://api.twelvedata.com/quote?symbol=DIA,QQQ,SPY&apikey=${TWELVE_DATA_API_KEY}`);
+            if (fallbackRes.status === 429) {
+              markTwelveDataBackoff();
+              throw new Error('Twelve Data rate limited');
+            }
+            const fallbackData = await fallbackRes.json();
+            if (!isUsableQuote(djiQuote)) djiQuote = fallbackData.DIA || null;
+            if (!isUsableQuote(ixicQuote)) ixicQuote = fallbackData.QQQ || null;
+            if (!isUsableQuote(spxQuote)) spxQuote = fallbackData.SPY || null;
+          }
 
-        if (isUsableQuote(djiQuote) && isUsableQuote(ixicQuote) && isUsableQuote(spxQuote)) {
-          twelveDataOk = true;
-        }
-      } catch (_) { /* fall through to Alpha Vantage */ }
+          if (isUsableQuote(djiQuote) && isUsableQuote(ixicQuote) && isUsableQuote(spxQuote)) {
+            twelveDataOk = true;
+            clearTwelveDataBackoff();
+          }
+        } catch (_) { /* fall through to Alpha Vantage */ }
+      }
 
-      // --- Tier 2: Alpha Vantage ETF proxies (via CORS proxy) ---
+      // --- Tier 2: Alpha Vantage ETF proxies ---
       if (!twelveDataOk) {
         try {
           const [aDji, aIxic, aSpx] = await Promise.all([
@@ -907,7 +963,21 @@
           if (!isUsableQuote(djiQuote)) djiQuote = aDji;
           if (!isUsableQuote(ixicQuote)) ixicQuote = aIxic;
           if (!isUsableQuote(spxQuote)) spxQuote = aSpx;
-        } catch (_) { /* both sources failed */ }
+        } catch (_) { /* fall through to Yahoo via r.jina.ai */ }
+      }
+
+      // --- Tier 3: Yahoo Finance ETF proxies via r.jina.ai ---
+      if (!isUsableQuote(djiQuote) || !isUsableQuote(ixicQuote) || !isUsableQuote(spxQuote)) {
+        try {
+          const [yDji, yIxic, ySpx] = await Promise.all([
+            fetchJinaYahooQuote('DIA'),
+            fetchJinaYahooQuote('QQQ'),
+            fetchJinaYahooQuote('SPY')
+          ]);
+          if (!isUsableQuote(djiQuote)) djiQuote = yDji;
+          if (!isUsableQuote(ixicQuote)) ixicQuote = yIxic;
+          if (!isUsableQuote(spxQuote)) spxQuote = ySpx;
+        } catch (_) { /* all sources failed */ }
       }
 
       if (isUsableQuote(djiQuote) || isUsableQuote(ixicQuote) || isUsableQuote(spxQuote)) {
