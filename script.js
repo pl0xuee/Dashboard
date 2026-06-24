@@ -435,3 +435,46 @@ function initializeTradingViewPage() {
 
 document.addEventListener('DOMContentLoaded', initializeTradingViewPage);
 
+function registerAppServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  if (!window.isSecureContext) return;
+
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch((error) => {
+      console.warn('Service worker registration failed:', error);
+    });
+  });
+}
+
+function isStandaloneMode() {
+  return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+}
+
+function enableStandaloneSameWindowLinks() {
+  if (!isStandaloneMode()) return;
+
+  document.addEventListener('click', (event) => {
+    const link = event.target.closest('a[href]');
+    if (!link) return;
+    if (link.target !== '_blank') return;
+
+    const href = link.getAttribute('href');
+    if (!href || href.startsWith('#')) return;
+
+    let url;
+    try {
+      url = new URL(href, window.location.href);
+    } catch (_) {
+      return;
+    }
+
+    if (!/^https?:$/i.test(url.protocol)) return;
+
+    event.preventDefault();
+    window.location.assign(url.href);
+  });
+}
+
+registerAppServiceWorker();
+enableStandaloneSameWindowLinks();
+
