@@ -351,6 +351,12 @@
       margin: 0;
       color: var(--text-muted);
     }
+    .weather-city {
+      font-size: 0.8rem;
+      margin: 4px 0 0 0;
+      color: #9fb0cc;
+      letter-spacing: 0.01em;
+    }
     .weather-summary {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -544,6 +550,7 @@
                   <p id="weather-temp" class="weather-temp">--°F</p>
                   <p id="weather-range" class="weather-range">H:--° L:--°</p>
                   <p id="weather-desc" class="weather-desc">Loading...</p>
+                  <p id="weather-city" class="weather-city">Location: --</p>
                   <div id="weather-summary" class="weather-summary">
                     <!-- Weekly items will be injected here -->
                   </div>
@@ -864,14 +871,39 @@
       const descEl = document.getElementById('weather-desc');
       const rangeEl = document.getElementById('weather-range');
       const summaryEl = document.getElementById('weather-summary');
+      const cityEl = document.getElementById('weather-city');
+
+      async function fetchLocationLabel(latitude, longitude) {
+        try {
+          const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+          const geo = await geoRes.json();
+          const city = geo.city || geo.locality || geo.principalSubdivision || '';
+          const region = geo.principalSubdivisionCode || geo.principalSubdivision || '';
+
+          if (city && region) return `${city}, ${region}`;
+          if (city) return city;
+          if (region) return region;
+        } catch (e) {
+          // Ignore location lookup errors and fall back below.
+        }
+        return 'Unknown location';
+      }
 
       if (!navigator.geolocation) {
         descEl.textContent = "Geoloc not supported";
+        if (cityEl) cityEl.textContent = 'Location: Unavailable';
         return;
       }
 
       navigator.geolocation.getCurrentPosition(async (position) => {
         const { latitude, longitude } = position.coords;
+        if (cityEl) {
+          cityEl.textContent = 'Location: Detecting...';
+          fetchLocationLabel(latitude, longitude).then((label) => {
+            cityEl.textContent = `Location: ${label}`;
+          });
+        }
+
         try {
           const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&timezone=auto`);
         const data = await res.json();
@@ -927,6 +959,7 @@
     }
       }, () => {
         descEl.textContent = "Location access denied";
+        if (cityEl) cityEl.textContent = 'Location: Permission denied';
       });
     }
     fetchWeather();
