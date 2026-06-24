@@ -7,6 +7,50 @@ const tvTickerInputs = [
 // Removed unused statusText const
 const defaultTvTickers = ['GOOGL', 'SPCX', 'SPY', 'BTCUSD'];
 const TWELVE_DATA_API_KEY = 'e113279daa094cf29e24802ff56566e2';
+const PACIFIC_TIME_ZONE = 'America/Los_Angeles';
+const CHART_WINDOW_SECONDS = 24 * 60 * 60;
+
+const pacificAxisFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: PACIFIC_TIME_ZONE,
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true
+});
+
+const pacificCrosshairFormatter = new Intl.DateTimeFormat('en-US', {
+  timeZone: PACIFIC_TIME_ZONE,
+  hour: 'numeric',
+  minute: '2-digit',
+  second: '2-digit',
+  timeZoneName: 'short',
+  hour12: true
+});
+
+function chartTimeToUnixSeconds(timeValue) {
+  if (typeof timeValue === 'number') {
+    return timeValue;
+  }
+
+  if (timeValue && typeof timeValue === 'object') {
+    const y = Number(timeValue.year);
+    const m = Number(timeValue.month);
+    const d = Number(timeValue.day);
+    if (Number.isFinite(y) && Number.isFinite(m) && Number.isFinite(d)) {
+      return Math.floor(Date.UTC(y, m - 1, d) / 1000);
+    }
+  }
+
+  return null;
+}
+
+function formatPacificChartTime(timeValue, formatter) {
+  const unixSeconds = chartTimeToUnixSeconds(timeValue);
+  if (!Number.isFinite(unixSeconds)) {
+    return '';
+  }
+  return formatter.format(new Date(unixSeconds * 1000));
+}
+
 function getYouTubeEmbedUrl(videoId) {
   if (!videoId) return null;
 
@@ -179,7 +223,17 @@ function createTradingViewWidget(index, symbol) {
         layout: { background: { type: 'solid', color: '#081018' }, textColor: '#DDD' },
         grid: { vertLines: { color: '#1f2937' }, horzLines: { color: '#1f2937' } },
         crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-        timeScale: { timeVisible: true, secondsVisible: false, fixLeftEdge: true, fixRightEdge: false, rightOffset: 10 },
+        localization: {
+          timeFormatter: (time) => formatPacificChartTime(time, pacificCrosshairFormatter)
+        },
+        timeScale: {
+          timeVisible: true,
+          secondsVisible: false,
+          fixLeftEdge: true,
+          fixRightEdge: false,
+          rightOffset: 10,
+          tickMarkFormatter: (time) => formatPacificChartTime(time, pacificAxisFormatter)
+        },
     });
 
     const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
@@ -207,7 +261,7 @@ function createTradingViewWidget(index, symbol) {
 
 async function loadChartData(ticker, candleSeries, volumeSeries, chart, index) {
     try {
-        const response = await fetch(`https://api.twelvedata.com/time_series?symbol=${ticker}&interval=1min&outputsize=100&apikey=${TWELVE_DATA_API_KEY}`);
+    const response = await fetch(`https://api.twelvedata.com/time_series?symbol=${ticker}&interval=1min&outputsize=1500&prepost=true&timezone=${encodeURIComponent(PACIFIC_TIME_ZONE)}&apikey=${TWELVE_DATA_API_KEY}`);
             const json = await response.json();
 
         if (json.values && json.values.length > 0) {
@@ -227,7 +281,16 @@ async function loadChartData(ticker, candleSeries, volumeSeries, chart, index) {
 
             candleSeries.setData(formattedData);
             volumeSeries.setData(volumeData);
-            chart.timeScale().fitContent();
+            const firstBar = formattedData[0];
+            const lastBar = formattedData[formattedData.length - 1];
+            if (firstBar && lastBar) {
+              chart.timeScale().setVisibleRange({
+                from: Math.max(firstBar.time, lastBar.time - CHART_WINDOW_SECONDS),
+                to: lastBar.time
+              });
+            } else {
+              chart.timeScale().fitContent();
+            }
             window[`lastCandle${index}`] = formattedData[formattedData.length - 1];
         } else {
             throw new Error("No data available");
