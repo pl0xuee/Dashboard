@@ -661,13 +661,38 @@
       renderNews();
     }
     showNews('usa');
+    const SENTIMENT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+    function applysentiment(el, valueText, color) {
+      el.textContent = valueText;
+      el.style.color = color;
+    }
+
     async function fetchSentiment() {
       const el = document.getElementById('sentiment-val');
       if (!el) return;
 
+      // Show cached value instantly if available (stale-while-revalidate)
+      let hadCache = false;
+      try {
+        const cached = JSON.parse(localStorage.getItem('cnnSentimentCache') || 'null');
+        if (cached && cached.valueText) {
+          const age = Date.now() - (cached.updatedAt || 0);
+          // If cache is fresh enough, show it and skip the network call entirely
+          if (age < SENTIMENT_CACHE_TTL) {
+            applysentiment(el, cached.valueText, cached.color || '#ffffff');
+            return;
+          }
+          // Stale cache: show it immediately, then refresh in background
+          applysentiment(el, `${cached.valueText}`, cached.color || '#ffffff');
+          hadCache = true;
+        }
+      } catch (_) { /* ignore broken cache */ }
+
+      // Background (or foreground if no cache) network fetch
       try {
         const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://production.dataviz.cnn.io/index/fearandgreed/graphdata');
-        const res = await fetch(proxyUrl, { cache: 'no-store' });
+        const res = await fetch(proxyUrl);
         if (!res.ok) throw new Error('CNN sentiment fetch failed');
 
         const data = await res.json();
@@ -686,8 +711,7 @@
           else color = '#6dff85';
 
           const valueText = `${rounded} (${label})`;
-          el.textContent = valueText;
-          el.style.color = color;
+          applysentiment(el, valueText, color);
 
           localStorage.setItem('cnnSentimentCache', JSON.stringify({
             valueText,
@@ -697,22 +721,14 @@
           return;
         }
       } catch (e) {
-        // Fall through to cached CNN value
+        // Network failed — if we already showed stale cache, leave it; otherwise show unavailable
+        if (hadCache) return;
       }
 
-      try {
-        const cached = JSON.parse(localStorage.getItem('cnnSentimentCache') || 'null');
-        if (cached && cached.valueText) {
-          el.textContent = `${cached.valueText} (Cached)`;
-          el.style.color = cached.color || '#ffffff';
-          return;
-        }
-      } catch (_) {
-        // ignore broken cache and show unavailable
+      if (!hadCache) {
+        el.textContent = 'Unavailable';
+        el.style.color = 'rgba(255,255,255,0.65)';
       }
-
-      el.textContent = 'Unavailable';
-      el.style.color = 'rgba(255,255,255,0.65)';
     }
 
     function isUsMarketOpenNow() {
@@ -784,10 +800,40 @@
       stateEl.className = `market-index-state ${quoteIsLive ? 'live' : 'last'}`;
     }
 
-    async function fetchMajorIndexes() {
-      try {
-        const isUsableQuote = (quote) => quote && quote.status !== 'error' && quote.close !== undefined;
+    // During market hours refresh every 5 min; outside hours every 60 min (prices don't change)
+    const INDEX_CACHE_TTL_LIVE = 5 * 60 * 1000;
+    const INDEX_CACHE_TTL_CLOSED = 60 * 60 * 1000;
 
+    function applyIndexCache(cache) {
+      updateIndexRow('idx-dji', cache.dji);
+      updateIndexRow('idx-ixic', cache.ixic);
+      updateIndexRow('idx-gspc', cache.spx);
+    }
+
+    async function fetchMajorIndexes() {
+      const isUsableQuote = (quote) => quote && quote.status !== 'error' && quote.close !== undefined;
+
+      // Determine appropriate TTL based on market hours
+      const cacheTTL = isUsMarketOpenNow() ? INDEX_CACHE_TTL_LIVE : INDEX_CACHE_TTL_CLOSED;
+
+      // Show cached data immediately if fresh enough, skipping the network entirely
+      let hadCache = false;
+      try {
+        const cached = JSON.parse(localStorage.getItem('majorIndexCache') || 'null');
+        if (cached && cached.updatedAt) {
+          const age = Date.now() - cached.updatedAt;
+          if (age < cacheTTL) {
+            applyIndexCache(cached);
+            fetchSentiment();
+            return;
+          }
+          // Stale — show immediately while refreshing in background
+          applyIndexCache(cached);
+          hadCache = true;
+        }
+      } catch (_) { /* ignore broken cache */ }
+
+      try {
         // Requested symbols first: .DJI (Dow), .SPX (Index), .IXIC (Nasdaq)
         const requestedRes = await fetch(`https://api.twelvedata.com/quote?symbol=.DJI,.SPX,.IXIC&apikey=${TWELVE_DATA_API_KEY}`);
         const requestedData = await requestedRes.json();
@@ -809,13 +855,22 @@
         updateIndexRow('idx-dji', djiQuote);
         updateIndexRow('idx-ixic', ixicQuote);
         updateIndexRow('idx-gspc', spxQuote);
-        fetchSentiment();
+
+        localStorage.setItem('majorIndexCache', JSON.stringify({
+          dji: djiQuote,
+          ixic: ixicQuote,
+          spx: spxQuote,
+          updatedAt: Date.now()
+        }));
       } catch (e) {
-        updateIndexRow('idx-dji', null);
-        updateIndexRow('idx-ixic', null);
-        updateIndexRow('idx-gspc', null);
-        fetchSentiment();
+        if (!hadCache) {
+          updateIndexRow('idx-dji', null);
+          updateIndexRow('idx-ixic', null);
+          updateIndexRow('idx-gspc', null);
+        }
       }
+
+      fetchSentiment();
     }
     function updateMarketStatus() {
       const now = new Date();
