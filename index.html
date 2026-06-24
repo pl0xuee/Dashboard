@@ -744,6 +744,7 @@
     }
 
     const TWELVE_DATA_API_KEY = 'e113279daa094cf29e24802ff56566e2';
+    const ALPHA_VANTAGE_API_KEY = 'JUIUIHXXSHB4IAJW';
 
     function isQuoteLive(quote) {
       if (!quote || quote.is_market_open === undefined || quote.is_market_open === null) {
@@ -833,25 +834,76 @@
         }
       } catch (_) { /* ignore broken cache */ }
 
+      // --- Helper: fetch a single ETF proxy quote from Alpha Vantage ---
+      async function fetchAlphaVantageQuote(symbol) {
+        const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(symbol)}&apikey=${ALPHA_VANTAGE_API_KEY}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`Alpha Vantage ${symbol} ${res.status}`);
+
+        const data = await res.json();
+        const quote = data?.['Global Quote'];
+        if (!quote || Object.keys(quote).length === 0) {
+          throw new Error(`Alpha Vantage ${symbol} missing quote`);
+        }
+
+        const price = parseFloat(quote['05. price']);
+        const change = parseFloat(quote['09. change']);
+        const pctText = quote['10. change percent'] || '';
+        const pct = parseFloat(pctText.replace('%', ''));
+        if (Number.isNaN(price) || Number.isNaN(change) || Number.isNaN(pct)) {
+          throw new Error(`Alpha Vantage ${symbol} invalid numbers`);
+        }
+
+        return {
+          close: price,
+          change,
+          percent_change: pct,
+          is_market_open: isUsMarketOpenNow()
+        };
+      }
+
+      // --- Tier 1: Twelve Data ---
+      let djiQuote = null, ixicQuote = null, spxQuote = null;
+      let twelveDataOk = false;
       try {
-        // Requested symbols first: .DJI (Dow), .SPX (Index), .IXIC (Nasdaq)
         const requestedRes = await fetch(`https://api.twelvedata.com/quote?symbol=.DJI,.SPX,.IXIC&apikey=${TWELVE_DATA_API_KEY}`);
+        if (requestedRes.status === 429) throw new Error('Twelve Data rate limited');
         const requestedData = await requestedRes.json();
 
-        let djiQuote = requestedData['.DJI'] || null;
-        let ixicQuote = requestedData['.IXIC'] || null;
-        let spxQuote = requestedData['.SPX'] || null;
+        djiQuote = requestedData['.DJI'] || null;
+        ixicQuote = requestedData['.IXIC'] || null;
+        spxQuote = requestedData['.SPX'] || null;
 
-        // Twelve Data currently rejects these dotted index symbols, so fall back to liquid ETF proxies.
+        // Twelve Data sometimes rejects dotted index symbols — fall back to ETF proxies
         if (!isUsableQuote(djiQuote) || !isUsableQuote(ixicQuote) || !isUsableQuote(spxQuote)) {
           const fallbackRes = await fetch(`https://api.twelvedata.com/quote?symbol=DIA,QQQ,SPY&apikey=${TWELVE_DATA_API_KEY}`);
+          if (fallbackRes.status === 429) throw new Error('Twelve Data rate limited');
           const fallbackData = await fallbackRes.json();
-
           if (!isUsableQuote(djiQuote)) djiQuote = fallbackData.DIA || null;
           if (!isUsableQuote(ixicQuote)) ixicQuote = fallbackData.QQQ || null;
           if (!isUsableQuote(spxQuote)) spxQuote = fallbackData.SPY || null;
         }
 
+        if (isUsableQuote(djiQuote) && isUsableQuote(ixicQuote) && isUsableQuote(spxQuote)) {
+          twelveDataOk = true;
+        }
+      } catch (_) { /* fall through to Alpha Vantage */ }
+
+      // --- Tier 2: Alpha Vantage ETF proxies (via CORS proxy) ---
+      if (!twelveDataOk) {
+        try {
+          const [aDji, aIxic, aSpx] = await Promise.all([
+            fetchAlphaVantageQuote('DIA'),
+            fetchAlphaVantageQuote('QQQ'),
+            fetchAlphaVantageQuote('SPY')
+          ]);
+          if (!isUsableQuote(djiQuote)) djiQuote = aDji;
+          if (!isUsableQuote(ixicQuote)) ixicQuote = aIxic;
+          if (!isUsableQuote(spxQuote)) spxQuote = aSpx;
+        } catch (_) { /* both sources failed */ }
+      }
+
+      if (isUsableQuote(djiQuote) || isUsableQuote(ixicQuote) || isUsableQuote(spxQuote)) {
         updateIndexRow('idx-dji', djiQuote);
         updateIndexRow('idx-ixic', ixicQuote);
         updateIndexRow('idx-gspc', spxQuote);
@@ -862,12 +914,10 @@
           spx: spxQuote,
           updatedAt: Date.now()
         }));
-      } catch (e) {
-        if (!hadCache) {
-          updateIndexRow('idx-dji', null);
-          updateIndexRow('idx-ixic', null);
-          updateIndexRow('idx-gspc', null);
-        }
+      } else if (!hadCache) {
+        updateIndexRow('idx-dji', null);
+        updateIndexRow('idx-ixic', null);
+        updateIndexRow('idx-gspc', null);
       }
 
       fetchSentiment();
