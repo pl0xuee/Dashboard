@@ -36,24 +36,39 @@
             <h3 style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">Status</h3>
             <p id="server-status" style="font-size: 0.9rem; margin: 0; font-weight: 600; display: flex; align-items: center; gap: 6px;">Checking...</p>
         </div>
+
       </div>
     </main>
   </div>
   <script>
     async function checkServerStatus() {
         const statusEl = document.getElementById('server-status');
-        try {
-            // We use 'no-cache' to ensure we get the latest status
-            // Note: This relies on the server supporting CORS, which Jellyfin might block.
-            // If it shows "Offline" even when online, it's a browser security restriction.
-            const controller = new AbortController();
-            setTimeout(() => controller.abort(), 5000);
+      const probeUrl = 'http://192.168.1.212:8096/web/favicon.ico';
 
-            const response = await fetch('http://192.168.1.212:8096/web/index.html', { mode: 'no-cors', signal: controller.signal });
-            statusEl.innerHTML = '<span style="color: #00ff00;">●</span> Online';
-        } catch (e) {
-            statusEl.innerHTML = '<span style="color: #ff3333;">●</span> Offline';
-        }
+      await new Promise((resolve) => {
+        const image = new Image();
+        const timeoutId = setTimeout(() => {
+          image.onload = null;
+          image.onerror = null;
+          resolve(false);
+        }, 5000);
+
+        image.onload = () => {
+          clearTimeout(timeoutId);
+          resolve(true);
+        };
+
+        image.onerror = () => {
+          clearTimeout(timeoutId);
+          resolve(false);
+        };
+
+        image.src = `${probeUrl}?t=${Date.now()}`;
+      }).then((isOnline) => {
+        statusEl.innerHTML = isOnline
+          ? '<span style="color: #00ff00;">●</span> Online'
+          : '<span style="color: #ff3333;">●</span> Offline';
+      });
     }
     checkServerStatus();
   </script>
