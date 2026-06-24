@@ -813,6 +813,11 @@
 
     async function fetchMajorIndexes() {
       const isUsableQuote = (quote) => quote && quote.status !== 'error' && quote.close !== undefined;
+      const hasUsableCachedQuote = (cache) => cache && (
+        isUsableQuote(cache.dji) ||
+        isUsableQuote(cache.ixic) ||
+        isUsableQuote(cache.spx)
+      );
 
       // Determine appropriate TTL based on market hours
       const cacheTTL = isUsMarketOpenNow() ? INDEX_CACHE_TTL_LIVE : INDEX_CACHE_TTL_CLOSED;
@@ -821,7 +826,7 @@
       let hadCache = false;
       try {
         const cached = JSON.parse(localStorage.getItem('majorIndexCache') || 'null');
-        if (cached && cached.updatedAt) {
+        if (cached && cached.updatedAt && hasUsableCachedQuote(cached)) {
           const age = Date.now() - cached.updatedAt;
           if (age < cacheTTL) {
             applyIndexCache(cached);
@@ -831,6 +836,8 @@
           // Stale — show immediately while refreshing in background
           applyIndexCache(cached);
           hadCache = true;
+        } else if (cached && cached.updatedAt) {
+          localStorage.removeItem('majorIndexCache');
         }
       } catch (_) { /* ignore broken cache */ }
 
@@ -973,11 +980,7 @@
       document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', options);
       updateMarketStatus();
     }
-    const scheduleAfterPaint = window.requestIdleCallback
-      ? (fn) => window.requestIdleCallback(fn, { timeout: 1500 })
-      : (fn) => window.setTimeout(fn, 0);
-
-    scheduleAfterPaint(fetchMajorIndexes);
+    fetchMajorIndexes();
     setInterval(fetchMajorIndexes, 120000);
     setInterval(updateClock, 1000);
     updateClock();
@@ -988,6 +991,74 @@
       const rangeEl = document.getElementById('weather-range');
       const summaryEl = document.getElementById('weather-summary');
       const cityEl = document.getElementById('weather-city');
+      const tempEl = document.getElementById('weather-temp');
+
+      const conditions = {
+        0: "Clear", 1: "Mainly Clear", 2: "Partly Cloudy", 3: "Cloudy",
+        45: "Foggy", 48: "Rime Fog", 51: "Light Drizzle", 53: "Drizzle",
+        55: "Heavy Drizzle", 61: "Light Rain", 63: "Rain", 65: "Heavy Rain",
+        71: "Light Snow", 73: "Snow", 75: "Heavy Snow", 95: "Thunderstorm"
+      };
+
+      const icons = {
+        0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
+        45: "🌫️", 48: "🌫️", 51: "🌦️", 53: "🌦️",
+        55: "🌧️", 61: "🌧️", 63: "🌧️", 65: "⛈️",
+        71: "🌨️", 73: "🌨️", 75: "❄️", 95: "⚡"
+      };
+
+      async function renderWeather(latitude, longitude, locationLabel) {
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&timezone=auto`);
+        const data = await res.json();
+
+        const temp = Math.round(data.current.temperature_2m);
+        const max = Math.round(data.daily.temperature_2m_max[0]);
+        const min = Math.round(data.daily.temperature_2m_min[0]);
+        const condition = conditions[data.current.weather_code] || "Unknown";
+        const icon = icons[data.current.weather_code] || "🌡️";
+
+        const dailyCodes = data.daily.weather_code;
+        const dailyMax = data.daily.temperature_2m_max;
+        const dailyMin = data.daily.temperature_2m_min;
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const today = new Date().getDay();
+
+        let weekHTML = "";
+        for (let i = 1; i <= 6; i++) {
+          const dayIndex = (today + i) % 7;
+          const dayCondition = conditions[dailyCodes[i]] || "Var";
+          const dayIcon = icons[dailyCodes[i]] || "🌡️";
+          const dayMax = Math.round(dailyMax[i]);
+          const dayMin = Math.round(dailyMin[i]);
+          weekHTML += `<div class="weather-day">
+                       <div class="weather-day-name">${days[dayIndex]} ${dayIcon}</div>
+                       <div class="weather-day-cond">${dayCondition}</div>
+                       <div class="weather-day-temps">H:${dayMax}° L:${dayMin}°</div>
+                      </div>`;
+        }
+
+        tempEl.textContent = `${icon} ${temp}°F`;
+        descEl.textContent = condition;
+        rangeEl.textContent = `H: ${max}° L: ${min}°`;
+        summaryEl.innerHTML = weekHTML;
+        if (cityEl && locationLabel) cityEl.textContent = `Location: ${locationLabel}`;
+      }
+
+      async function fetchApproximateLocation() {
+        const res = await fetch('https://ipapi.co/json/');
+        if (!res.ok) throw new Error('Approximate location lookup failed');
+        const data = await res.json();
+        if (typeof data.latitude !== 'number' || typeof data.longitude !== 'number') {
+          throw new Error('Approximate location lookup missing coordinates');
+        }
+
+        const parts = [data.city, data.region_code || data.region].filter(Boolean);
+        return {
+          latitude: data.latitude,
+          longitude: data.longitude,
+          label: parts.length > 0 ? parts.join(', ') : 'Approximate location'
+        };
+      }
 
       async function fetchLocationLabel(latitude, longitude) {
         try {
@@ -1006,8 +1077,13 @@
       }
 
       if (!navigator.geolocation) {
-        descEl.textContent = "Geoloc not supported";
-        if (cityEl) cityEl.textContent = 'Location: Unavailable';
+        try {
+          const approx = await fetchApproximateLocation();
+          await renderWeather(approx.latitude, approx.longitude, `${approx.label} (Approx)`);
+        } catch (_) {
+          descEl.textContent = "Geoloc not supported";
+          if (cityEl) cityEl.textContent = 'Location: Unavailable';
+        }
         return;
       }
 
@@ -1021,64 +1097,21 @@
         }
 
         try {
-          const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&timezone=auto`);
-        const data = await res.json();
-
-          const temp = Math.round(data.current.temperature_2m);
-          const max = Math.round(data.daily.temperature_2m_max[0]);
-          const min = Math.round(data.daily.temperature_2m_min[0]);
-
-          const conditions = {
-            0: "Clear", 1: "Mainly Clear", 2: "Partly Cloudy", 3: "Cloudy",
-            45: "Foggy", 48: "Rime Fog", 51: "Light Drizzle", 53: "Drizzle",
-            55: "Heavy Drizzle", 61: "Light Rain", 63: "Rain", 65: "Heavy Rain",
-            71: "Light Snow", 73: "Snow", 75: "Heavy Snow", 95: "Thunderstorm"
-          };
-
-          const icons = {
-            0: "☀️", 1: "🌤️", 2: "⛅", 3: "☁️",
-            45: "🌫️", 48: "🌫️", 51: "🌦️", 53: "🌦️",
-            55: "🌧️", 61: "🌧️", 63: "🌧️", 65: "⛈️",
-            71: "🌨️", 73: "🌨️", 75: "❄️", 95: "⚡"
-          };
-
-          const condition = conditions[data.current.weather_code] || "Unknown";
-          const icon = icons[data.current.weather_code] || "🌡️";
-
-          // Generate a simple weekly summary
-          const dailyCodes = data.daily.weather_code;
-          const dailyMax = data.daily.temperature_2m_max;
-          const dailyMin = data.daily.temperature_2m_min;
-          const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-          const today = new Date().getDay();
-
-           let weekHTML = "";
-          for(let i = 1; i <= 6; i++) {
-             const dayIndex = (today + i) % 7;
-             const condition = conditions[dailyCodes[i]] || "Var";
-             const dayIcon = icons[dailyCodes[i]] || "🌡️";
-             const max = Math.round(dailyMax[i]);
-             const min = Math.round(dailyMin[i]);
-             weekHTML += `<div class="weather-day">
-                       <div class="weather-day-name">${days[dayIndex]} ${dayIcon}</div>
-                       <div class="weather-day-cond">${condition}</div>
-                       <div class="weather-day-temps">H:${max}° L:${min}°</div>
-                      </div>`;
-          }
-
-           document.getElementById('weather-temp').textContent = `${icon} ${temp}°F`;
-          descEl.textContent = condition;
-          rangeEl.textContent = `H: ${max}° L: ${min}°`;
-          summaryEl.innerHTML = weekHTML;
+          await renderWeather(latitude, longitude, null);
         } catch (e) {
           descEl.textContent = "Error loading";
-    }
-      }, () => {
-        descEl.textContent = "Location access denied";
-        if (cityEl) cityEl.textContent = 'Location: Permission denied';
+        }
+      }, async () => {
+        try {
+          const approx = await fetchApproximateLocation();
+          await renderWeather(approx.latitude, approx.longitude, `${approx.label} (Approx)`);
+        } catch (_) {
+          descEl.textContent = "Location access denied";
+          if (cityEl) cityEl.textContent = 'Location: Permission denied';
+        }
       });
     }
-    scheduleAfterPaint(fetchWeather);
+    fetchWeather();
 
     function setNascarTabActive(seriesType) {
       const tabs = ['cup', 'truck', 'oreilly'];
@@ -1174,7 +1207,7 @@
       }
     }
 
-    scheduleAfterPaint(() => fetchNextNascarRace('cup'));
+    fetchNextNascarRace('cup');
   </script>
 </body>
 </html>
