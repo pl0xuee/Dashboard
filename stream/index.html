@@ -166,6 +166,9 @@
     const YOUTUBE_SUBS_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
     const YOUTUBE_ERROR_COOLDOWN_MS = 60000;
     const TWITCH_TAB_RESUME_MIN_HIDDEN_MS = 2500;
+    const TWITCH_RESUME_DEBOUNCE_MS = 250;
+    const TWITCH_RESUME_RETRY_DELAY_MS = 1800;
+    const TWITCH_RESUME_RELOAD_COOLDOWN_MS = 7000;
 
     let lastDropdownRefreshAt = 0;
     let dropdownRefreshInFlight = false;
@@ -174,6 +177,8 @@
     let youtubeLiveInFlight = null;
     let youtubeRetryAfter = 0;
     let lastHiddenAt = 0;
+    let lastTwitchEmbedLoadAt = 0;
+    let twitchResumeTimer = null;
     let activeStream = { platform: null, id: '' };
 
     function loadTwitchEmbed(channel, options = {}) {
@@ -190,10 +195,44 @@
       chat.style.display = 'block';
 
       activeStream = { platform: 'twitch', id: cleanChannel };
+      lastTwitchEmbedLoadAt = Date.now();
       inputElement.dataset.lastInput = cleanChannel;
       if (!keepInputText) {
         inputElement.value = 'You are Watching: ' + cleanChannel;
       }
+    }
+
+    function canResumeTwitch(minHiddenMs = TWITCH_TAB_RESUME_MIN_HIDDEN_MS) {
+      if (document.visibilityState !== 'visible') return false;
+      if (activeStream.platform !== 'twitch' || !activeStream.id) return false;
+      if (Date.now() - lastHiddenAt < minHiddenMs) return false;
+      if (Date.now() - lastTwitchEmbedLoadAt < TWITCH_RESUME_RELOAD_COOLDOWN_MS) return false;
+      return true;
+    }
+
+    function attemptTwitchResume(reason) {
+      if (!canResumeTwitch()) return;
+
+      const channelId = activeStream.id;
+      loadTwitchEmbed(channelId, { keepInputText: true });
+
+      // Some browsers/media stacks need a second kick after returning from background.
+      window.setTimeout(() => {
+        if (activeStream.platform !== 'twitch' || activeStream.id !== channelId) return;
+        if (!canResumeTwitch(0)) return;
+        loadTwitchEmbed(channelId, { keepInputText: true });
+      }, TWITCH_RESUME_RETRY_DELAY_MS);
+    }
+
+    function scheduleTwitchResume(reason, delayMs = TWITCH_RESUME_DEBOUNCE_MS) {
+      if (twitchResumeTimer) {
+        clearTimeout(twitchResumeTimer);
+      }
+
+      twitchResumeTimer = window.setTimeout(() => {
+        twitchResumeTimer = null;
+        attemptTwitchResume(reason);
+      }, delayMs);
     }
 
     function getLastTwitchFollowSyncAt() {
@@ -908,10 +947,19 @@
         return;
       }
 
-      if (activeStream.platform !== 'twitch' || !activeStream.id) return;
-      if (Date.now() - lastHiddenAt < TWITCH_TAB_RESUME_MIN_HIDDEN_MS) return;
+      scheduleTwitchResume('visibilitychange');
+    });
 
-      loadTwitchEmbed(activeStream.id, { keepInputText: true });
+    window.addEventListener('blur', function() {
+      lastHiddenAt = Date.now();
+    });
+
+    window.addEventListener('focus', function() {
+      scheduleTwitchResume('focus');
+    });
+
+    window.addEventListener('pageshow', function() {
+      scheduleTwitchResume('pageshow');
     });
 
     const streamerDropdown = document.querySelector('.dropdown');
