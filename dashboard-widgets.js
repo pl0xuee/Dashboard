@@ -361,24 +361,28 @@ if (!window.__dashboardWidgetsInitialized) {
       iframe.style.width = '100%';
       iframe.style.height = '100%';
       iframe.style.border = '0';
+      iframe.allowFullscreen = true;
+      iframe.setAttribute('allowfullscreen', '');
+      iframe.setAttribute('webkitallowfullscreen', '');
+      iframe.setAttribute('mozallowfullscreen', '');
 
       if (media.type === 'youtube') {
         const youtubeSrc = getYouTubeEmbedUrl(media.id);
         if (youtubeSrc) {
           iframe.src = youtubeSrc;
-          iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+          iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
           container.appendChild(iframe);
         }
       } else if (media.type === 'twitch') {
         const twitchSrc = getTwitchEmbedUrl(media);
         if (twitchSrc) {
           iframe.src = twitchSrc;
-          iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+          iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
           container.appendChild(iframe);
         }
       } else if (media.type === 'youtube_tv') {
         iframe.src = `https://tv.youtube.com/watch/${media.id}`;
-        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
         container.appendChild(iframe);
       }
       return;
