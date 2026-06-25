@@ -3,7 +3,7 @@ if (!window.__dashboardWidgetsInitialized) {
 
   const defaultTvTickers = ['GOOGL', 'SPCX', 'SPY', 'BTCUSD'];
   const PACIFIC_TIME_ZONE = 'America/Los_Angeles';
-  const CHART_WINDOW_SECONDS = 60 * 60;
+  const CHART_WINDOW_SECONDS = 24 * 60 * 60;
   const CHART_REFRESH_MS = 5 * 1000;
   const YAHOO_REQUEST_SPACING_MS = 1500;
   const YAHOO_SYMBOL_MAP = {
@@ -66,6 +66,12 @@ if (!window.__dashboardWidgetsInitialized) {
       clearInterval(window[intervalKey]);
       delete window[intervalKey];
     }
+
+    const retryKey = `retryTimeout${index}`;
+    if (window[retryKey]) {
+      clearTimeout(window[retryKey]);
+      delete window[retryKey];
+    }
   }
 
   function getTickerInputs() {
@@ -83,6 +89,18 @@ if (!window.__dashboardWidgetsInitialized) {
 
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  function scheduleChartRetry(index, symbol, delayMs = 8000) {
+    const retryKey = `retryTimeout${index}`;
+    if (window[retryKey]) {
+      return;
+    }
+
+    window[retryKey] = setTimeout(() => {
+      delete window[retryKey];
+      createTradingViewWidget(index, symbol);
+    }, delayMs);
   }
 
   function queueYahooChartRequest(symbol) {
@@ -152,6 +170,40 @@ if (!window.__dashboardWidgetsInitialized) {
     return { candles, volumes };
   }
 
+  function getInitialLogicalRange(result, candles) {
+    const firstBar = candles[0];
+    const lastBar = candles[candles.length - 1];
+    if (!firstBar || !lastBar) {
+      return null;
+    }
+
+    const periods = result && result.meta && result.meta.currentTradingPeriod;
+    const regularStart = periods && periods.regular && Number(periods.regular.start);
+    const regularEnd = periods && periods.regular && Number(periods.regular.end);
+
+    const sessionStart = Number.isFinite(regularStart)
+      ? regularStart
+      : Math.max(firstBar.time, lastBar.time - CHART_WINDOW_SECONDS);
+    const sessionEnd = Number.isFinite(regularEnd)
+      ? Math.min(regularEnd, lastBar.time)
+      : lastBar.time;
+
+    const startIndex = candles.findIndex((bar) => bar.time >= Math.max(firstBar.time, sessionStart));
+    const endIndex = Math.max(
+      startIndex,
+      candles.reduce((lastMatch, bar, index) => (bar.time <= Math.max(sessionStart, sessionEnd) ? index : lastMatch), -1)
+    );
+
+    if (startIndex < 0 || endIndex < 0) {
+      return null;
+    }
+
+    return {
+      from: Math.max(0, startIndex - 1),
+      to: endIndex + 2
+    };
+  }
+
   async function createTradingViewWidget(index, symbol) {
     const container = document.getElementById(`tvWidget${index}`);
     if (!container) return;
@@ -213,15 +265,33 @@ if (!window.__dashboardWidgetsInitialized) {
       layout: { background: { type: 'solid', color: '#081018' }, textColor: '#DDD' },
       grid: { vertLines: { color: '#1f2937' }, horzLines: { color: '#1f2937' } },
       crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+      handleScroll: {
+        mouseWheel: true,
+        pressedMouseMove: true,
+        horzTouchDrag: true,
+        vertTouchDrag: false
+      },
+      handleScale: {
+        axisPressedMouseMove: {
+          time: true,
+          price: true
+        },
+        mouseWheel: true,
+        pinch: true
+      },
+      kineticScroll: {
+        mouse: true,
+        touch: true
+      },
       localization: {
         timeFormatter: (time) => formatPacificChartTime(time, pacificCrosshairFormatter)
       },
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
-        fixLeftEdge: true,
+        fixLeftEdge: false,
         fixRightEdge: false,
-        rightOffset: 10,
+        rightOffset: 2,
         tickMarkFormatter: (time) => formatPacificChartTime(time, pacificAxisFormatter)
       }
     });
@@ -287,15 +357,13 @@ if (!window.__dashboardWidgetsInitialized) {
       if (candles.length > 0) {
         candleSeries.setData(candles);
         volumeSeries.setData(volumes);
-        const firstBar = candles[0];
-        const lastBar = candles[candles.length - 1];
-        if (firstBar && lastBar) {
-          chart.timeScale().setVisibleRange({
-            from: Math.max(firstBar.time, lastBar.time - CHART_WINDOW_SECONDS),
-            to: lastBar.time
-          });
-        } else {
-          chart.timeScale().fitContent();
+        if (!window[`hasChartData${index}`]) {
+          const initialRange = getInitialLogicalRange(result, candles);
+          if (initialRange) {
+            chart.timeScale().setVisibleLogicalRange(initialRange);
+          } else {
+            chart.timeScale().fitContent();
+          }
         }
         window[`hasChartData${index}`] = true;
         return true;
@@ -306,6 +374,12 @@ if (!window.__dashboardWidgetsInitialized) {
       const message = String(error && error.message ? error.message : error);
       const isRateLimited = message.includes('429');
       const hasExistingChartData = Boolean(window[`hasChartData${index}`]);
+
+      if (isRateLimited && !hasExistingChartData) {
+        console.warn('Initial chart load rate-limited, retrying shortly:', error);
+        scheduleChartRetry(index, ticker);
+        return false;
+      }
 
       if (!allowFallback || isRateLimited || hasExistingChartData) {
         console.warn('Chart refresh error, keeping existing chart:', error);
