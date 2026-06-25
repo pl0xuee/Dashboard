@@ -595,18 +595,25 @@
           completedSuccessfully = true;
           return liveItems;
         } catch (e) {
+          const errorMsg = String(e.message || '');
           console.error('YouTube live fetch error', e);
           youtubeRetryAfter = Date.now() + YOUTUBE_ERROR_COOLDOWN_MS;
-          if (String(e.message || '').includes('insufficientPermissions')) {
+          if (errorMsg.includes('insufficientPermissions')) {
             setYouTubeScanStatus('YouTube scope missing. Disconnect + reconnect YouTube.');
-          } else if (String(e.message || '').includes('accessNotConfigured') || String(e.message || '').includes('serviceDisabled')) {
+          } else if (errorMsg.includes('accessNotConfigured') || errorMsg.includes('serviceDisabled')) {
             setYouTubeScanStatus('Enable YouTube Data API v3 in Google Cloud.');
-          } else if (String(e.message || '').includes('quotaExceeded') || String(e.message || '').includes('dailyLimitExceeded')) {
+          } else if (errorMsg.includes('quotaExceeded') || errorMsg.includes('dailyLimitExceeded')) {
             setYouTubeScanStatus('YouTube API quota exceeded. Try later.');
-          } else if (String(e.message || '').includes('cooldown')) {
+          } else if (errorMsg.includes('cooldown')) {
             setYouTubeScanStatus('YouTube temporarily paused after error. Retrying soon...');
+          } else if (errorMsg.includes('auth expired') || errorMsg.includes('401')) {
+            setYouTubeScanStatus('YouTube session expired. Disconnect + reconnect YouTube.');
+          } else if (errorMsg.includes('403')) {
+            setYouTubeScanStatus('YouTube API access denied. Check OAuth scopes & API config.');
+          } else if (errorMsg.includes('network') || errorMsg.includes('fetch')) {
+            setYouTubeScanStatus('Network error contacting YouTube. Try again in a moment.');
           } else {
-            setYouTubeScanStatus('YouTube scan failed. Try reconnecting.');
+            setYouTubeScanStatus('YouTube scan failed: ' + errorMsg.slice(0, 50) + '. Try reconnecting.');
           }
           return [];
         } finally {
@@ -879,11 +886,16 @@
             localStorage.removeItem('youtubeLiveCache');
             renderList();
           } catch (e) {
+            const errorMsg = String(e.message || '');
             console.error('YouTube subscriptions fetch error', e);
-            if (String(e.message || '').includes('insufficientPermissions')) {
+            if (errorMsg.includes('insufficientPermissions')) {
               setYouTubeScanStatus('YouTube scope missing. Disconnect + reconnect YouTube.');
-            } else if (String(e.message || '').includes('accessNotConfigured') || String(e.message || '').includes('serviceDisabled')) {
+            } else if (errorMsg.includes('accessNotConfigured') || errorMsg.includes('serviceDisabled')) {
               setYouTubeScanStatus('Enable YouTube Data API v3 in Google Cloud.');
+            } else if (errorMsg.includes('401') || errorMsg.includes('auth expired')) {
+              setYouTubeScanStatus('YouTube session expired. Disconnect + reconnect YouTube.');
+            } else if (errorMsg.includes('403')) {
+              setYouTubeScanStatus('YouTube API access denied. Check OAuth scopes & API config.');
             } else {
               setYouTubeScanStatus('Unable to read subscriptions. Check OAuth/API setup.');
             }
