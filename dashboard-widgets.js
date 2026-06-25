@@ -60,6 +60,73 @@ if (!window.__dashboardWidgetsInitialized) {
     return YAHOO_SYMBOL_MAP[trimmedSymbol] || trimmedSymbol;
   }
 
+  function formatChartPrice(price) {
+    if (!Number.isFinite(price)) {
+      return 'N/A';
+    }
+
+    const fractionDigits = price >= 1000 ? 2 : price >= 1 ? 2 : 6;
+    return price.toLocaleString('en-US', {
+      minimumFractionDigits: fractionDigits,
+      maximumFractionDigits: fractionDigits
+    });
+  }
+
+  function formatChartChange(change, changePercent) {
+    if (!Number.isFinite(change) || !Number.isFinite(changePercent)) {
+      return 'Day change unavailable';
+    }
+
+    const sign = change > 0 ? '+' : change < 0 ? '-' : '';
+    const magnitude = Math.abs(change).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+    const percent = Math.abs(changePercent).toFixed(2);
+    const direction = change > 0 ? '▲' : change < 0 ? '▼' : '•';
+
+    return `${direction} ${sign}${magnitude} (${sign}${percent}%)`;
+  }
+
+  function updateChartTooltip(toolTip, symbol, candles, result) {
+    if (!toolTip) return;
+
+    const lastCandle = candles[candles.length - 1];
+    const firstCandle = candles[0];
+    const lastPrice = lastCandle && Number.isFinite(lastCandle.close) ? lastCandle.close : NaN;
+    const previousClose = Number(result && result.meta && result.meta.previousClose);
+    const referencePrice = Number.isFinite(previousClose)
+      ? previousClose
+      : (firstCandle && Number.isFinite(firstCandle.open) ? firstCandle.open : NaN);
+    const change = Number.isFinite(lastPrice) && Number.isFinite(referencePrice) ? lastPrice - referencePrice : NaN;
+    const changePercent = Number.isFinite(change) && Number.isFinite(referencePrice) && referencePrice !== 0
+      ? (change / referencePrice) * 100
+      : NaN;
+    const isUp = Number.isFinite(change) && change > 0;
+    const isDown = Number.isFinite(change) && change < 0;
+    const textColor = isUp ? '#6dff85' : isDown ? '#ff7d73' : '#dce8ff';
+
+    toolTip.innerHTML = '';
+
+    const symbolLine = document.createElement('div');
+    symbolLine.textContent = `${symbol} · 1m`;
+    symbolLine.style.fontSize = '18px';
+    symbolLine.style.fontWeight = '800';
+    symbolLine.style.lineHeight = '1.15';
+    symbolLine.style.color = '#fff';
+
+    const priceLine = document.createElement('div');
+    priceLine.textContent = `${formatChartPrice(lastPrice)} ${formatChartChange(change, changePercent)}`;
+    priceLine.style.marginTop = '4px';
+    priceLine.style.fontSize = '13px';
+    priceLine.style.fontWeight = '700';
+    priceLine.style.lineHeight = '1.2';
+    priceLine.style.color = textColor;
+
+    toolTip.appendChild(symbolLine);
+    toolTip.appendChild(priceLine);
+  }
+
   function clearChartInterval(index) {
     const intervalKey = `interval${index}`;
     if (window[intervalKey]) {
@@ -251,12 +318,14 @@ if (!window.__dashboardWidgetsInitialized) {
     toolTip.style.position = 'absolute';
     toolTip.style.top = '10px';
     toolTip.style.left = '10px';
-    toolTip.style.fontSize = '18px';
-    toolTip.style.fontWeight = 'bold';
-    toolTip.style.color = '#fff';
     toolTip.style.zIndex = '10';
     toolTip.style.pointerEvents = 'none';
-    toolTip.textContent = `${symbol} · 1m`;
+    toolTip.style.padding = '8px 10px';
+    toolTip.style.borderRadius = '12px';
+    toolTip.style.background = 'rgba(8, 16, 24, 0.72)';
+    toolTip.style.backdropFilter = 'blur(8px)';
+    toolTip.style.border = '1px solid rgba(167, 188, 255, 0.14)';
+    updateChartTooltip(toolTip, symbol, [], null);
     container.appendChild(toolTip);
 
     const chart = LightweightCharts.createChart(chartDiv, {
@@ -320,17 +389,17 @@ if (!window.__dashboardWidgetsInitialized) {
       scaleMargins: { top: 0.8, bottom: 0 }
     });
 
-    const loadSucceeded = await loadChartData(symbol, candleSeries, volumeSeries, chart, index);
+    const loadSucceeded = await loadChartData(symbol, candleSeries, volumeSeries, chart, index, toolTip);
     if (!loadSucceeded) {
       return;
     }
 
     window[`interval${index}`] = setInterval(() => {
-      loadChartData(symbol, candleSeries, volumeSeries, chart, index, { allowFallback: false });
+      loadChartData(symbol, candleSeries, volumeSeries, chart, index, toolTip, { allowFallback: false });
     }, CHART_REFRESH_MS);
   }
 
-  async function loadChartData(ticker, candleSeries, volumeSeries, chart, index, options = {}) {
+  async function loadChartData(ticker, candleSeries, volumeSeries, chart, index, toolTip, options = {}) {
     const { allowFallback = true } = options;
     const normalizedTicker = normalizeChartSymbol(ticker);
     try {
@@ -357,6 +426,7 @@ if (!window.__dashboardWidgetsInitialized) {
       if (candles.length > 0) {
         candleSeries.setData(candles);
         volumeSeries.setData(volumes);
+        updateChartTooltip(toolTip, ticker, candles, result);
         if (!window[`hasChartData${index}`]) {
           const initialRange = getInitialLogicalRange(result, candles);
           if (initialRange) {
