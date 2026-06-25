@@ -1,4 +1,4 @@
-const CACHE_NAME = 'command-center-v1';
+const CACHE_NAME = 'command-center-v3';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
