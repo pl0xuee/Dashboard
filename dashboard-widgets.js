@@ -6,6 +6,8 @@ if (!window.__dashboardWidgetsInitialized) {
   const CHART_WINDOW_SECONDS = 24 * 60 * 60;
   const CHART_REFRESH_MS = 5 * 1000;
   const YAHOO_REQUEST_SPACING_MS = 1500;
+  const CHART_CACHE_TTL_MS = 15 * 60 * 1000;
+  const CHART_CACHE_KEY_PREFIX = 'dashboardChartCache:';
   const YAHOO_SYMBOL_MAP = {
     BTCUSD: 'BTC-USD',
     ETHUSD: 'ETH-USD',
@@ -154,6 +156,58 @@ if (!window.__dashboardWidgetsInitialized) {
     return `https://r.jina.ai/http://https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1m&range=1d`;
   }
 
+  function getChartCacheKey(symbol) {
+    return `${CHART_CACHE_KEY_PREFIX}${normalizeChartSymbol(symbol)}`;
+  }
+
+  function getCachedChartData(symbol) {
+    try {
+      const raw = localStorage.getItem(getChartCacheKey(symbol));
+      if (!raw) {
+        return null;
+      }
+
+      const parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.candles) || !Array.isArray(parsed.volumes)) {
+        return null;
+      }
+
+      const ageMs = Date.now() - Number(parsed.updatedAt || 0);
+      if (!Number.isFinite(ageMs) || ageMs > CHART_CACHE_TTL_MS) {
+        return null;
+      }
+
+      return parsed;
+    } catch {
+      return null;
+    }
+  }
+
+  function setCachedChartData(symbol, candles, volumes, result) {
+    if (!Array.isArray(candles) || candles.length === 0) {
+      return;
+    }
+
+    try {
+      const cachePayload = {
+        updatedAt: Date.now(),
+        candles,
+        volumes,
+        resultMeta: {
+          meta: result && result.meta
+            ? {
+                previousClose: Number(result.meta.previousClose),
+                currentTradingPeriod: result.meta.currentTradingPeriod || null
+              }
+            : null
+        }
+      };
+      localStorage.setItem(getChartCacheKey(symbol), JSON.stringify(cachePayload));
+    } catch {
+      // Ignore storage errors and continue with live-only rendering.
+    }
+  }
+
   function sleep(ms) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
@@ -166,6 +220,13 @@ if (!window.__dashboardWidgetsInitialized) {
 
     window[retryKey] = setTimeout(() => {
       delete window[retryKey];
+
+      // If this panel already has rendered data, avoid tearing it down just to retry.
+      // Recreating the widget here can cause charts to disappear during repeated 429s.
+      if (window[`hasChartData${index}`]) {
+        return;
+      }
+
       createTradingViewWidget(index, symbol);
     }, delayMs);
   }
@@ -204,11 +265,24 @@ if (!window.__dashboardWidgetsInitialized) {
     const candles = [];
     const volumes = [];
 
+    let previousClose = NaN;
+
     timestamps.forEach((timestamp, index) => {
-      const open = Number(quote.open && quote.open[index]);
-      const high = Number(quote.high && quote.high[index]);
-      const low = Number(quote.low && quote.low[index]);
-      const close = Number(quote.close && quote.close[index]);
+      const rawOpen = Number(quote.open && quote.open[index]);
+      const rawHigh = Number(quote.high && quote.high[index]);
+      const rawLow = Number(quote.low && quote.low[index]);
+      const rawClose = Number(quote.close && quote.close[index]);
+
+      // Yahoo can leave the currently-forming minute partially null.
+      // Backfill missing values so the latest candle can render immediately.
+      const open = Number.isFinite(rawOpen)
+        ? rawOpen
+        : (Number.isFinite(previousClose) ? previousClose : NaN);
+      const close = Number.isFinite(rawClose)
+        ? rawClose
+        : (Number.isFinite(rawOpen) ? rawOpen : (Number.isFinite(previousClose) ? previousClose : NaN));
+      const high = Number.isFinite(rawHigh) ? rawHigh : Math.max(open, close);
+      const low = Number.isFinite(rawLow) ? rawLow : Math.min(open, close);
 
       if (![open, high, low, close].every(Number.isFinite)) {
         return;
@@ -232,6 +306,8 @@ if (!window.__dashboardWidgetsInitialized) {
         value: Number.isFinite(volume) ? volume : 0,
         color: close >= open ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)'
       });
+
+      previousClose = close;
     });
 
     return { candles, volumes };
@@ -427,6 +503,8 @@ if (!window.__dashboardWidgetsInitialized) {
         candleSeries.setData(candles);
         volumeSeries.setData(volumes);
         updateChartTooltip(toolTip, ticker, candles, result);
+        setCachedChartData(ticker, candles, volumes, result);
+        window[`chartRateLimitCount${index}`] = 0;
         if (!window[`hasChartData${index}`]) {
           const initialRange = getInitialLogicalRange(result, candles);
           if (initialRange) {
@@ -445,7 +523,44 @@ if (!window.__dashboardWidgetsInitialized) {
       const isRateLimited = message.includes('429');
       const hasExistingChartData = Boolean(window[`hasChartData${index}`]);
 
+      if (!hasExistingChartData) {
+        const cachedChartData = getCachedChartData(ticker);
+        if (cachedChartData) {
+          const cachedResult = cachedChartData.resultMeta || null;
+          candleSeries.setData(cachedChartData.candles);
+          volumeSeries.setData(cachedChartData.volumes);
+          updateChartTooltip(toolTip, ticker, cachedChartData.candles, cachedResult);
+
+          const initialRange = getInitialLogicalRange(cachedResult, cachedChartData.candles);
+          if (initialRange) {
+            chart.timeScale().setVisibleLogicalRange(initialRange);
+          } else {
+            chart.timeScale().fitContent();
+          }
+
+          window[`hasChartData${index}`] = true;
+
+          if (isRateLimited) {
+            console.warn('Using cached chart data while rate-limited:', ticker);
+            scheduleChartRetry(index, ticker);
+          }
+
+          return true;
+        }
+      }
+
       if (isRateLimited && !hasExistingChartData) {
+        const rateLimitCountKey = `chartRateLimitCount${index}`;
+        const retryCount = Number(window[rateLimitCountKey] || 0) + 1;
+        window[rateLimitCountKey] = retryCount;
+
+        if (retryCount >= 3) {
+          console.warn('Repeated initial 429s, falling back to TradingView widget:', ticker);
+          clearChartInterval(index);
+          fallbackToTradingView(index, ticker);
+          return false;
+        }
+
         console.warn('Initial chart load rate-limited, retrying shortly:', error);
         scheduleChartRetry(index, ticker);
         return false;
