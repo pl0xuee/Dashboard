@@ -510,7 +510,7 @@
               <div class="card news-card">
                 <h2 class="home-box-title center">📰 Live News Feed</h2>
                 <div class="news-controls">
-                  <button onclick="showNews('usa')" id="btn-usa" class="home-button" title="USA news">🇺🇸 USA</button>
+                  <button onclick="showNews('usa')" id="btn-usa" class="home-button" title="United States news">🇺🇸 United States</button>
                   <button onclick="showNews('world')" id="btn-world" class="home-button" title="World news">🌍 World</button>
                   <button onclick="showNews('finance')" id="btn-finance" class="home-button" title="Finance news">📈 Finance</button>
       </div>
@@ -614,9 +614,9 @@
 
         // Set RSS feeds based on category
         if (type === 'usa') {
-          feedUrl = 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en';
+          feedUrl = 'https://news.google.com/rss/search?q=' + encodeURIComponent('United States news') + '&hl=en-US&gl=US&ceid=US:en';
         } else if (type === 'world') {
-          feedUrl = 'https://news.google.com/rss?hl=en&gl=US&ceid=US:en&topic=w';
+          feedUrl = 'https://news.google.com/rss/search?q=' + encodeURIComponent('world news') + '&hl=en-US&gl=US&ceid=US:en';
         } else if (type === 'finance') {
           feedUrl = 'https://feeds.bloomberg.com/markets/news.rss';
         } else {
