@@ -511,7 +511,6 @@
                 <h2 class="home-box-title center">📰 Live News Feed</h2>
                 <div class="news-controls">
                   <button onclick="showNews('usa')" id="btn-usa" class="home-button" title="USA news">🇺🇸 USA</button>
-                  <button onclick="showNews('local')" id="btn-local" class="home-button" title="Local news">📍 Local</button>
                   <button onclick="showNews('world')" id="btn-world" class="home-button" title="World news">🌍 World</button>
                   <button onclick="showNews('finance')" id="btn-finance" class="home-button" title="Finance news">📈 Finance</button>
       </div>
@@ -615,15 +614,13 @@
 
         // Set RSS feeds based on category
         if (type === 'usa') {
-          feedUrl = 'https://feeds.ap.org/apnews/usNews.xml';
-        } else if (type === 'local') {
-          feedUrl = await getAreaNewsFeedUrl();
+          feedUrl = 'https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en';
         } else if (type === 'world') {
-          feedUrl = 'https://feeds.ap.org/apnews/intlNews.xml';
+          feedUrl = 'https://news.google.com/rss?hl=en&gl=US&ceid=US:en&topic=w';
         } else if (type === 'finance') {
           feedUrl = 'https://feeds.bloomberg.com/markets/news.rss';
         } else {
-          feedUrl = 'https://news.google.com/news/rss/headlines';
+          feedUrl = 'https://feeds.bloomberg.com/markets/news.rss';
         }
 
         let data = await fetchNewsWithCache(feedUrl, type);
@@ -710,9 +707,8 @@
     async function fetchNewsWithRetry(feedUrl, maxRetries = 3) {
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
-          // Use allorigins as CORS proxy
-          const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(feedUrl);
-          const response = await fetch(proxyUrl);
+          // Use RSS2JSON API to convert RSS to JSON
+          const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl));
           
           if (!response.ok) {
             console.warn(`HTTP ${response.status} on attempt ${attempt + 1}`);
@@ -723,19 +719,26 @@
             throw new Error(`HTTP ${response.status}`);
           }
           
-          const xmlText = await response.text();
-          const data = parseRSSItems(xmlText);
+          const data = await response.json();
+          
+          if (data.status === 'error') {
+            console.warn(`API error: ${data.message} on attempt ${attempt + 1}`);
+            if (attempt < maxRetries - 1) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+              continue;
+            }
+            throw new Error(data.message || 'API returned error');
+          }
           
           if (data.items && Array.isArray(data.items) && data.items.length > 0) {
             console.log(`Successfully fetched ${data.items.length} news items`);
             return data;
           }
           
-          throw new Error('No items in RSS feed');
+          throw new Error('No items in response');
         } catch (e) {
           console.error(`Attempt ${attempt + 1} failed:`, e.message);
           if (attempt === maxRetries - 1) {
-            // All retries exhausted, use fallback
             console.warn('Using fallback news - RSS feed unavailable');
             return FALLBACK_NEWS;
           }
@@ -755,7 +758,7 @@
 
         // Extract the source from the title if it contains " - "
         let displayTitle = item.title;
-        let displaySource = item.author || 'Google News';
+        let displaySource = item.author || 'News Feed';
 
         if (displayTitle.includes(' - ')) {
             const parts = displayTitle.split(' - ');
