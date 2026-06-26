@@ -517,7 +517,6 @@
                 <div id="news-container" class="news-container">
                 <p>Loading headlines...</p>
       </div>
-                <button id="toggle-news" onclick="toggleNews()" class="home-button news-toggle">Show More</button>
               </div>
             </section>
 
@@ -569,8 +568,7 @@
   </div>
   <script>
     let allNewsItems = [];
-    let showAll = false;
-    const NEWS_INITIAL_LIMIT = 8;
+    const NEWS_MAX_ITEMS = 10;
 
     async function getAreaNewsFeedUrl() {
       const fallback = 'https://news.google.com/rss/search?q=' + encodeURIComponent('regional news us') + '&hl=en-US&gl=US&ceid=US:en';
@@ -605,10 +603,7 @@
 
     async function showNews(type) {
       const container = document.getElementById('news-container');
-      const toggleBtn = document.getElementById('toggle-news');
       container.innerHTML = "Loading...";
-      showAll = false;
-      toggleBtn.style.display = 'none';
       try {
         let feedUrl = '';
 
@@ -748,8 +743,7 @@
 
     function renderNews() {
       const container = document.getElementById('news-container');
-      const toggleBtn = document.getElementById('toggle-news');
-      const limit = showAll ? allNewsItems.length : NEWS_INITIAL_LIMIT;
+      const limit = NEWS_MAX_ITEMS;
 
       let html = '<ul style="padding-left: 0; margin: 0; list-style: none;">';
       allNewsItems.slice(0, limit).forEach(item => {
@@ -773,13 +767,6 @@
       });
       html += '</ul>';
       container.innerHTML = html;
-
-      toggleBtn.style.display = allNewsItems.length > NEWS_INITIAL_LIMIT ? 'inline-flex' : 'none';
-      toggleBtn.textContent = showAll ? 'Show Less' : 'Show More';
-    }
-    function toggleNews() {
-      showAll = !showAll;
-      renderNews();
     }
     showNews('usa');
     const SENTIMENT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
