@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' https://unpkg.com https://widgets.tradingview-widget.com https://s3.tradingview.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http:; font-src 'self' data: https:; connect-src 'self' https: http:; frame-src 'self' https://player.twitch.tv https://www.twitch.tv https://www.youtube.com https://tv.youtube.com https://clips.twitch.tv; media-src 'self' https: http:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' https://unpkg.com; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src 'self' https://player.twitch.tv https://www.twitch.tv https://www.youtube.com https://tv.youtube.com https://clips.twitch.tv; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
   <meta name="theme-color" content="#0b1220" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -26,21 +26,21 @@
 
       <!-- Controls moved back to the header on the right -->
       <div class="controls">
-        <input type="text" id="streamUrl" placeholder="YouTube URL or Twitch Channel Name" style="width: 350px; height: 38px; padding: 0 12px; margin: 0 4px;">
+        <input type="text" id="streamUrl" class="stream-url-input" placeholder="YouTube URL or Twitch Channel Name">
         <button id="loadStreamBtn" class="home-button">Load</button>
         <button id="toggleChatBtn" class="home-button">Toggle Chat</button>
         <!-- Streamer Dropdown -->
         <div class="dropdown">
           <button class="dropbtn home-button">My Streamers ▼</button>
           <div class="dropdown-content" id="streamerList">
-            <div style="padding:4px 6px 2px; font-size:10px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:rgba(200,210,255,0.45);">My Streamers</div>
-            <div style="padding:0 6px 6px; font-size:10px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:rgba(0,220,120,0.75);">Live Channels Only</div>
-            <div id="youtubeScanStatus" style="padding:0 6px 6px; font-size:10px; color:rgba(255,180,140,0.75); min-height:14px;"></div>
+            <div class="streamer-dropdown-title">My Streamers</div>
+            <div class="streamer-dropdown-subtitle">Live Channels Only</div>
+            <div id="youtubeScanStatus" class="youtube-scan-status"></div>
             <div id="listItems"></div>
-            <div style="border-top: 1px solid var(--border); margin: 6px 0 4px;"></div>
-            <a id="addStreamerBtn" href="#" style="display:block; text-align:center; padding:6px 10px; font-size:12px; font-weight:600; color:#7dd3fc; text-decoration:none; border-radius:8px; transition:background 0.15s;">+ Add Streamer</a>
-            <a id="twitchConnectBtn" href="#" style="display:block; text-align:center; padding:6px 10px; font-size:12px; font-weight:600; color:#a970ff; text-decoration:none; border-radius:8px; transition:background 0.15s;">+ Connect Twitch</a>
-            <a id="youtubeConnectBtn" href="#" style="display:block; text-align:center; padding:6px 10px; font-size:12px; font-weight:600; color:#ff6a4a; text-decoration:none; border-radius:8px; transition:background 0.15s;">+ Connect YouTube</a>
+            <div class="streamer-divider"></div>
+            <a id="addStreamerBtn" href="#" class="streamer-action streamer-action-add">+ Add Streamer</a>
+            <a id="twitchConnectBtn" href="#" class="streamer-action streamer-action-twitch">+ Connect Twitch</a>
+            <a id="youtubeConnectBtn" href="#" class="streamer-action streamer-action-youtube">+ Connect YouTube</a>
           </div>
         </div>
       </div>

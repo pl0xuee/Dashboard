@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' https://unpkg.com https://widgets.tradingview-widget.com https://s3.tradingview.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http:; font-src 'self' data: https:; connect-src 'self' https: http:; frame-src 'self' https://player.twitch.tv https://www.twitch.tv https://www.youtube.com https://tv.youtube.com https://clips.twitch.tv; media-src 'self' https: http:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' https://unpkg.com; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https: http://192.168.1.212:8096; font-src 'self' data: https:; connect-src 'self' https: http://192.168.1.212:8096; frame-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
   <meta name="theme-color" content="#0b1220" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -25,18 +25,16 @@
     </header>
     <main class="main welcome">
       <div class="welcome-inner">
-        <h1 style="margin-bottom: 10px;">Jellyfin Media Portal</h1>
-        <p style="margin-bottom: 40px; color: var(--text-muted);">Access your private media library directly from your home network.</p>
+        <h1 class="media-title">Jellyfin Media Portal</h1>
+        <p class="media-subtitle">Access your private media library directly from your home network.</p>
 
-          <a href="http://192.168.1.212:8096" target="_blank" rel="noopener noreferrer"
-           class="home-button"
-            style="padding: 24px 48px; font-size: 1.5rem; background: #5a2c94; border-color: #7a3dbf; color: #fff; box-shadow: 0 4px 15px rgba(90, 44, 148, 0.4); display: flex; justify-content: center; align-items: center; width: fit-content; margin: 0 auto; text-align: center;">
+          <a href="http://192.168.1.212:8096" target="_blank" rel="noopener noreferrer" class="home-button media-launch-btn">
            Click to Open Jellyfin
         </a>
 
-        <div style="margin-top: 20px; padding: 15px 25px; border-radius: 20px; background: rgba(22, 28, 36, 0.4); border: 1px solid var(--border); display: inline-flex; align-items: center; gap: 15px;">
-            <h3 style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">Status</h3>
-            <p id="server-status" style="font-size: 0.9rem; margin: 0; font-weight: 600; display: flex; align-items: center; gap: 6px;">Checking...</p>
+        <div class="media-status-wrap">
+            <h3 class="media-status-title">Status</h3>
+            <p id="server-status" class="media-status-value">Checking...</p>
         </div>
 
       </div>

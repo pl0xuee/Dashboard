@@ -218,6 +218,31 @@ header, .dashboard-header, .page-header {
   align-items: center;
 }
 
+.ticker-chip-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  width: 100%;
+  overflow: hidden;
+  align-items: center;
+}
+
+.ticker-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(138, 169, 233, 0.3);
+  background: linear-gradient(180deg, rgba(24, 35, 55, 0.9), rgba(16, 24, 39, 0.92));
+  color: #dce8ff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
 tv-ticker-tape {
   width: 100%;
   height: 100%;
@@ -251,6 +276,72 @@ tv-ticker-tape {
 .welcome-inner {
   max-width: 900px;
   width: 100%;
+}
+
+.media-title {
+  margin-bottom: 10px;
+}
+
+.media-subtitle {
+  margin-bottom: 40px;
+  color: var(--text-muted);
+}
+
+.media-launch-btn {
+  padding: 24px 48px;
+  height: auto;
+  font-size: 1.5rem;
+  background: #5a2c94;
+  border-color: #7a3dbf;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(90, 44, 148, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: fit-content;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.media-status-wrap {
+  margin-top: 20px;
+  padding: 15px 25px;
+  border-radius: 20px;
+  background: rgba(22, 28, 36, 0.4);
+  border: 1px solid var(--border);
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.media-status-title {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.media-status-value {
+  font-size: 0.9rem;
+  margin: 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.media-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.media-status-dot.online {
+  background: #00ff66;
+}
+
+.media-status-dot.offline {
+  background: #ff4747;
 }
 
 /* Unified Card Style */

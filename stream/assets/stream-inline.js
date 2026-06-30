@@ -575,58 +575,83 @@
           const emptyMessage = hasConnectedTwitch
             ? 'No one is live right now'
             : 'No live channels yet. Add a streamer or connect Twitch.';
-          container.innerHTML = `<div style="padding:8px 10px; font-size:12px; color:rgba(200,210,255,0.4); text-align:center;">${emptyMessage}</div>`;
+          const emptyEl = document.createElement('div');
+          emptyEl.className = 'stream-list-empty';
+          emptyEl.textContent = emptyMessage;
+          container.appendChild(emptyEl);
         } else {
-          const rowHtml = (item) => {
+          const makeRow = (item) => {
+            const row = document.createElement('div');
+            row.className = 'stream-live-row';
+
+            const link = document.createElement('a');
+            link.href = '#';
+            link.className = 'stream-open-link';
+            link.dataset.streamUrl = item.url;
+
+            const label = document.createElement('span');
+            label.className = 'stream-live-label';
+
+            const nameText = document.createTextNode(`${item.name} `);
+            const viewersEl = document.createElement('span');
+            viewersEl.className = 'stream-live-viewers';
+            viewersEl.textContent = `(${formatViewerCount(item.viewers)})`;
+            label.appendChild(nameText);
+            label.appendChild(viewersEl);
+            link.appendChild(label);
+
+            link.addEventListener('click', (event) => {
+              event.preventDefault();
+              if (item.url) loadStreamDirect(item.url);
+            });
+
+            row.appendChild(link);
+
             const isManual = item.platform === 'twitch' && manual.some(m => m.url.toLowerCase() === item.url.toLowerCase());
-            const viewersText = `(${formatViewerCount(item.viewers)})`;
-            const removeBtn = isManual
-              ? `<button class="stream-remove-btn" data-streamer-name="${item.name}" style="background:none; border:none; color:rgba(255,80,80,0.5); cursor:pointer; font-size:16px; margin-left:6px; padding:0 2px; flex-shrink:0; transition:all 0.2s;">×</button>`
-              : '';
+            if (isManual) {
+              const removeBtn = document.createElement('button');
+              removeBtn.type = 'button';
+              removeBtn.className = 'stream-remove-btn';
+              removeBtn.textContent = '×';
+              removeBtn.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                removeStreamer(item.name);
+              });
+              row.appendChild(removeBtn);
+            }
 
-            return `
-              <div class="stream-live-row" style="display:flex; align-items:center; justify-content:space-between; padding:6px 8px; margin-bottom:4px; background:rgba(0,200,80,0.18); border:1px solid rgba(0,200,80,0.45); border-radius:8px; transition:filter 0.15s;">
-                <a href="#" class="stream-open-link" data-stream-url="${item.url}" style="display:flex; align-items:center; gap:8px; text-decoration:none; color:#e8ecef; flex-grow:1; min-width:0;">
-                  <span style="overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:12px; font-weight:600; text-transform:capitalize; letter-spacing:0.02em;">${item.name} <span style="font-size:10px; color:rgba(230,255,235,0.82);">${viewersText}</span></span>
-                </a>
-                ${removeBtn}
-              </div>`;
+            return row;
           };
 
-          const sectionHtml = (title, titleColor, rows) => {
-            const body = rows.length
-              ? rows.map(rowHtml).join('')
-              : `<div style="padding:6px 8px 8px; font-size:11px; color:rgba(200,210,255,0.4);">No live channels</div>`;
+          const makeSection = (title, titleClassName, rows) => {
+            const section = document.createElement('div');
+            section.className = 'stream-live-section';
 
-            return `
-              <div style="min-width:0;">
-                <div style="padding:6px 6px 4px; font-size:10px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:${titleColor};">${title}</div>
-                ${body}
-              </div>`;
+            const heading = document.createElement('div');
+            heading.className = `stream-live-section-title ${titleClassName}`;
+            heading.textContent = title;
+            section.appendChild(heading);
+
+            if (!rows.length) {
+              const empty = document.createElement('div');
+              empty.className = 'stream-live-empty';
+              empty.textContent = 'No live channels';
+              section.appendChild(empty);
+              return section;
+            }
+
+            rows.forEach((row) => {
+              section.appendChild(makeRow(row));
+            });
+            return section;
           };
 
-          container.innerHTML = `
-            <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; align-items:start;">
-              ${sectionHtml('Twitch Live', 'rgba(169,112,255,0.95)', twitchRows)}
-              ${sectionHtml('YouTube Live', 'rgba(255,106,74,0.95)', youtubeRows)}
-            </div>`;
-
-          container.querySelectorAll('.stream-open-link').forEach((linkEl) => {
-            linkEl.addEventListener('click', (event) => {
-              event.preventDefault();
-              const streamUrl = linkEl.getAttribute('data-stream-url');
-              if (streamUrl) loadStreamDirect(streamUrl);
-            });
-          });
-
-          container.querySelectorAll('.stream-remove-btn').forEach((buttonEl) => {
-            buttonEl.addEventListener('click', (event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              const streamerName = buttonEl.getAttribute('data-streamer-name');
-              if (streamerName) removeStreamer(streamerName);
-            });
-          });
+          const grid = document.createElement('div');
+          grid.className = 'stream-live-grid';
+          grid.appendChild(makeSection('Twitch Live', 'stream-live-title-twitch', twitchRows));
+          grid.appendChild(makeSection('YouTube Live', 'stream-live-title-youtube', youtubeRows));
+          container.appendChild(grid);
         }
 
         updateConnectButtons();

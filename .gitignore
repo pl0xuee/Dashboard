@@ -2,4 +2,5 @@ backup.sh
 start_local_server.sh
 backup_to_github_and_local.sh
 SECURITY-CSP-CHECKLIST.md
+security/
 

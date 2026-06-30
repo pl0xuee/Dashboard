@@ -22,9 +22,16 @@
 
         image.src = `${probeUrl}?t=${Date.now()}`;
       }).then((isOnline) => {
-        statusEl.innerHTML = isOnline
-          ? '<span style="color: #00ff00;">●</span> Online'
-          : '<span style="color: #ff3333;">●</span> Offline';
+        statusEl.textContent = '';
+
+        const dot = document.createElement('span');
+        dot.className = `media-status-dot ${isOnline ? 'online' : 'offline'}`;
+        dot.setAttribute('aria-hidden', 'true');
+
+        const text = document.createTextNode(isOnline ? 'Online' : 'Offline');
+
+        statusEl.appendChild(dot);
+        statusEl.appendChild(text);
       });
     }
     checkServerStatus();

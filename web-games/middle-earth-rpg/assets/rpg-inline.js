@@ -37,6 +37,15 @@
       Acrobatics: 'dex'
     };
 
+    function escapeHtml(value) {
+      return String(value ?? '')
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
     const BESTIARY = {
       orcSkirmisher: {
         name: 'Orc Skirmisher', role: 'raider', ac: 12, hp: 18, maxHp: 18, attackBonus: 4, damageDie: '1d8', damageBonus: 2,
@@ -1087,7 +1096,7 @@
       state.storyLog.forEach((entry) => {
         const wrapper = document.createElement('article');
         wrapper.className = 'story-entry';
-        wrapper.innerHTML = `<h4>${entry.title}</h4><p>${entry.text}</p>`;
+        wrapper.innerHTML = `<h4>${escapeHtml(entry.title)}</h4><p>${escapeHtml(entry.text)}</p>`;
         dom.narrativeLog.appendChild(wrapper);
       });
       dom.narrativeLog.scrollTop = dom.narrativeLog.scrollHeight;
@@ -1098,7 +1107,7 @@
       state.actionLog.forEach((entry) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'action-entry';
-        wrapper.innerHTML = entry;
+        wrapper.textContent = entry;
         dom.actionLog.appendChild(wrapper);
       });
       dom.actionLog.scrollTop = dom.actionLog.scrollHeight;
@@ -1110,7 +1119,7 @@
       state.rollLog.slice().reverse().forEach((entry) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'action-entry';
-        wrapper.innerHTML = entry;
+        wrapper.textContent = entry;
         dom.rollLog.appendChild(wrapper);
       });
     }
@@ -1725,7 +1734,7 @@
           ? `Steel meets shadow beneath ${state.world.targetSite}.`
           : `${state.world.theater} stretches out beneath the company’s next decision.`
         : 'The march is quiet for a breath.';
-      dom.sceneVisualCaption.innerHTML = `<strong>Scene Tableau</strong>${caption}`;
+      dom.sceneVisualCaption.textContent = `Scene Tableau ${caption}`;
     }
 
     function renderSceneMap() {
@@ -2023,7 +2032,7 @@
       const routeLabel = scene
         ? `${scene.act} · ${scene.subtitle} · ${scene.kind === 'combat' ? 'Engagement marker active' : 'Trail marker active'}`
         : 'The company has not yet set its course.';
-      dom.sceneMapCaption.innerHTML = `<strong>Route Map</strong>${routeLabel}`;
+      dom.sceneMapCaption.textContent = `Route Map ${routeLabel}`;
 
       if (generatedMap && generatedMap.status === 'loading' && !hasGeneratedMap) {
         ctx.fillStyle = 'rgba(7, 9, 15, 0.36)';

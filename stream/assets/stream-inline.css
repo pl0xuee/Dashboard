@@ -55,6 +55,66 @@
       margin-bottom: 0; /* Adjusted */
     }
 
+    .stream-url-input {
+      width: 350px;
+      height: 38px;
+      padding: 0 12px;
+      margin: 0 4px;
+    }
+
+    .streamer-dropdown-title {
+      padding: 4px 6px 2px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(200, 210, 255, 0.45);
+    }
+
+    .streamer-dropdown-subtitle {
+      padding: 0 6px 6px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(0, 220, 120, 0.75);
+    }
+
+    .youtube-scan-status {
+      padding: 0 6px 6px;
+      font-size: 10px;
+      color: rgba(255, 180, 140, 0.75);
+      min-height: 14px;
+    }
+
+    .streamer-divider {
+      border-top: 1px solid var(--border);
+      margin: 6px 0 4px;
+    }
+
+    .streamer-action {
+      display: block;
+      text-align: center;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+      border-radius: 8px;
+      transition: background 0.15s;
+    }
+
+    .streamer-action-add {
+      color: #7dd3fc;
+    }
+
+    .streamer-action-twitch {
+      color: #a970ff;
+    }
+
+    .streamer-action-youtube {
+      color: #ff6a4a;
+    }
+
         /* Dropdown Styles */
     .dropdown { position: relative; display: inline-block; }
     .dropdown-content {
@@ -98,6 +158,95 @@
 
     .stream-live-row:hover {
       filter: brightness(1.25);
+    }
+
+    .stream-live-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 6px 8px;
+      margin-bottom: 4px;
+      background: rgba(0, 200, 80, 0.18);
+      border: 1px solid rgba(0, 200, 80, 0.45);
+      border-radius: 8px;
+      transition: filter 0.15s;
+    }
+
+    .stream-open-link {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      color: #e8ecef;
+      flex-grow: 1;
+      min-width: 0;
+    }
+
+    .stream-live-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: capitalize;
+      letter-spacing: 0.02em;
+    }
+
+    .stream-live-viewers {
+      font-size: 10px;
+      color: rgba(230, 255, 235, 0.82);
+    }
+
+    .stream-remove-btn {
+      background: none;
+      border: none;
+      color: rgba(255, 80, 80, 0.5);
+      cursor: pointer;
+      font-size: 16px;
+      margin-left: 6px;
+      padding: 0 2px;
+      flex-shrink: 0;
+      transition: all 0.2s;
+    }
+
+    .stream-live-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .stream-live-section {
+      min-width: 0;
+    }
+
+    .stream-live-section-title {
+      padding: 6px 6px 4px;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .stream-live-title-twitch {
+      color: rgba(169, 112, 255, 0.95);
+    }
+
+    .stream-live-title-youtube {
+      color: rgba(255, 106, 74, 0.95);
+    }
+
+    .stream-live-empty {
+      padding: 6px 8px 8px;
+      font-size: 11px;
+      color: rgba(200, 210, 255, 0.4);
+    }
+
+    .stream-list-empty {
+      padding: 8px 10px;
+      font-size: 12px;
+      color: rgba(200, 210, 255, 0.4);
+      text-align: center;
     }
 
     .stream-remove-btn:hover {

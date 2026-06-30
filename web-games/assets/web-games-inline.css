@@ -126,6 +126,17 @@
       transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease, background 140ms ease, filter 140ms ease;
     }
 
+    .game-picker-btn-rpg {
+      grid-column: 1 / -1;
+      min-height: 360px;
+      height: 360px;
+    }
+
+    .games-side-title {
+      margin-bottom: 0;
+      font-size: 0.74rem;
+    }
+
     .game-picker-btn[data-game='rpg'] {
       --game-tint: rgba(216, 189, 132, 0.2);
       --game-accent: rgba(108, 78, 34, 0.2);
