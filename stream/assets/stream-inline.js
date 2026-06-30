@@ -649,7 +649,7 @@
         const clientId = window.TWITCH_CLIENT_ID;
         if (!clientId || clientId === 'YOUR_TWITCH_CLIENT_ID') {
         const redirect = getOAuthRedirect('twitch');
-        alert('Set your TWITCH_CLIENT_ID in config.js first.\n\nRegister a free app at: https://dev.twitch.tv/console/apps\n\nAlso ensure this exact OAuth Redirect URL is in your Twitch app settings:\n' + redirect);
+        alert('Set your TWITCH_CLIENT_ID in assets/js/config.js first.\n\nRegister a free app at: https://dev.twitch.tv/console/apps\n\nAlso ensure this exact OAuth Redirect URL is in your Twitch app settings:\n' + redirect);
             return;
         }
       const state = makeOAuthState('tw');
@@ -668,7 +668,7 @@
     function youtubeLogin() {
       const clientId = window.YOUTUBE_CLIENT_ID;
       if (!clientId || clientId === 'YOUR_YOUTUBE_CLIENT_ID') {
-        alert('Set your YOUTUBE_CLIENT_ID in config.js first.\n\nCreate an OAuth client ID at: https://console.cloud.google.com/');
+        alert('Set your YOUTUBE_CLIENT_ID in assets/js/config.js first.\n\nCreate an OAuth client ID at: https://console.cloud.google.com/');
         return;
       }
       const state = makeOAuthState('yt');

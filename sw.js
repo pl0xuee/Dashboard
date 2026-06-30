@@ -1,13 +1,14 @@
-const CACHE_NAME = 'command-center-v6';
+const CACHE_NAME = 'command-center-v7';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
-  '/styles.css',
-  '/script.js',
+  '/assets/css/styles.css',
+  '/assets/js/script.js',
   '/manifest.webmanifest',
-  '/favicon.svg',
+  '/assets/icons/favicon.svg',
   '/dashboard/',
   '/dashboard/index.html',
+  '/dashboard/assets/dashboard-widgets.js',
   '/stream/',
   '/stream/index.html',
   '/media-portal/',
