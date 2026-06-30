@@ -1,0 +1,106 @@
+    .page {
+      max-width: 99% !important; /* Wider width for stream page */
+    }
+
+    .stream-container {
+      display: flex;
+      flex: 1;
+      gap: 5px;
+      height: 100%;
+      width: 100%;
+      overflow: hidden;
+      min-height: 0;
+    }
+    .stream-player {
+      flex: 1;
+      height: 100%;
+      background: #000;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .stream-chat {
+      flex: 0 0 390px;
+      width: 390px;
+      height: 100%;
+      background: #0d1117;
+      border-radius: 20px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+
+    @media (max-width: 1200px) {
+      .stream-chat {
+        flex-basis: 340px;
+        width: 340px;
+      }
+    }
+
+    /* Removed the filter invert trick */
+    .stream-chat iframe {
+      filter: none;
+    }
+    /* Force Twitch/YouTube chat frames to look darker if possible via query params */
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      /* padding: 10px; */ /* Removed */
+      background: transparent; /* Removed background */
+      border-radius: 20px;
+      margin-bottom: 0; /* Adjusted */
+    }
+
+        /* Dropdown Styles */
+    .dropdown { position: relative; display: inline-block; }
+    .dropdown-content {
+      display: none;
+      position: absolute;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      width: min(88vw, 520px);
+      min-width: min(420px, 88vw);
+      max-width: 520px;
+      z-index: 20;
+      padding: 6px;
+      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      right: 0;
+      top: 100%;
+      margin-top: 0px;
+      max-height: 70vh;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    .dropdown-content::-webkit-scrollbar { width: 4px; }
+    .dropdown-content::-webkit-scrollbar-track { background: transparent; }
+    .dropdown-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+    .dropdown:hover .dropdown-content { display: block; }
+
+    .dropdown-content a {
+      display: block;
+      padding: 8px 12px;
+      text-decoration: none;
+      color: #e8ecef;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .dropdown-content a:hover {
+      background: rgba(109, 140, 255, 0.14);
+      color: #f6f8ff;
+    }
+
+    .stream-live-row:hover {
+      filter: brightness(1.25);
+    }
+
+    .stream-remove-btn:hover {
+      color: rgba(255, 80, 80, 1) !important;
+      transform: scale(1.2);
+    }

@@ -682,7 +682,8 @@ if (!window.__dashboardWidgetsInitialized) {
           const query = symbolInput ? symbolInput.value.trim() : '';
           if (query) {
             const searchUrl = `https://search.brave.com/search?q=${encodeURIComponent(query)}`;
-            window.open(searchUrl, '_blank');
+            const popup = window.open(searchUrl, '_blank', 'noopener,noreferrer');
+            if (popup) popup.opener = null;
           }
         } else {
           updatePanel(panelIndex);

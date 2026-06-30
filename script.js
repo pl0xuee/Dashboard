@@ -150,6 +150,23 @@ function enableStandaloneSameWindowLinks() {
   });
 }
 
+function hardenNewTabTargets(root = document) {
+  const elements = root.querySelectorAll('a[target="_blank"], form[target="_blank"]');
+  elements.forEach((element) => {
+    const rel = (element.getAttribute('rel') || '')
+      .split(/\s+/)
+      .filter(Boolean);
+    if (!rel.includes('noopener')) rel.push('noopener');
+    if (!rel.includes('noreferrer')) rel.push('noreferrer');
+    element.setAttribute('rel', rel.join(' '));
+  });
+}
+
 registerAppServiceWorker();
 enableStandaloneSameWindowLinks();
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => hardenNewTabTargets());
+} else {
+  hardenNewTabTargets();
+}
 

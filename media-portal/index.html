@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' https://unpkg.com https://widgets.tradingview-widget.com https://s3.tradingview.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https: http:; font-src 'self' data: https:; connect-src 'self' https: http:; frame-src 'self' https://player.twitch.tv https://www.twitch.tv https://www.youtube.com https://tv.youtube.com https://clips.twitch.tv; media-src 'self' https: http:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
   <meta name="theme-color" content="#0b1220" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -27,7 +28,7 @@
         <h1 style="margin-bottom: 10px;">Jellyfin Media Portal</h1>
         <p style="margin-bottom: 40px; color: var(--text-muted);">Access your private media library directly from your home network.</p>
 
-        <a href="http://192.168.1.212:8096" target="_blank"
+          <a href="http://192.168.1.212:8096" target="_blank" rel="noopener noreferrer"
            class="home-button"
             style="padding: 24px 48px; font-size: 1.5rem; background: #5a2c94; border-color: #7a3dbf; color: #fff; box-shadow: 0 4px 15px rgba(90, 44, 148, 0.4); display: flex; justify-content: center; align-items: center; width: fit-content; margin: 0 auto; text-align: center;">
            Click to Open Jellyfin
@@ -41,38 +42,7 @@
       </div>
     </main>
   </div>
-  <script>
-    async function checkServerStatus() {
-        const statusEl = document.getElementById('server-status');
-      const probeUrl = 'http://192.168.1.212:8096/web/favicon.ico';
-
-      await new Promise((resolve) => {
-        const image = new Image();
-        const timeoutId = setTimeout(() => {
-          image.onload = null;
-          image.onerror = null;
-          resolve(false);
-        }, 5000);
-
-        image.onload = () => {
-          clearTimeout(timeoutId);
-          resolve(true);
-        };
-
-        image.onerror = () => {
-          clearTimeout(timeoutId);
-          resolve(false);
-        };
-
-        image.src = `${probeUrl}?t=${Date.now()}`;
-      }).then((isOnline) => {
-        statusEl.innerHTML = isOnline
-          ? '<span style="color: #00ff00;">●</span> Online'
-          : '<span style="color: #ff3333;">●</span> Offline';
-      });
-    }
-    checkServerStatus();
-  </script>
+  <script src="./assets/media-inline.js"></script>
 </body>
 </html>
 
