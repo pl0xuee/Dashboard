@@ -322,6 +322,50 @@
     let whackSwapTimer = 0;
     let activeGame = null;
     let rpgTheaterMode = false;
+    const scheduledGameLoops = {
+      tetris: false,
+      snake: false,
+      pong: false,
+      breakout: false,
+      dash: false,
+      whack: false,
+      doom: false
+    };
+
+    function canRunGameLoop(gameName) {
+      return !document.hidden && activeGame === gameName;
+    }
+
+    function resetGameLoopClock(gameName) {
+      if (gameName === 'tetris') lastTime = 0;
+      if (gameName === 'snake') snakeLastStepAt = 0;
+      if (gameName === 'pong') pongLastFrame = 0;
+      if (gameName === 'breakout') breakoutLastFrame = 0;
+      if (gameName === 'dash') dashLastFrame = 0;
+      if (gameName === 'whack') whackLastFrame = 0;
+      if (gameName === 'doom') doomLastTs = 0;
+    }
+
+    function stopGameLoop(gameName) {
+      scheduledGameLoops[gameName] = false;
+      resetGameLoopClock(gameName);
+    }
+
+    function scheduleGameLoop(gameName, loopFn) {
+      if (scheduledGameLoops[gameName]) return;
+      scheduledGameLoops[gameName] = true;
+      requestAnimationFrame(loopFn);
+    }
+
+    function syncActiveGameLoop() {
+      if (activeGame === 'tetris') scheduleGameLoop('tetris', gameLoop);
+      if (activeGame === 'snake') scheduleGameLoop('snake', snakeLoop);
+      if (activeGame === 'pong') scheduleGameLoop('pong', pongLoop);
+      if (activeGame === 'breakout') scheduleGameLoop('breakout', breakoutLoop);
+      if (activeGame === 'dash') scheduleGameLoop('dash', dashLoop);
+      if (activeGame === 'whack') scheduleGameLoop('whack', whackLoop);
+      if (activeGame === 'doom') scheduleGameLoop('doom', doomLoop);
+    }
 
     const MINE_WORLD_SIZE = 24;
     const MINE_FOV = Math.PI / 3;
@@ -2047,6 +2091,10 @@
     }
 
     function doomLoop(ts = 0) {
+      if (!canRunGameLoop('doom')) {
+        stopGameLoop('doom');
+        return;
+      }
       if (!doomLastTs) doomLastTs = ts;
       const delta = Math.min(0.05, (ts - doomLastTs) / 1000);
       doomLastTs = ts;
@@ -2098,7 +2146,7 @@
       updateStats();
       setStatus('Game running');
       draw();
-      requestAnimationFrame(gameLoop);
+      scheduleGameLoop('tetris', gameLoop);
     }
 
     function updateStats() {
@@ -2340,7 +2388,13 @@
     }
 
     function gameLoop(time = 0) {
+      if (!canRunGameLoop('tetris')) {
+        stopGameLoop('tetris');
+        draw();
+        return;
+      }
       if (!running) {
+        stopGameLoop('tetris');
         draw();
         return;
       }
@@ -2512,6 +2566,10 @@
     }
 
     function snakeLoop(time = 0) {
+      if (!canRunGameLoop('snake')) {
+        stopGameLoop('snake');
+        return;
+      }
       if (!snakeLastStepAt) snakeLastStepAt = time;
       const elapsed = time - snakeLastStepAt;
       if (elapsed >= SNAKE_STEP_MS) {
@@ -3086,6 +3144,10 @@
     }
 
     function pongLoop(time = 0) {
+      if (!canRunGameLoop('pong')) {
+        stopGameLoop('pong');
+        return;
+      }
       if (!pongLastFrame) pongLastFrame = time;
       const delta = Math.min(0.05, (time - pongLastFrame) / 1000);
       pongLastFrame = time;
@@ -3271,6 +3333,10 @@
     }
 
     function breakoutLoop(time = 0) {
+      if (!canRunGameLoop('breakout')) {
+        stopGameLoop('breakout');
+        return;
+      }
       if (!breakoutLastFrame) breakoutLastFrame = time;
       const delta = Math.min(0.05, (time - breakoutLastFrame) / 1000);
       breakoutLastFrame = time;
@@ -3385,6 +3451,10 @@
     }
 
     function dashLoop(time = 0) {
+      if (!canRunGameLoop('dash')) {
+        stopGameLoop('dash');
+        return;
+      }
       if (!dashLastFrame) dashLastFrame = time;
       const delta = Math.min(0.05, (time - dashLastFrame) / 1000);
       dashLastFrame = time;
@@ -3715,6 +3785,10 @@
     }
 
     function whackLoop(time = 0) {
+      if (!canRunGameLoop('whack')) {
+        stopGameLoop('whack');
+        return;
+      }
       if (!whackLastFrame) whackLastFrame = time;
       const delta = Math.min(0.05, (time - whackLastFrame) / 1000);
       whackLastFrame = time;
@@ -3915,8 +3989,15 @@
       document.body.classList.toggle('rpg-theater-mode', rpgTheaterMode);
       document.documentElement.classList.toggle('rpg-theater-mode', rpgTheaterMode);
       updateRpgFullscreenButton();
+      syncActiveGameLoop();
       requestAnimationFrame(resizeGameCanvases);
     }
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) {
+        syncActiveGameLoop();
+      }
+    });
 
     function setActiveGame(gameName) {
       if (gameName === 'mine') {
@@ -4329,10 +4410,3 @@
     setActiveGame(null);
     resizeGameCanvases();
     window.addEventListener('resize', resizeGameCanvases);
-    requestAnimationFrame(snakeLoop);
-    requestAnimationFrame(pongLoop);
-    requestAnimationFrame(breakoutLoop);
-    requestAnimationFrame(dashLoop);
-    requestAnimationFrame(whackLoop);
-    requestAnimationFrame(mineLoop);
-    requestAnimationFrame(doomLoop);

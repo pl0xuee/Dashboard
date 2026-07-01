@@ -475,6 +475,7 @@ if (!window.__dashboardWidgetsInitialized) {
     }
 
     window[`interval${index}`] = setInterval(() => {
+      if (document.hidden) return;
       loadChartData(symbol, candleSeries, volumeSeries, chart, index, toolTip, { allowFallback: false });
     }, CHART_REFRESH_MS);
   }

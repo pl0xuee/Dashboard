@@ -1,5 +1,32 @@
     let allNewsItems = [];
     const NEWS_MAX_ITEMS = 10;
+    const NEWS_CACHE_PREFIX = 'homeNewsCache:';
+    const WEATHER_CACHE_TTL_MS = 15 * 60 * 1000;
+    const WEATHER_LOCATION_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+    const WEATHER_LAST_SNAPSHOT_KEY = 'homeWeatherLastSnapshot';
+    const WEATHER_APPROX_LOCATION_KEY = 'homeWeatherApproxLocation';
+    const NASCAR_CACHE_PREFIX = 'homeNascarSchedule:';
+    const NASCAR_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+
+    function readStorageJson(key, storage = localStorage) {
+      try {
+        return JSON.parse(storage.getItem(key) || 'null');
+      } catch (_) {
+        return null;
+      }
+    }
+
+    function writeStorageJson(key, value, storage = localStorage) {
+      try {
+        storage.setItem(key, JSON.stringify(value));
+      } catch (_) {
+        // Ignore storage quota and privacy mode failures.
+      }
+    }
+
+    function isFreshTimestamp(updatedAt, ttlMs) {
+      return Number.isFinite(updatedAt) && Date.now() - updatedAt < ttlMs;
+    }
 
     async function getAreaNewsFeedUrl() {
       const fallback = 'https://news.google.com/rss/search?q=' + encodeURIComponent('regional news us') + '&hl=en-US&gl=US&ceid=US:en';
@@ -79,6 +106,13 @@
         }
       }
 
+      const persistentCacheKey = `${NEWS_CACHE_PREFIX}${cacheKey}`;
+      const persisted = readStorageJson(persistentCacheKey);
+      if (persisted && isFreshTimestamp(persisted.timestamp, CACHE_DURATION) && persisted.data) {
+        newsCache[cacheKey] = persisted;
+        return persisted.data;
+      }
+
       // Cache miss or expired - fetch fresh data
       const data = await fetchNewsWithRetry(feedUrl);
       
@@ -87,6 +121,7 @@
         data: data,
         timestamp: Date.now()
       };
+      writeStorageJson(persistentCacheKey, newsCache[cacheKey]);
       
       return data;
     }
@@ -625,12 +660,83 @@
         hour12: true
       };
       document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', options);
-      updateMarketStatus();
     }
-    fetchMajorIndexes();
-    setInterval(fetchMajorIndexes, 120000);
-    setInterval(updateClock, 1000);
-    updateClock();
+
+    let majorIndexesTimer = null;
+    let majorIndexesInFlight = false;
+    let clockTimer = null;
+    let marketStatusTimer = null;
+
+    function getMajorIndexRefreshIntervalMs() {
+      return isUsMarketOpenNow() ? INDEX_CACHE_TTL_LIVE : INDEX_CACHE_TTL_CLOSED;
+    }
+
+    async function refreshMajorIndexesNow() {
+      if (majorIndexesInFlight || document.hidden) return;
+
+      majorIndexesInFlight = true;
+      try {
+        await fetchMajorIndexes();
+      } finally {
+        majorIndexesInFlight = false;
+        scheduleMajorIndexesRefresh();
+      }
+    }
+
+    function scheduleMajorIndexesRefresh(delayMs = getMajorIndexRefreshIntervalMs()) {
+      if (majorIndexesTimer) clearTimeout(majorIndexesTimer);
+      if (document.hidden) return;
+
+      majorIndexesTimer = window.setTimeout(() => {
+        majorIndexesTimer = null;
+        refreshMajorIndexesNow();
+      }, delayMs);
+    }
+
+    function startClockUpdates() {
+      if (clockTimer) return;
+      updateClock();
+      clockTimer = window.setInterval(updateClock, 1000);
+    }
+
+    function stopClockUpdates() {
+      if (!clockTimer) return;
+      clearInterval(clockTimer);
+      clockTimer = null;
+    }
+
+    function startMarketStatusUpdates() {
+      if (marketStatusTimer) return;
+      updateMarketStatus();
+      marketStatusTimer = window.setInterval(updateMarketStatus, 60000);
+    }
+
+    function stopMarketStatusUpdates() {
+      if (!marketStatusTimer) return;
+      clearInterval(marketStatusTimer);
+      marketStatusTimer = null;
+    }
+
+    function syncHomePageSchedulers() {
+      if (document.hidden) {
+        stopClockUpdates();
+        stopMarketStatusUpdates();
+        if (majorIndexesTimer) {
+          clearTimeout(majorIndexesTimer);
+          majorIndexesTimer = null;
+        }
+        return;
+      }
+
+      startClockUpdates();
+      startMarketStatusUpdates();
+      if (!majorIndexesTimer && !majorIndexesInFlight) {
+        refreshMajorIndexesNow();
+      }
+    }
+
+    document.addEventListener('visibilitychange', syncHomePageSchedulers);
+    syncHomePageSchedulers();
 
     // Weather Script
     async function fetchWeather() {
@@ -654,44 +760,91 @@
         71: "🌨️", 73: "🌨️", 75: "❄️", 95: "⚡"
       };
 
-      async function renderWeather(latitude, longitude, locationLabel) {
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&timezone=auto`);
-        const data = await res.json();
+      function renderWeatherSnapshot(snapshot, locationLabel) {
+        if (!snapshot) return;
 
+        tempEl.textContent = `${snapshot.icon} ${snapshot.temp}°F`;
+        descEl.textContent = snapshot.condition;
+        rangeEl.textContent = `H: ${snapshot.max}° L: ${snapshot.min}°`;
+        summaryEl.innerHTML = snapshot.weekHtml;
+        if (cityEl && locationLabel) cityEl.textContent = `Location: ${locationLabel}`;
+      }
+
+      function buildWeatherSnapshot(data) {
         const temp = Math.round(data.current.temperature_2m);
         const max = Math.round(data.daily.temperature_2m_max[0]);
         const min = Math.round(data.daily.temperature_2m_min[0]);
-        const condition = conditions[data.current.weather_code] || "Unknown";
-        const icon = icons[data.current.weather_code] || "🌡️";
+        const condition = conditions[data.current.weather_code] || 'Unknown';
+        const icon = icons[data.current.weather_code] || '🌡️';
 
         const dailyCodes = data.daily.weather_code;
         const dailyMax = data.daily.temperature_2m_max;
         const dailyMin = data.daily.temperature_2m_min;
-        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
         const today = new Date().getDay();
 
-        let weekHTML = "";
+        let weekHtml = '';
         for (let i = 1; i <= 6; i++) {
           const dayIndex = (today + i) % 7;
-          const dayCondition = conditions[dailyCodes[i]] || "Var";
-          const dayIcon = icons[dailyCodes[i]] || "🌡️";
+          const dayCondition = conditions[dailyCodes[i]] || 'Var';
+          const dayIcon = icons[dailyCodes[i]] || '🌡️';
           const dayMax = Math.round(dailyMax[i]);
           const dayMin = Math.round(dailyMin[i]);
-          weekHTML += `<div class="weather-day">
+          weekHtml += `<div class="weather-day">
                        <div class="weather-day-name">${days[dayIndex]} ${dayIcon}</div>
                        <div class="weather-day-cond">${dayCondition}</div>
                        <div class="weather-day-temps">H:${dayMax}° L:${dayMin}°</div>
                       </div>`;
         }
 
-        tempEl.textContent = `${icon} ${temp}°F`;
-        descEl.textContent = condition;
-        rangeEl.textContent = `H: ${max}° L: ${min}°`;
-        summaryEl.innerHTML = weekHTML;
-        if (cityEl && locationLabel) cityEl.textContent = `Location: ${locationLabel}`;
+        return { temp, max, min, condition, icon, weekHtml };
+      }
+
+      function getWeatherCacheKey(latitude, longitude) {
+        return `${WEATHER_LAST_SNAPSHOT_KEY}:${latitude.toFixed(2)},${longitude.toFixed(2)}`;
+      }
+
+      function persistWeatherSnapshot(cacheKey, snapshot, locationLabel) {
+        const payload = {
+          snapshot,
+          locationLabel: locationLabel || '',
+          updatedAt: Date.now()
+        };
+        writeStorageJson(cacheKey, payload);
+        writeStorageJson(WEATHER_LAST_SNAPSHOT_KEY, payload);
+      }
+
+      const lastSnapshot = readStorageJson(WEATHER_LAST_SNAPSHOT_KEY);
+      if (lastSnapshot && isFreshTimestamp(lastSnapshot.updatedAt, WEATHER_CACHE_TTL_MS) && lastSnapshot.snapshot) {
+        renderWeatherSnapshot(lastSnapshot.snapshot, lastSnapshot.locationLabel);
+      }
+
+      async function renderWeather(latitude, longitude, locationLabel) {
+        const cacheKey = getWeatherCacheKey(latitude, longitude);
+        const cached = readStorageJson(cacheKey);
+        if (cached && isFreshTimestamp(cached.updatedAt, WEATHER_CACHE_TTL_MS) && cached.snapshot) {
+          renderWeatherSnapshot(cached.snapshot, locationLabel || cached.locationLabel);
+          return;
+        }
+
+        if (cached && cached.snapshot) {
+          renderWeatherSnapshot(cached.snapshot, locationLabel || cached.locationLabel);
+        }
+
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&timezone=auto`);
+        const data = await res.json();
+        const snapshot = buildWeatherSnapshot(data);
+
+        renderWeatherSnapshot(snapshot, locationLabel || cached?.locationLabel);
+        persistWeatherSnapshot(cacheKey, snapshot, locationLabel || cached?.locationLabel);
       }
 
       async function fetchApproximateLocation() {
+        const cached = readStorageJson(WEATHER_APPROX_LOCATION_KEY);
+        if (cached && isFreshTimestamp(cached.updatedAt, WEATHER_LOCATION_CACHE_TTL_MS)) {
+          return cached;
+        }
+
         const res = await fetch('https://ipapi.co/json/');
         if (!res.ok) throw new Error('Approximate location lookup failed');
         const data = await res.json();
@@ -700,11 +853,14 @@
         }
 
         const parts = [data.city, data.region_code || data.region].filter(Boolean);
-        return {
+        const approx = {
           latitude: data.latitude,
           longitude: data.longitude,
-          label: parts.length > 0 ? parts.join(', ') : 'Approximate location'
+          label: parts.length > 0 ? parts.join(', ') : 'Approximate location',
+          updatedAt: Date.now()
         };
+        writeStorageJson(WEATHER_APPROX_LOCATION_KEY, approx);
+        return approx;
       }
 
       async function fetchLocationLabel(latitude, longitude) {
@@ -740,6 +896,10 @@
           cityEl.textContent = 'Location: Detecting...';
           fetchLocationLabel(latitude, longitude).then((label) => {
             cityEl.textContent = `Location: ${label}`;
+            const latest = readStorageJson(getWeatherCacheKey(latitude, longitude));
+            if (latest && latest.snapshot) {
+              persistWeatherSnapshot(getWeatherCacheKey(latitude, longitude), latest.snapshot, label);
+            }
           });
         }
 
@@ -789,6 +949,19 @@
 
       const selected = seriesMap[seriesType] || seriesMap.cup;
 
+      async function getNascarSchedule(year) {
+        const cacheKey = `${NASCAR_CACHE_PREFIX}${year}`;
+        const cached = readStorageJson(cacheKey);
+        if (cached && isFreshTimestamp(cached.updatedAt, NASCAR_CACHE_TTL_MS) && cached.data) {
+          return cached.data;
+        }
+
+        const res = await fetch(`https://cf.nascar.com/cacher/${year}/race_list_basic.json`);
+        const data = await res.json();
+        writeStorageJson(cacheKey, { data, updatedAt: Date.now() });
+        return data;
+      }
+
       const setUnavailable = () => {
         raceEl.textContent = 'Unavailable';
         trackEl.textContent = '--';
@@ -802,8 +975,7 @@
         let nextRace = null;
 
         for (const year of yearsToCheck) {
-          const res = await fetch(`https://cf.nascar.com/cacher/${year}/race_list_basic.json`);
-          const data = await res.json();
+          const data = await getNascarSchedule(year);
           const seriesRaces = Array.isArray(data[selected.key]) ? data[selected.key] : [];
 
           const upcoming = seriesRaces
