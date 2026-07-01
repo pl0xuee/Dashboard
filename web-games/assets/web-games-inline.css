@@ -1203,13 +1203,71 @@
     }
 
     .memory-stats,
-    .minefield-stats,
     .whack-stats {
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
+    .minefield-stats {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
     .simon-stats {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .minefield-controls {
+      max-width: 720px;
+      width: 100%;
+      margin: 14px auto 0;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .minefield-control {
+      display: grid;
+      gap: 8px;
+      color: #dce8ff;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .minefield-control select,
+    .minefield-control input {
+      width: 100%;
+    }
+
+    .minefield-control select {
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04);
+      color: #eef4ff;
+      font: inherit;
+      font-size: 0.92rem;
+      font-weight: 600;
+      padding: 0 12px;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    .minefield-slider-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .minefield-slider-row output {
+      min-width: 64px;
+      text-align: right;
+      color: var(--accent);
+      font-size: 0.84rem;
+      font-weight: 700;
+      letter-spacing: normal;
+      text-transform: none;
     }
 
     .memory-card,
@@ -1345,6 +1403,13 @@
     .minefield-cell.mine {
       background: rgba(255, 122, 122, 0.18);
       border-color: rgba(255, 122, 122, 0.38);
+    }
+
+    @media (max-width: 720px) {
+      .minefield-controls,
+      .minefield-stats {
+        grid-template-columns: 1fr 1fr;
+      }
     }
 
     .simon-grid {

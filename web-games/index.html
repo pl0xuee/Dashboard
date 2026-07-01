@@ -11,7 +11,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="../assets/css/styles.css" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
-  <link rel="stylesheet" href="./assets/web-games-inline.css?v=20260630b" />
+  <link rel="stylesheet" href="./assets/web-games-inline.css?v=20260630d" />
 </head>
 <body class="home-page">
   <div class="page">
@@ -197,12 +197,31 @@
         <section id="minefieldPanel" class="games-card game-panel">
           <h2 class="games-title">Minefield</h2>
           <p class="control-hint">Controls: Left click to reveal, right click to flag. Clear every safe tile without hitting a mine.</p>
+          <div class="minefield-controls" aria-label="Minefield settings">
+            <label class="minefield-control" for="minefieldDifficultySelect">
+              <span>Difficulty</span>
+              <select id="minefieldDifficultySelect">
+                <option value="easy">Easy</option>
+                <option value="normal" selected>Normal</option>
+                <option value="hard">Hard</option>
+                <option value="brutal">Brutal</option>
+              </select>
+            </label>
+            <label class="minefield-control minefield-control-slider" for="minefieldSizeSlider">
+              <span>Board Size</span>
+              <div class="minefield-slider-row">
+                <input id="minefieldSizeSlider" type="range" min="6" max="14" step="1" value="8" />
+                <output id="minefieldSizeValue" for="minefieldSizeSlider">8 x 8</output>
+              </div>
+            </label>
+          </div>
           <div class="minefield-grid-wrap">
             <div id="minefieldGrid" class="minefield-grid" aria-label="Minefield grid"></div>
           </div>
           <div class="stats-grid minefield-stats">
             <div class="stat"><div class="stat-label">Safe Left</div><div class="stat-value" id="minefieldSafeVal">0</div></div>
             <div class="stat"><div class="stat-label">Flags</div><div class="stat-value" id="minefieldFlagsVal">0</div></div>
+            <div class="stat"><div class="stat-label">Mines</div><div class="stat-value" id="minefieldMinesVal">0</div></div>
             <div class="stat"><div class="stat-label">Wins</div><div class="stat-value" id="minefieldWinsVal">0</div></div>
           </div>
           <p id="minefieldStatus">Find the safe route.</p>
@@ -327,6 +346,6 @@
   </div>
 
   <script src="../assets/js/script.js"></script>
-  <script src="./assets/web-games-inline.js?v=20260630b"></script>
+  <script src="./assets/web-games-inline.js?v=20260630d"></script>
 </body>
 </html>

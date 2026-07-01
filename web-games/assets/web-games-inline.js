@@ -204,8 +204,12 @@
     const memoryBestEl = document.getElementById('memoryBestVal');
     const memoryStatusEl = document.getElementById('memoryStatus');
     const minefieldGridEl = document.getElementById('minefieldGrid');
+    const minefieldDifficultySelectEl = document.getElementById('minefieldDifficultySelect');
+    const minefieldSizeSliderEl = document.getElementById('minefieldSizeSlider');
+    const minefieldSizeValueEl = document.getElementById('minefieldSizeValue');
     const minefieldSafeEl = document.getElementById('minefieldSafeVal');
     const minefieldFlagsEl = document.getElementById('minefieldFlagsVal');
+    const minefieldMinesEl = document.getElementById('minefieldMinesVal');
     const minefieldWinsEl = document.getElementById('minefieldWinsVal');
     const minefieldStatusEl = document.getElementById('minefieldStatus');
     const simonPads = [0, 1, 2, 3].map((pad) => document.getElementById(`simonPad${pad}`));
@@ -298,8 +302,26 @@
     let memoryMatches = 0;
     let memoryBusy = false;
     let memoryBest = Number(localStorage.getItem('memoryBestMoves') || 0);
-    const MINEFIELD_SIZE = 8;
-    const MINEFIELD_MINES = 10;
+    const MINEFIELD_SETTINGS_KEY = 'minefieldSettings';
+    const MINEFIELD_MIN_SIZE = 6;
+    const MINEFIELD_MAX_SIZE = 14;
+    const MINEFIELD_DIFFICULTY_RATIOS = {
+      easy: 0.12,
+      normal: 0.16,
+      hard: 0.22,
+      brutal: 0.28
+    };
+    const savedMinefieldSettings = (() => {
+      try {
+        return JSON.parse(localStorage.getItem(MINEFIELD_SETTINGS_KEY) || 'null');
+      } catch (_) {
+        return null;
+      }
+    })();
+    let minefieldSize = Math.max(MINEFIELD_MIN_SIZE, Math.min(MINEFIELD_MAX_SIZE, Number(savedMinefieldSettings?.size) || 8));
+    let minefieldDifficulty = typeof savedMinefieldSettings?.difficulty === 'string' && savedMinefieldSettings.difficulty in MINEFIELD_DIFFICULTY_RATIOS
+      ? savedMinefieldSettings.difficulty
+      : 'normal';
     let minefieldCells = [];
     let minefieldFlags = 0;
     let minefieldRevealed = 0;
@@ -3552,6 +3574,30 @@
       minefieldStatusEl.textContent = text;
     }
 
+    function getMinefieldMineCount(size = minefieldSize, difficulty = minefieldDifficulty) {
+      const ratio = MINEFIELD_DIFFICULTY_RATIOS[difficulty] || MINEFIELD_DIFFICULTY_RATIOS.normal;
+      const totalCells = size * size;
+      return Math.max(1, Math.min(totalCells - 1, Math.round(totalCells * ratio)));
+    }
+
+    function persistMinefieldSettings() {
+      localStorage.setItem(MINEFIELD_SETTINGS_KEY, JSON.stringify({
+        size: minefieldSize,
+        difficulty: minefieldDifficulty
+      }));
+    }
+
+    function syncMinefieldControls() {
+      const mines = getMinefieldMineCount();
+      if (minefieldDifficultySelectEl) minefieldDifficultySelectEl.value = minefieldDifficulty;
+      if (minefieldSizeSliderEl) minefieldSizeSliderEl.value = String(minefieldSize);
+      if (minefieldSizeValueEl) minefieldSizeValueEl.textContent = `${minefieldSize} x ${minefieldSize}`;
+      if (minefieldMinesEl) minefieldMinesEl.textContent = String(mines);
+      if (minefieldGridEl) {
+        minefieldGridEl.style.gridTemplateColumns = `repeat(${minefieldSize}, minmax(0, 1fr))`;
+      }
+    }
+
     function countMinefieldAdjacents(row, col) {
       let count = 0;
       for (let dr = -1; dr <= 1; dr += 1) {
@@ -3559,7 +3605,7 @@
           if (dr === 0 && dc === 0) continue;
           const nextRow = row + dr;
           const nextCol = col + dc;
-          if (nextRow < 0 || nextRow >= MINEFIELD_SIZE || nextCol < 0 || nextCol >= MINEFIELD_SIZE) continue;
+          if (nextRow < 0 || nextRow >= minefieldSize || nextCol < 0 || nextCol >= minefieldSize) continue;
           if (minefieldCells[nextRow][nextCol].mine) count += 1;
         }
       }
@@ -3567,8 +3613,10 @@
     }
 
     function updateMinefieldHud() {
-      minefieldSafeEl.textContent = String(MINEFIELD_SIZE * MINEFIELD_SIZE - MINEFIELD_MINES - minefieldRevealed);
-      minefieldFlagsEl.textContent = String(Math.max(0, MINEFIELD_MINES - minefieldFlags));
+      const mineCount = getMinefieldMineCount();
+      minefieldSafeEl.textContent = String(minefieldSize * minefieldSize - mineCount - minefieldRevealed);
+      minefieldFlagsEl.textContent = String(Math.max(0, mineCount - minefieldFlags));
+      if (minefieldMinesEl) minefieldMinesEl.textContent = String(mineCount);
       minefieldWinsEl.textContent = String(minefieldWins);
     }
 
@@ -3582,7 +3630,7 @@
         for (let dc = -1; dc <= 1; dc += 1) {
           const nextRow = row + dr;
           const nextCol = col + dc;
-          if (nextRow < 0 || nextRow >= MINEFIELD_SIZE || nextCol < 0 || nextCol >= MINEFIELD_SIZE) continue;
+          if (nextRow < 0 || nextRow >= minefieldSize || nextCol < 0 || nextCol >= minefieldSize) continue;
           if (minefieldCells[nextRow][nextCol].revealed) continue;
           revealMinefieldCell(nextRow, nextCol);
         }
@@ -3608,7 +3656,7 @@
               setMinefieldStatus('Mine triggered. Press Restart to sweep again.');
             } else {
               revealMinefieldCell(row, col);
-              if (minefieldRevealed === MINEFIELD_SIZE * MINEFIELD_SIZE - MINEFIELD_MINES) {
+              if (minefieldRevealed === minefieldSize * minefieldSize - getMinefieldMineCount()) {
                 minefieldGameOver = true;
                 minefieldWins += 1;
                 localStorage.setItem('minefieldWins', String(minefieldWins));
@@ -3632,14 +3680,17 @@
     }
 
     function resetMinefieldGame() {
-      minefieldCells = Array.from({ length: MINEFIELD_SIZE }, () => Array.from({ length: MINEFIELD_SIZE }, () => ({ mine: false, flagged: false, revealed: false, adjacent: 0 })));
+      const mineCount = getMinefieldMineCount();
+      persistMinefieldSettings();
+      syncMinefieldControls();
+      minefieldCells = Array.from({ length: minefieldSize }, () => Array.from({ length: minefieldSize }, () => ({ mine: false, flagged: false, revealed: false, adjacent: 0 })));
       minefieldFlags = 0;
       minefieldRevealed = 0;
       minefieldGameOver = false;
-      const minePositions = shuffleArray(Array.from({ length: MINEFIELD_SIZE * MINEFIELD_SIZE }, (_, index) => index)).slice(0, MINEFIELD_MINES);
+      const minePositions = shuffleArray(Array.from({ length: minefieldSize * minefieldSize }, (_, index) => index)).slice(0, mineCount);
       minePositions.forEach((position) => {
-        const row = Math.floor(position / MINEFIELD_SIZE);
-        const col = position % MINEFIELD_SIZE;
+        const row = Math.floor(position / minefieldSize);
+        const col = position % minefieldSize;
         minefieldCells[row][col].mine = true;
       });
       minefieldCells.forEach((rowCells, row) => {
@@ -3650,6 +3701,26 @@
       updateMinefieldHud();
       setMinefieldStatus('Find the safe route. Right click to flag mines.');
       renderMinefieldGrid();
+    }
+
+    if (minefieldDifficultySelectEl) {
+      minefieldDifficultySelectEl.addEventListener('change', () => {
+        const nextDifficulty = minefieldDifficultySelectEl.value;
+        if (!(nextDifficulty in MINEFIELD_DIFFICULTY_RATIOS)) return;
+        minefieldDifficulty = nextDifficulty;
+        resetMinefieldGame();
+      });
+    }
+
+    if (minefieldSizeSliderEl) {
+      minefieldSizeSliderEl.addEventListener('input', () => {
+        minefieldSize = Math.max(MINEFIELD_MIN_SIZE, Math.min(MINEFIELD_MAX_SIZE, Number(minefieldSizeSliderEl.value) || 8));
+        syncMinefieldControls();
+      });
+      minefieldSizeSliderEl.addEventListener('change', () => {
+        minefieldSize = Math.max(MINEFIELD_MIN_SIZE, Math.min(MINEFIELD_MAX_SIZE, Number(minefieldSizeSliderEl.value) || 8));
+        resetMinefieldGame();
+      });
     }
 
     function setSimonStatus(text) {
@@ -4189,6 +4260,7 @@
         activeGameHintEl.textContent = 'Pick a game to start playing.';
       }
 
+      syncActiveGameLoop();
       requestAnimationFrame(resizeGameCanvases);
     }
 

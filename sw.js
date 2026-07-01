@@ -1,4 +1,4 @@
-const CACHE_NAME = 'command-center-v9';
+const CACHE_NAME = 'command-center-v11';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
@@ -25,7 +25,11 @@ const APP_SHELL_FILES = [
   '/web-games/',
   '/web-games/index.html',
   '/web-games/assets/web-games-inline.css?v=20260630b',
-  '/web-games/assets/web-games-inline.js?v=20260630b'
+  '/web-games/assets/web-games-inline.css?v=20260630c',
+  '/web-games/assets/web-games-inline.css?v=20260630d',
+  '/web-games/assets/web-games-inline.js?v=20260630b',
+  '/web-games/assets/web-games-inline.js?v=20260630c',
+  '/web-games/assets/web-games-inline.js?v=20260630d'
 ];
 
 function isAppShellAsset(requestUrl) {
