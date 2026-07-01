@@ -73,6 +73,16 @@
       }, delayMs);
     }
 
+    function setDropdownOpen(dropdown, isOpen) {
+      if (!dropdown) return;
+      dropdown.classList.toggle('is-open', isOpen);
+
+      const trigger = dropdown.querySelector('.dropbtn');
+      if (trigger) {
+        trigger.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+      }
+    }
+
     function getLastTwitchFollowSyncAt() {
       const raw = Number(localStorage.getItem('twitchFollowedLastSyncedAt') || '0');
       return Number.isFinite(raw) ? raw : 0;
@@ -888,7 +898,40 @@
 
     const streamerDropdown = document.querySelector('.dropdown');
     if (streamerDropdown) {
-      streamerDropdown.addEventListener('mouseenter', refreshListOnDropdownHover);
+      const dropdownTrigger = streamerDropdown.querySelector('.dropbtn');
+
+      streamerDropdown.addEventListener('mouseenter', () => {
+        setDropdownOpen(streamerDropdown, true);
+        refreshListOnDropdownHover();
+      });
+
+      streamerDropdown.addEventListener('mouseleave', () => {
+        setDropdownOpen(streamerDropdown, false);
+      });
+
+      streamerDropdown.addEventListener('focusin', () => {
+        setDropdownOpen(streamerDropdown, true);
+      });
+
+      streamerDropdown.addEventListener('focusout', (event) => {
+        if (streamerDropdown.contains(event.relatedTarget)) return;
+        setDropdownOpen(streamerDropdown, false);
+      });
+
+      if (dropdownTrigger) {
+        dropdownTrigger.setAttribute('aria-expanded', 'false');
+        dropdownTrigger.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          setDropdownOpen(streamerDropdown, true);
+          refreshListOnDropdownHover();
+        });
+      }
+
+      document.addEventListener('click', (event) => {
+        if (streamerDropdown.contains(event.target)) return;
+        setDropdownOpen(streamerDropdown, false);
+      });
     }
 
     const addStreamerBtn = document.getElementById('addStreamerBtn');

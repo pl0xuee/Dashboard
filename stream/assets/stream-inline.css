@@ -140,7 +140,9 @@
     .dropdown-content::-webkit-scrollbar-track { background: transparent; }
     .dropdown-content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
 
-    .dropdown:hover .dropdown-content { display: block; }
+    .dropdown:hover .dropdown-content,
+    .dropdown:focus-within .dropdown-content,
+    .dropdown.is-open .dropdown-content { display: block; }
 
     .dropdown-content a {
       display: block;
