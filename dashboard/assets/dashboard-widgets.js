@@ -106,7 +106,7 @@ if (!window.__dashboardWidgetsInitialized) {
       : NaN;
     const isUp = Number.isFinite(change) && change > 0;
     const isDown = Number.isFinite(change) && change < 0;
-    const textColor = isUp ? '#6dff85' : isDown ? '#ff7d73' : '#dce8ff';
+    const textColor = isUp ? '#64fbcf' : isDown ? '#ff8a85' : '#e1f2ff';
 
     toolTip.innerHTML = '';
 
@@ -402,17 +402,17 @@ if (!window.__dashboardWidgetsInitialized) {
     toolTip.style.pointerEvents = 'none';
     toolTip.style.padding = '8px 10px';
     toolTip.style.borderRadius = '12px';
-    toolTip.style.background = 'rgba(8, 16, 24, 0.72)';
+    toolTip.style.background = 'rgba(8, 14, 22, 0.72)';
     toolTip.style.backdropFilter = 'blur(8px)';
-    toolTip.style.border = '1px solid rgba(167, 188, 255, 0.14)';
+    toolTip.style.border = '1px solid rgba(184, 214, 255, 0.15)';
     updateChartTooltip(toolTip, symbol, [], null);
     container.appendChild(toolTip);
 
     const chart = LightweightCharts.createChart(chartDiv, {
       width: chartDiv.clientWidth,
       height: chartDiv.clientHeight,
-      layout: { background: { type: 'solid', color: '#081018' }, textColor: '#DDD' },
-      grid: { vertLines: { color: '#1f2937' }, horzLines: { color: '#1f2937' } },
+      layout: { background: { type: 'solid', color: '#080d14' }, textColor: '#c7d5e8' },
+      grid: { vertLines: { color: '#1a2431' }, horzLines: { color: '#1a2431' } },
       crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
       handleScroll: {
         mouseWheel: true,
@@ -446,15 +446,15 @@ if (!window.__dashboardWidgetsInitialized) {
     });
 
     const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
-      upColor: '#26a69a',
-      downColor: '#ef5350',
+      upColor: '#22d6bf',
+      downColor: '#ff7e79',
       borderVisible: false,
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350'
+      wickUpColor: '#22d6bf',
+      wickDownColor: '#ff7e79'
     });
 
     const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
-      color: '#26a69a',
+      color: '#22d6bf',
       priceFormat: { type: 'volume' },
       priceScaleId: 'volume'
     });
@@ -594,8 +594,8 @@ if (!window.__dashboardWidgetsInitialized) {
     notification.style.top = '0';
     notification.style.left = '0';
     notification.style.right = '0';
-    notification.style.background = 'rgba(255, 165, 0, 0.9)';
-    notification.style.color = '#000';
+    notification.style.background = 'rgba(20, 34, 48, 0.92)';
+    notification.style.color = '#dff1ff';
     notification.style.padding = '10px';
     notification.style.fontSize = '12px';
     notification.style.zIndex = '20';
