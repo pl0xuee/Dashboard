@@ -1,4 +1,4 @@
-const CACHE_NAME = 'command-center-v21';
+const CACHE_NAME = 'command-center-v22';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const APP_SHELL_FILES = [
   '/assets/css/styles.css?v=20260630modern',
   '/assets/css/styles.css?v=20260630ultra',
   '/assets/css/styles.css?v=20260630ultrap2',
+  '/assets/css/styles.css?v=20260630ultrap3',
   '/assets/css/index-inline.css',
   '/assets/css/index-inline.css?v=20260630b',
   '/assets/css/index-inline.css?v=20260630modern',

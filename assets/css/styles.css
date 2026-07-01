@@ -78,6 +78,13 @@ body {
   scrollbar-gutter: stable;
 }
 
+html:has(body.media-page),
+body.media-page,
+html:has(body.games-page),
+body.games-page {
+  scrollbar-gutter: auto;
+}
+
 /* Standard body padding and box-sizing for all pages */
 body {
   padding: 20px;
