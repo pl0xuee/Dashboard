@@ -844,8 +844,14 @@
         });
 
         const tv = nextRace.television_broadcaster || 'TBA';
+        const raceTitle = [
+          nextRace.race_name,
+          nextRace.event_name,
+          nextRace.name,
+          nextRace.title
+        ].find((value) => typeof value === 'string' && value.trim());
 
-        raceEl.textContent = nextRace.race_name || `Next ${selected.fallbackLabel} Event`;
+        raceEl.textContent = raceTitle || `Next ${selected.fallbackLabel} Event`;
         trackEl.textContent = nextRace.track_name || '--';
         whenEl.textContent = `${displayDate} | PT: ${displayTimePT} | ET: ${displayTimeET}`;
         broadcastEl.textContent = `TV: ${tv}`;

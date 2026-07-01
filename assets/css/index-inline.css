@@ -303,10 +303,14 @@
       text-align: left;
     }
     .nascar-race-name {
-      font-size: 1rem;
-      margin: 4px 0 8px 0;
-      line-height: 1.25;
-      letter-spacing: 0.005em;
+      font-size: 1.05rem;
+      margin: 0 0 8px 0;
+      line-height: 1.3;
+      letter-spacing: 0.01em;
+      min-height: 2.7em;
+      color: #f5f8ff;
+      font-weight: 700;
+      text-wrap: balance;
     }
     .nascar-label {
       font-size: 0.68rem;
