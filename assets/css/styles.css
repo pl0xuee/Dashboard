@@ -1,15 +1,22 @@
 :root {
   color-scheme: dark;
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  color: #e8eef9;
-  background: #131923;
-  --bg: #131923;
-  --surface: rgba(30, 36, 48, 0.95);
-  --border: rgba(190, 205, 235, 0.2);
-  --text-muted: #b5c1d8;
-  --accent: #6ea1ff;
-  --accent-glow: rgba(110, 161, 255, 0.24);
-  --shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+  font-family: 'Sora', 'Avenir Next', 'Segoe UI Variable Text', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  color: #edf3ff;
+  background: #0b1118;
+  --bg: #0b1118;
+  --bg-soft: #111a24;
+  --surface: linear-gradient(180deg, rgba(20, 28, 40, 0.92) 0%, rgba(13, 19, 29, 0.96) 100%);
+  --surface-strong: linear-gradient(180deg, rgba(24, 34, 48, 0.96) 0%, rgba(15, 22, 33, 0.98) 100%);
+  --border: rgba(152, 181, 209, 0.16);
+  --border-strong: rgba(196, 160, 98, 0.3);
+  --text-muted: #9fb0c8;
+  --text-soft: #7d8da5;
+  --accent: #d2a86c;
+  --accent-strong: #f0c58a;
+  --accent-cool: #5fc2cb;
+  --accent-glow: rgba(210, 168, 108, 0.24);
+  --shadow: 0 20px 60px rgba(1, 5, 11, 0.38);
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, 0.24);
 }
 
 * { box-sizing: border-box; }
@@ -17,13 +24,13 @@
 button, .home-button, .load-button {
   height: 42px;
   padding: 0 20px;
-  border-radius: 16px;
-  background: var(--surface);
-  color: #e9f0ff;
-  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(27, 35, 48, 0.92) 0%, rgba(18, 24, 35, 0.94) 100%);
+  color: #eef4ff;
+  border: 1px solid rgba(168, 190, 217, 0.2);
   cursor: pointer;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   transition: all 0.3s ease;
   white-space: nowrap;
   display: inline-flex;
@@ -31,16 +38,17 @@ button, .home-button, .load-button {
   justify-content: center;
   text-decoration: none;
   line-height: 1;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 10px 24px rgba(0,0,0,0.22);
 }
 
 button:hover, .home-button:hover, .load-button:hover {
-  border-color: var(--accent);
-  background: rgba(109, 140, 255, 0.1);
-  color: #fff;
+  border-color: color-mix(in srgb, var(--accent) 55%, rgba(255,255,255,0.14));
+  background: linear-gradient(180deg, rgba(39, 46, 57, 0.95) 0%, rgba(24, 30, 39, 0.96) 100%);
+  color: #fff7eb;
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1), 0 14px 34px rgba(0,0,0,0.28), 0 0 0 1px rgba(210, 168, 108, 0.08);
 }
 
 .home-button {
@@ -65,8 +73,11 @@ body {
   padding: 20px;
   box-sizing: border-box;
   min-height: 100vh;
-  background: radial-gradient(circle at top right, rgba(78, 101, 146, 0.35), transparent 52%),
-              linear-gradient(180deg, #0f141d 0%, #151b26 100%);
+  background:
+    radial-gradient(circle at top left, rgba(95, 194, 203, 0.16), transparent 28%),
+    radial-gradient(circle at 82% 12%, rgba(210, 168, 108, 0.18), transparent 24%),
+    radial-gradient(circle at 50% 120%, rgba(33, 62, 94, 0.22), transparent 30%),
+    linear-gradient(180deg, #0a1016 0%, #0d141c 48%, #111b25 100%);
   font-size: 15px;
   line-height: 1.6;
   color: var(--text-muted);
@@ -148,11 +159,11 @@ header {
   justify-content: space-between;
   padding: 10px 20px; /* Matching the home page header padding */
   height: 56px;
-  border: 1px solid var(--border);
-  border-radius: 20px;
-  background: var(--surface);
+  border: 1px solid rgba(165, 188, 214, 0.14);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(17, 24, 35, 0.9) 0%, rgba(11, 17, 25, 0.94) 100%);
   box-shadow: var(--shadow);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(22px);
   position: relative;
   z-index: 10;
   flex: 0 0 auto;
@@ -307,7 +318,7 @@ tv-ticker-tape {
   margin-top: 20px;
   padding: 15px 25px;
   border-radius: 20px;
-  background: rgba(22, 28, 36, 0.4);
+  background: linear-gradient(180deg, rgba(18, 24, 34, 0.92), rgba(12, 17, 25, 0.94));
   border: 1px solid var(--border);
   display: inline-flex;
   align-items: center;
@@ -348,24 +359,29 @@ tv-ticker-tape {
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 20px;
+  border-radius: 24px;
+  padding: 22px;
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-soft);
 }
 
 .card::before {
   content: '';
   position: absolute;
-  top: 0; left: 0; width: 4px; height: 100%;
-  background: var(--accent);
+  top: 0;
+  left: 22px;
+  right: 22px;
+  height: 1px;
+  width: auto;
+  background: linear-gradient(90deg, transparent 0%, rgba(210, 168, 108, 0.82) 18%, rgba(95, 194, 203, 0.82) 82%, transparent 100%);
 }
 
 .link-group h2, h2 {
-  font-size: 0.75rem;
+  font-size: 0.78rem;
   text-transform: uppercase;
-  letter-spacing: 1.5px;
-  color: var(--text-muted);
+  letter-spacing: 0.22em;
+  color: var(--text-soft);
   margin: 0 0 15px 0;
 }
 
@@ -393,26 +409,26 @@ tv-ticker-tape {
   align-items: center;
   justify-content: center;
   padding: 10px;
-  background: rgba(255, 255, 255, 0.04);
+  background: linear-gradient(180deg, rgba(24, 32, 44, 0.96), rgba(16, 22, 31, 0.96));
   border: 1px solid color-mix(in srgb, var(--ql-accent) 30%, var(--border));
-  border-radius: 12px;
-  color: #fff;
+  border-radius: 16px;
+  color: #f2f6ff;
   text-decoration: none;
   transition: all 0.3s ease;
   text-align: center;
-  font-weight: 600;
-  font-size: 0.75rem; /* Slightly smaller for tighter uniform look */
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 0 0 1px rgba(0, 0, 0, 0.12);
+  font-weight: 700;
+  font-size: 0.76rem;
+  text-transform: none;
+  letter-spacing: 0.03em;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 8px 16px rgba(0, 0, 0, 0.18);
 }
 
 .quick-links-list li a:hover {
   border-color: var(--ql-accent);
-  background: color-mix(in srgb, var(--ql-accent) 14%, rgba(255, 255, 255, 0.04));
-  color: #fff;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--ql-accent) 12%, rgba(28, 34, 44, 0.98)), rgba(18, 23, 32, 0.98));
+  color: #fffdf7;
   transform: translateY(-1px);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ql-accent) 35%, transparent), 0 8px 16px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--ql-accent) 35%, transparent), 0 14px 24px rgba(0, 0, 0, 0.24);
 }
 
 /* Subtle brand accents for quick links */
@@ -460,14 +476,15 @@ tv-ticker-tape {
 .tv-panel {
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(109, 140, 255, 0.15);
-  border-radius: 20px;
-  background: rgba(20, 27, 38, 0.96);
+  border: 1px solid rgba(156, 185, 214, 0.14);
+  border-radius: 24px;
+  background: linear-gradient(180deg, rgba(18, 25, 36, 0.96), rgba(11, 17, 26, 0.98));
   height: 100%;
   position: relative;
   z-index: 6;
   overflow: hidden;
   transform: translateZ(0);
+  box-shadow: var(--shadow-soft);
 }
 
 .tv-panel-header {
@@ -475,8 +492,8 @@ tv-ticker-tape {
   gap: 10px;
   align-items: center;
   padding: 10px 14px;
-  background: rgba(255,255,255,0.03);
-  border-bottom: 1px solid rgba(109, 140, 255, 0.12);
+  background: rgba(255,255,255,0.025);
+  border-bottom: 1px solid rgba(156, 185, 214, 0.12);
   flex: 0 0 auto;
 }
 
@@ -514,7 +531,7 @@ tv-ticker-tape {
   flex: 1;
   min-height: 280px;
   height: 100%;
-  background: #121a27;
+  background: linear-gradient(180deg, rgba(16, 22, 33, 0.98), rgba(10, 15, 24, 0.98));
   position: relative;
   min-width: 0;
   overflow: hidden;

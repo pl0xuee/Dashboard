@@ -2,12 +2,12 @@
     body {
       scrollbar-gutter: stable;
       scrollbar-width: thin;
-      scrollbar-color: rgba(176, 146, 96, 0.78) rgba(14, 19, 29, 0.92);
+      scrollbar-color: rgba(210, 168, 108, 0.72) rgba(13, 19, 29, 0.92);
     }
 
     * {
       scrollbar-width: thin;
-      scrollbar-color: rgba(176, 146, 96, 0.72) rgba(14, 19, 29, 0.9);
+      scrollbar-color: rgba(210, 168, 108, 0.68) rgba(13, 19, 29, 0.9);
     }
 
     *::-webkit-scrollbar {
@@ -16,19 +16,19 @@
     }
 
     *::-webkit-scrollbar-track {
-      background: linear-gradient(180deg, rgba(14, 19, 29, 0.92), rgba(9, 13, 20, 0.94));
+      background: linear-gradient(180deg, rgba(12, 17, 26, 0.94), rgba(9, 13, 20, 0.96));
       border-radius: 999px;
     }
 
     *::-webkit-scrollbar-thumb {
-      background: linear-gradient(180deg, rgba(206, 175, 118, 0.86), rgba(120, 90, 48, 0.9));
+      background: linear-gradient(180deg, rgba(210, 168, 108, 0.9), rgba(123, 91, 49, 0.92));
       border: 2px solid rgba(13, 18, 27, 0.9);
       border-radius: 999px;
-      box-shadow: inset 0 1px 0 rgba(255, 236, 198, 0.26);
+      box-shadow: inset 0 1px 0 rgba(255, 237, 205, 0.22);
     }
 
     *::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(180deg, rgba(227, 196, 138, 0.92), rgba(141, 106, 57, 0.94));
+      background: linear-gradient(180deg, rgba(230, 191, 127, 0.94), rgba(142, 106, 57, 0.96));
     }
 
     .games-main {
@@ -63,8 +63,8 @@
     .games-lead {
       margin: 0;
       font-size: 0.9rem;
-      color: #e3edff;
-      letter-spacing: 0.03em;
+      color: #f1d7aa;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
       font-weight: 700;
     }
@@ -105,8 +105,8 @@
     }
 
     .game-picker-btn {
-      --game-tint: rgba(126, 164, 255, 0.14);
-      --game-accent: rgba(96, 126, 188, 0.12);
+      --game-tint: rgba(210, 168, 108, 0.12);
+      --game-accent: rgba(95, 194, 203, 0.12);
       display: inline-flex;
       align-items: center;
       gap: 12px;
@@ -117,12 +117,12 @@
       min-height: 86px;
       padding: 16px 18px;
       border-radius: 18px;
-      border: 1px solid rgba(156, 180, 228, 0.26);
+      border: 1px solid rgba(165, 188, 214, 0.2);
       background:
-        linear-gradient(180deg, rgba(30, 36, 54, 0.96), rgba(20, 26, 42, 0.96)),
+        linear-gradient(180deg, rgba(27, 35, 49, 0.96), rgba(17, 23, 34, 0.98)),
         radial-gradient(circle at top left, var(--game-tint), transparent 56%),
         radial-gradient(circle at 88% 110%, var(--game-accent), transparent 50%);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 10px 22px rgba(5, 10, 18, 0.2);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 16px 32px rgba(5, 10, 18, 0.22);
       transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease, background 140ms ease, filter 140ms ease;
     }
 
@@ -202,9 +202,9 @@
     }
 
     .back-btn {
-      border-color: rgba(122, 186, 255, 0.34);
-      background: rgba(122, 186, 255, 0.08);
-      color: #dff1ff;
+      border-color: rgba(210, 168, 108, 0.26);
+      background: linear-gradient(180deg, rgba(73, 58, 35, 0.28), rgba(37, 30, 20, 0.28));
+      color: #f7e1bc;
     }
 
     .game-toolbar-actions .home-button {
@@ -227,26 +227,26 @@
 
     .game-toolbar-actions .home-button:focus-visible,
     .game-picker-btn:focus-visible {
-      outline: 2px solid rgba(144, 201, 255, 0.9);
+      outline: 2px solid rgba(210, 168, 108, 0.76);
       outline-offset: 2px;
     }
 
     .game-toolbar-actions .back-btn {
-      border-color: rgba(130, 196, 255, 0.44);
-      background: linear-gradient(180deg, rgba(52, 98, 157, 0.34), rgba(27, 56, 94, 0.34));
-      box-shadow: 0 8px 18px rgba(10, 24, 44, 0.24);
+      border-color: rgba(210, 168, 108, 0.38);
+      background: linear-gradient(180deg, rgba(84, 66, 39, 0.36), rgba(38, 31, 20, 0.36));
+      box-shadow: 0 10px 20px rgba(25, 18, 10, 0.22);
     }
 
     .game-toolbar-actions .fullscreen-btn {
-      border-color: rgba(166, 210, 255, 0.4);
-      background: linear-gradient(180deg, rgba(56, 86, 130, 0.3), rgba(27, 45, 76, 0.3));
-      color: #e7f4ff;
+      border-color: rgba(95, 194, 203, 0.34);
+      background: linear-gradient(180deg, rgba(36, 77, 86, 0.32), rgba(18, 42, 48, 0.32));
+      color: #ddfbff;
     }
 
     .game-toolbar-actions .restart-btn {
-      border-color: rgba(255, 170, 170, 0.32);
-      background: linear-gradient(180deg, rgba(110, 56, 66, 0.3), rgba(62, 31, 36, 0.3));
-      color: #ffe8ea;
+      border-color: rgba(255, 163, 135, 0.32);
+      background: linear-gradient(180deg, rgba(96, 56, 42, 0.32), rgba(54, 29, 20, 0.32));
+      color: #ffe8dd;
     }
 
     .game-toolbar-actions .restart-btn:disabled {
@@ -261,8 +261,8 @@
       font-size: 0.96rem;
       font-weight: 800;
       letter-spacing: 0.04em;
-      text-transform: uppercase;
-      color: #f1f6ff;
+      text-transform: none;
+      color: #f3f6ff;
       min-width: 0;
       max-width: 100%;
       white-space: normal;
@@ -283,8 +283,8 @@
       align-items: center;
       padding: 3px 7px;
       border-radius: 999px;
-      background: rgba(255, 255, 255, 0.08);
-      color: #c9d7f7;
+      background: rgba(210, 168, 108, 0.14);
+      color: #f1d7aa;
       font-size: 0.62rem;
       font-weight: 700;
       letter-spacing: 0.1em;
@@ -295,7 +295,7 @@
       width: 34px;
       height: 34px;
       border-radius: 10px;
-      border: 1px solid rgba(220, 233, 255, 0.28);
+      border: 1px solid rgba(183, 203, 225, 0.24);
       position: relative;
       flex: 0 0 34px;
       box-shadow: inset 0 0 0 1px rgba(10, 18, 33, 0.4), 0 6px 14px rgba(8, 14, 26, 0.26);
@@ -304,8 +304,8 @@
 
     .game-picker-btn:hover {
       transform: translateY(-2px);
-      border-color: rgba(164, 203, 255, 0.52);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 16px 30px rgba(8, 18, 34, 0.28), 0 0 0 1px rgba(113, 162, 255, 0.16);
+      border-color: rgba(210, 168, 108, 0.42);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 34px rgba(8, 18, 34, 0.28), 0 0 0 1px rgba(210, 168, 108, 0.12);
       filter: saturate(1.06);
     }
 

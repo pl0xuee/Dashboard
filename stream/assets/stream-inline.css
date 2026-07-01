@@ -37,20 +37,22 @@
       flex: 1;
       height: auto;
       min-height: 0;
-      background: #000;
-      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(12, 18, 28, 0.98), rgba(7, 11, 18, 0.98));
+      border-radius: 24px;
       overflow: hidden;
-      border: 1px solid var(--border);
+      border: 1px solid rgba(163, 187, 214, 0.14);
+      box-shadow: var(--shadow-soft);
     }
     .stream-chat {
       flex: 0 0 390px;
       width: 390px;
       height: auto;
       min-height: 0;
-      background: #0d1117;
-      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(18, 25, 36, 0.96), rgba(11, 17, 27, 0.98));
+      border-radius: 24px;
       overflow: hidden;
-      border: 1px solid var(--border);
+      border: 1px solid rgba(163, 187, 214, 0.14);
+      box-shadow: var(--shadow-soft);
     }
 
     @media (max-width: 1200px) {
@@ -106,7 +108,7 @@
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: rgba(200, 210, 255, 0.45);
+      color: var(--text-soft);
     }
 
     .streamer-dropdown-subtitle {
@@ -115,13 +117,13 @@
       font-weight: 600;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: rgba(0, 220, 120, 0.75);
+      color: color-mix(in srgb, var(--accent-cool) 74%, #c5fff5);
     }
 
     .youtube-scan-status {
       padding: 0 6px 6px;
       font-size: 10px;
-      color: rgba(255, 180, 140, 0.75);
+      color: color-mix(in srgb, var(--accent-strong) 76%, #fce0b7);
       min-height: 14px;
     }
 
@@ -137,20 +139,22 @@
       font-size: 12px;
       font-weight: 600;
       text-decoration: none;
-      border-radius: 8px;
-      transition: background 0.15s;
+      border-radius: 12px;
+      border: 1px solid rgba(167, 189, 216, 0.14);
+      background: linear-gradient(180deg, rgba(23, 31, 43, 0.94), rgba(15, 20, 29, 0.96));
+      transition: background 0.15s, border-color 0.15s, transform 0.15s;
     }
 
     .streamer-action-add {
-      color: #7dd3fc;
+      color: color-mix(in srgb, var(--accent-cool) 74%, #ebffff);
     }
 
     .streamer-action-twitch {
-      color: #a970ff;
+      color: #c7a7ff;
     }
 
     .streamer-action-youtube {
-      color: #ff6a4a;
+      color: #ff9f80;
     }
 
         /* Dropdown Styles */
@@ -160,13 +164,13 @@
       position: absolute;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 18px;
       width: min(88vw, 520px);
       min-width: min(420px, 88vw);
       max-width: 520px;
       z-index: 20;
       padding: 6px;
-      box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+      box-shadow: 0 18px 40px rgba(0,0,0,0.34);
       right: 0;
       top: 100%;
       margin-top: 0px;
@@ -186,14 +190,14 @@
       display: block;
       padding: 8px 12px;
       text-decoration: none;
-      color: #e8ecef;
-      border-radius: 8px;
+      color: #edf3ff;
+      border-radius: 12px;
       font-size: 13px;
     }
 
     .dropdown-content a:hover {
-      background: rgba(109, 140, 255, 0.14);
-      color: #f6f8ff;
+      background: color-mix(in srgb, var(--accent) 16%, rgba(255,255,255,0.04));
+      color: #fffaf1;
     }
 
     .stream-live-row:hover {
@@ -206,9 +210,9 @@
       justify-content: space-between;
       padding: 6px 8px;
       margin-bottom: 4px;
-      background: rgba(0, 200, 80, 0.18);
-      border: 1px solid rgba(0, 200, 80, 0.45);
-      border-radius: 8px;
+      background: linear-gradient(180deg, rgba(20, 55, 49, 0.82), rgba(14, 34, 32, 0.9));
+      border: 1px solid rgba(95, 194, 203, 0.34);
+      border-radius: 14px;
       transition: filter 0.15s;
     }
 
@@ -217,7 +221,7 @@
       align-items: center;
       gap: 8px;
       text-decoration: none;
-      color: #e8ecef;
+      color: #edf4ff;
       flex-grow: 1;
       min-width: 0;
     }
@@ -234,13 +238,13 @@
 
     .stream-live-viewers {
       font-size: 10px;
-      color: rgba(230, 255, 235, 0.82);
+      color: rgba(227, 251, 247, 0.8);
     }
 
     .stream-remove-btn {
       background: none;
       border: none;
-      color: rgba(255, 80, 80, 0.5);
+      color: rgba(255, 138, 138, 0.52);
       cursor: pointer;
       font-size: 16px;
       margin-left: 6px;
@@ -269,28 +273,28 @@
     }
 
     .stream-live-title-twitch {
-      color: rgba(169, 112, 255, 0.95);
+      color: #d3bcff;
     }
 
     .stream-live-title-youtube {
-      color: rgba(255, 106, 74, 0.95);
+      color: #ffb193;
     }
 
     .stream-live-empty {
       padding: 6px 8px 8px;
       font-size: 11px;
-      color: rgba(200, 210, 255, 0.4);
+      color: var(--text-soft);
     }
 
     .stream-list-empty {
       padding: 8px 10px;
       font-size: 12px;
-      color: rgba(200, 210, 255, 0.4);
+      color: var(--text-soft);
       text-align: center;
     }
 
     .stream-remove-btn:hover {
-      color: rgba(255, 80, 80, 1) !important;
+      color: rgba(255, 167, 167, 0.96) !important;
       transform: scale(1.2);
     }
 

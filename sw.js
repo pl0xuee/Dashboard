@@ -1,10 +1,12 @@
-const CACHE_NAME = 'command-center-v17';
+const CACHE_NAME = 'command-center-v19';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
   '/assets/css/styles.css',
+  '/assets/css/styles.css?v=20260630modern',
   '/assets/css/index-inline.css',
   '/assets/css/index-inline.css?v=20260630b',
+  '/assets/css/index-inline.css?v=20260630modern',
   '/assets/js/script.js',
   '/assets/js/index-inline.js',
   '/assets/js/index-inline.js?v=20260630b',
@@ -26,6 +28,7 @@ const APP_SHELL_FILES = [
   '/stream/assets/stream-inline.css?v=20260630f',
   '/stream/assets/stream-inline.css?v=20260630g',
   '/stream/assets/stream-inline.css?v=20260630h',
+  '/stream/assets/stream-inline.css?v=20260630modern',
   '/stream/assets/stream-inline.js?v=20260630b',
   '/stream/assets/stream-inline.js?v=20260630c',
   '/media-portal/',
@@ -36,6 +39,7 @@ const APP_SHELL_FILES = [
   '/web-games/assets/web-games-inline.css?v=20260630b',
   '/web-games/assets/web-games-inline.css?v=20260630c',
   '/web-games/assets/web-games-inline.css?v=20260630d',
+  '/web-games/assets/web-games-inline.css?v=20260630modern',
   '/web-games/assets/web-games-inline.js?v=20260630b',
   '/web-games/assets/web-games-inline.js?v=20260630c',
   '/web-games/assets/web-games-inline.js?v=20260630d'
