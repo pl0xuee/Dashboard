@@ -18,6 +18,25 @@
     let lastTwitchEmbedLoadAt = 0;
     let twitchResumeTimer = null;
     let activeStream = { platform: null, id: '' };
+    let streamTheaterMode = false;
+
+    function updateTheaterModeButton() {
+      const toggleBtn = document.getElementById('toggleTheaterBtn');
+      if (toggleBtn) {
+        toggleBtn.textContent = streamTheaterMode ? 'Default View' : 'Theater Mode';
+      }
+    }
+
+    function setStreamTheaterMode(nextValue) {
+      streamTheaterMode = Boolean(nextValue);
+      document.body.classList.toggle('stream-theater-mode', streamTheaterMode);
+      document.documentElement.classList.toggle('stream-theater-mode', streamTheaterMode);
+      updateTheaterModeButton();
+    }
+
+    function toggleStreamTheaterMode() {
+      setStreamTheaterMode(!streamTheaterMode);
+    }
 
     function loadTwitchEmbed(channel, options = {}) {
       const { keepInputText = false } = options;
@@ -959,7 +978,20 @@
       toggleChatBtn.addEventListener('click', () => toggleChat());
     }
 
+    const toggleTheaterBtn = document.getElementById('toggleTheaterBtn');
+    if (toggleTheaterBtn) {
+      toggleTheaterBtn.addEventListener('click', () => toggleStreamTheaterMode());
+    }
+
+    const streamTheaterExitBtn = document.getElementById('streamTheaterExitBtn');
+    if (streamTheaterExitBtn) {
+      streamTheaterExitBtn.addEventListener('click', () => {
+        if (streamTheaterMode) toggleStreamTheaterMode();
+      });
+    }
+
     window.onload = async function() {
+      updateTheaterModeButton();
       if (shouldSyncTwitchFollows()) {
         await fetchTwitchFollows({ skipRender: true });
       }
