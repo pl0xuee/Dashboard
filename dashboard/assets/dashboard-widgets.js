@@ -5,7 +5,9 @@ if (!window.__dashboardWidgetsInitialized) {
   const PACIFIC_TIME_ZONE = 'America/Los_Angeles';
   const CHART_WINDOW_SECONDS = 24 * 60 * 60;
   const CHART_REFRESH_MS = 5 * 1000;
-  const YAHOO_REQUEST_SPACING_MS = 1500;
+  const DEFAULT_PANEL_STAGGER_MS = 260;
+  const INITIAL_YAHOO_REQUEST_SPACING_MS = 1000;
+  const YAHOO_REQUEST_SPACING_MS = 2400;
   const CHART_CACHE_TTL_MS = 15 * 60 * 1000;
   const CHART_CACHE_KEY_PREFIX = 'dashboardChartCache:';
   const YAHOO_SYMBOL_MAP = {
@@ -231,9 +233,9 @@ if (!window.__dashboardWidgetsInitialized) {
     }, delayMs);
   }
 
-  function queueYahooChartRequest(symbol) {
+  function queueYahooChartRequest(symbol, spacingMs = YAHOO_REQUEST_SPACING_MS) {
     const requestTask = yahooRequestQueue.then(async () => {
-      const waitMs = Math.max(0, YAHOO_REQUEST_SPACING_MS - (Date.now() - yahooLastRequestAt));
+      const waitMs = Math.max(0, spacingMs - (Date.now() - yahooLastRequestAt));
       if (waitMs > 0) {
         await sleep(waitMs);
       }
@@ -469,22 +471,53 @@ if (!window.__dashboardWidgetsInitialized) {
       scaleMargins: { top: 0.8, bottom: 0 }
     });
 
-    const loadSucceeded = await loadChartData(symbol, candleSeries, volumeSeries, chart, index, toolTip);
-    if (!loadSucceeded) {
+    const cachedChartData = getCachedChartData(symbol);
+    if (cachedChartData) {
+      const cachedResult = cachedChartData.resultMeta || null;
+      candleSeries.setData(cachedChartData.candles);
+      volumeSeries.setData(cachedChartData.volumes);
+      updateChartTooltip(toolTip, symbol, cachedChartData.candles, cachedResult);
+
+      const initialRange = getInitialLogicalRange(cachedResult, cachedChartData.candles);
+      if (initialRange) {
+        chart.timeScale().setVisibleLogicalRange(initialRange);
+      } else {
+        chart.timeScale().fitContent();
+      }
+
+      window[`hasChartData${index}`] = true;
+    }
+
+    const loadSucceeded = await loadChartData(
+      symbol,
+      candleSeries,
+      volumeSeries,
+      chart,
+      index,
+      toolTip,
+      {
+        allowFallback: !cachedChartData,
+        requestSpacingMs: INITIAL_YAHOO_REQUEST_SPACING_MS
+      }
+    );
+    if (!loadSucceeded && !window[`hasChartData${index}`]) {
       return;
     }
 
     window[`interval${index}`] = setInterval(() => {
       if (document.hidden) return;
-      loadChartData(symbol, candleSeries, volumeSeries, chart, index, toolTip, { allowFallback: false });
+      loadChartData(symbol, candleSeries, volumeSeries, chart, index, toolTip, {
+        allowFallback: false,
+        requestSpacingMs: YAHOO_REQUEST_SPACING_MS
+      });
     }, CHART_REFRESH_MS);
   }
 
   async function loadChartData(ticker, candleSeries, volumeSeries, chart, index, toolTip, options = {}) {
-    const { allowFallback = true } = options;
+    const { allowFallback = true, requestSpacingMs = YAHOO_REQUEST_SPACING_MS } = options;
     const normalizedTicker = normalizeChartSymbol(ticker);
     try {
-      const { response, payload } = await queueYahooChartRequest(normalizedTicker);
+      const { response, payload } = await queueYahooChartRequest(normalizedTicker, requestSpacingMs);
 
       if (!response.ok) {
         throw new Error(`Yahoo chart request failed with ${response.status}`);
@@ -630,13 +663,19 @@ if (!window.__dashboardWidgetsInitialized) {
     widgetContainer.appendChild(script);
   }
 
-  async function renderDefaultTradingViewWidgets() {
+  function renderDefaultTradingViewWidgets() {
     const tvTickerInputs = getTickerInputs();
     for (const [index, symbol] of defaultTvTickers.entries()) {
       if (tvTickerInputs[index]) {
         tvTickerInputs[index].value = '';
       }
-      await createTradingViewWidget(index, symbol);
+
+      const staggerDelay = index * DEFAULT_PANEL_STAGGER_MS;
+      setTimeout(() => {
+        createTradingViewWidget(index, symbol).catch((error) => {
+          console.warn('Failed to initialize dashboard panel:', index, error);
+        });
+      }, staggerDelay);
     }
   }
 
