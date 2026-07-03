@@ -187,11 +187,6 @@
       --game-accent: rgba(255, 188, 120, 0.16);
     }
 
-    .game-picker-btn[data-game='doom'] {
-      --game-tint: rgba(214, 72, 72, 0.18);
-      --game-accent: rgba(130, 25, 25, 0.22);
-    }
-
     .game-picker-btn::before {
       content: '';
       position: absolute;
@@ -584,6 +579,32 @@
       height: 18px;
       left: 16px;
       top: 7px;
+    }
+
+    .game-picker-art.rift {
+      background: linear-gradient(180deg, #214f7f 0%, #16375a 48%, #111722 48%, #1f2936 100%);
+    }
+
+    .game-picker-art.rift::before,
+    .game-picker-art.rift::after {
+      content: '';
+      position: absolute;
+      background: rgba(204, 237, 255, 0.86);
+    }
+
+    .game-picker-art.rift::before {
+      width: 16px;
+      height: 2px;
+      left: 8px;
+      top: 16px;
+      box-shadow: 0 -6px 0 rgba(115, 186, 240, 0.6), 0 6px 0 rgba(115, 186, 240, 0.6);
+    }
+
+    .game-picker-art.rift::after {
+      width: 2px;
+      height: 16px;
+      left: 15px;
+      top: 9px;
     }
 
     .game-picker-art.mine {
@@ -1523,23 +1544,26 @@
       text-transform: uppercase;
     }
 
-    #doomPanel {
+    #doomPanel,
+    .hellstorm-panel {
       background:
-        radial-gradient(circle at top, rgba(255, 112, 62, 0.07), transparent 34%),
-        linear-gradient(180deg, rgba(36, 18, 14, 0.98), rgba(11, 8, 8, 0.98));
-      border-color: rgba(191, 99, 57, 0.4);
-      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.34), inset 0 0 0 1px rgba(255, 197, 144, 0.06);
+        radial-gradient(circle at top, rgba(96, 170, 255, 0.08), transparent 38%),
+        linear-gradient(180deg, rgba(16, 22, 34, 0.98), rgba(9, 12, 20, 0.98));
+      border-color: rgba(122, 173, 225, 0.42);
+      box-shadow: 0 24px 48px rgba(0, 0, 0, 0.34), inset 0 0 0 1px rgba(173, 214, 255, 0.08);
     }
 
-    #doomPanel .games-title {
-      color: #ffd69a;
-      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+    #doomPanel .games-title,
+    .hellstorm-panel .games-title {
+      color: #d6eeff;
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
     }
 
-    #doomPanel .control-hint {
-      border-color: rgba(199, 109, 73, 0.34);
-      background: linear-gradient(180deg, rgba(47, 22, 18, 0.82), rgba(25, 12, 12, 0.82));
-      color: #ffddb8;
+    #doomPanel .control-hint,
+    .hellstorm-panel .control-hint {
+      border-color: rgba(122, 173, 225, 0.34);
+      background: linear-gradient(180deg, rgba(23, 39, 59, 0.82), rgba(14, 22, 38, 0.82));
+      color: #dbedff;
     }
 
     .doom-banner {
@@ -1588,6 +1612,42 @@
       position: relative;
       overflow: hidden;
       box-shadow: inset 0 0 32px rgba(0, 0, 0, 0.58), 0 14px 24px rgba(0, 0, 0, 0.26);
+    }
+
+    #doomPanel .doom-wrap,
+    .hellstorm-panel .doom-wrap {
+      padding: 0;
+      border-color: rgba(122, 173, 225, 0.46);
+      background: #070b12;
+    }
+
+    .doom-three-frame {
+      width: 100%;
+      height: min(64vh, calc(100vh - 290px));
+      min-height: 360px;
+      border: 0;
+      display: block;
+      background: #050506;
+    }
+
+    .rift-three-frame {
+      height: min(78vh, calc(100vh - 220px));
+      min-height: 520px;
+      background: #05080f;
+    }
+
+    @media (max-width: 900px) {
+      .rift-three-frame {
+        min-height: 420px;
+      }
+    }
+
+    #doomPanel #doomCanvas,
+    #doomPanel .doom-vignette,
+    #doomPanel .doom-scanlines,
+    #doomPanel .doom-overlay,
+    #doomPanel .doom-note {
+      display: none;
     }
 
     .doom-overlay {

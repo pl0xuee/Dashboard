@@ -1,15 +1,9 @@
-const CACHE_NAME = 'command-center-v26';
+const CACHE_NAME = 'command-center-v30';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
   '/assets/css/styles.css',
-  '/assets/css/styles.css?v=20260630modern',
-  '/assets/css/styles.css?v=20260630ultra',
-  '/assets/css/styles.css?v=20260630ultrap2',
-  '/assets/css/styles.css?v=20260630ultrap3',
-  '/assets/css/index-inline.css',
-  '/assets/css/index-inline.css?v=20260630b',
-  '/assets/css/index-inline.css?v=20260630modern',
+  '/assets/css/styles.css?v=20260702refresh1',
   '/assets/js/script.js',
   '/assets/js/index-inline.js',
   '/assets/js/index-inline.js?v=20260630b',
@@ -17,47 +11,24 @@ const APP_SHELL_FILES = [
   '/assets/icons/favicon.svg',
   '/dashboard/',
   '/dashboard/index.html',
-  '/dashboard/assets/dashboard-inline.css?v=20260630a',
-  '/dashboard/assets/dashboard-inline.css?v=20260630ultra',
-  '/dashboard/assets/dashboard-inline.css?v=20260630ultrap2',
   '/dashboard/assets/dashboard-widgets.js',
-  '/dashboard/assets/dashboard-widgets.js?v=20260630b',
-  '/dashboard/assets/dashboard-widgets.js?v=20260630ultra',
-  '/dashboard/assets/dashboard-widgets.js?v=20260630ultra2',
-  '/dashboard/assets/dashboard-widgets.js?v=20260630ultra3',
   '/dashboard/assets/dashboard-widgets.js?v=20260630ultra4',
   '/stream/',
   '/stream/index.html',
-  '/stream/assets/config-inline.js?v=20260630b',
   '/stream/assets/config-inline.js?v=20260630c',
-  '/stream/assets/stream-inline.css?v=20260630b',
-  '/stream/assets/stream-inline.css?v=20260630c',
-  '/stream/assets/stream-inline.css?v=20260630d',
-  '/stream/assets/stream-inline.css?v=20260630e',
-  '/stream/assets/stream-inline.css?v=20260630f',
-  '/stream/assets/stream-inline.css?v=20260630g',
-  '/stream/assets/stream-inline.css?v=20260630h',
-  '/stream/assets/stream-inline.css?v=20260630modern',
-  '/stream/assets/stream-inline.css?v=20260630ultra',
-  '/stream/assets/stream-inline.css?v=20260630ultrap2',
-  '/stream/assets/stream-inline.css?v=20260630ultrap3',
   '/stream/assets/stream-inline.css?v=20260630ultrap4',
-  '/stream/assets/stream-inline.js?v=20260630b',
-  '/stream/assets/stream-inline.js?v=20260630c',
-  '/stream/assets/stream-inline.js?v=20260630ultra',
   '/stream/assets/stream-inline.js?v=20260630ultrap3',
   '/media-portal/',
   '/media-portal/index.html',
   '/media-portal/assets/media-inline.js?v=20260630b',
   '/web-games/',
   '/web-games/index.html',
-  '/web-games/assets/web-games-inline.css?v=20260630b',
-  '/web-games/assets/web-games-inline.css?v=20260630c',
-  '/web-games/assets/web-games-inline.css?v=20260630d',
   '/web-games/assets/web-games-inline.css?v=20260630modern',
-  '/web-games/assets/web-games-inline.js?v=20260630b',
-  '/web-games/assets/web-games-inline.js?v=20260630c',
-  '/web-games/assets/web-games-inline.js?v=20260630d'
+  '/web-games/assets/web-games-inline.js?v=20260630d',
+  '/web-games/middle-earth-rpg/',
+  '/web-games/middle-earth-rpg/index.html',
+  '/web-games/middle-earth-rpg/assets/rpg-inline.css?v=20260702refresh1',
+  '/web-games/middle-earth-rpg/assets/rpg-inline.js?v=20260702refresh1'
 ];
 
 function isAppShellAsset(requestUrl) {
@@ -141,7 +112,8 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isAppShellAsset(requestUrl)) {
-    event.respondWith(staleWhileRevalidate(request));
+    // Prefer fresh app-shell assets so style/script edits show immediately.
+    event.respondWith(networkFirst(request));
     return;
   }
 

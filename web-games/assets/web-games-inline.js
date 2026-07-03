@@ -48,7 +48,6 @@
     const pickWhackBtn = document.getElementById('pickWhack');
     const pickRpgBtn = document.getElementById('pickRpg');
     const pickMineBtn = document.getElementById('pickMine');
-    const pickDoomBtn = document.getElementById('pickDoom');
     const backToGridBtn = document.getElementById('backToGridBtn');
     const rpgFullscreenBtn = document.getElementById('rpgFullscreenBtn');
     const rpgTheaterExitBtn = document.getElementById('rpgTheaterExitBtn');
@@ -65,6 +64,7 @@
     const rpgPanel = document.getElementById('rpgPanel');
     const minePanel = document.getElementById('minePanel');
     const doomPanel = document.getElementById('doomPanel');
+    const riftPanel = document.getElementById('riftPanel');
     const tetrisBoardWrapEl = document.querySelector('.tetris-board-wrap');
     const pongCanvas = document.getElementById('pongBoard');
     const pongWrapEl = document.querySelector('.pong-wrap');
@@ -80,14 +80,17 @@
     const mineCanvas = document.getElementById('mineCanvas');
     const mineWrapEl = document.querySelector('.mine-wrap');
     const mineCtx = mineCanvas.getContext('2d');
+    const doomThreeFrame = document.getElementById('doomThreeFrame');
+    const riftFrame = document.getElementById('riftFrame');
     const doomCanvas = document.getElementById('doomCanvas');
     const doomWrapEl = document.querySelector('.doom-wrap');
-    const doomCtx = doomCanvas.getContext('2d');
+    const riftWrapEl = document.querySelector('#riftPanel .doom-wrap');
+    const doomCtx = doomCanvas ? doomCanvas.getContext('2d') : null;
     const doomWeaponIdleSprite = new Image();
     const doomWeaponIdleCanvas = document.createElement('canvas');
     const doomWeaponIdleCtx = doomWeaponIdleCanvas.getContext('2d', { willReadFrequently: true });
     let doomWeaponIdleReady = false;
-    doomWeaponIdleSprite.addEventListener('load', () => {
+    if (doomCanvas && !doomThreeFrame) doomWeaponIdleSprite.addEventListener('load', () => {
       const fullWidth = doomWeaponIdleSprite.naturalWidth;
       const fullHeight = doomWeaponIdleSprite.naturalHeight;
       doomWeaponIdleCanvas.width = fullWidth;
@@ -169,7 +172,7 @@
       }
       doomWeaponIdleReady = true;
     });
-    doomWeaponIdleSprite.src = 'ShotgunHUD4x.png';
+    if (doomCanvas && !doomThreeFrame) doomWeaponIdleSprite.src = 'ShotgunHUD4x.png';
     const doomHealthEl = document.getElementById('doomHealthVal');
     const doomAmmoEl = document.getElementById('doomAmmoVal');
     const doomScoreEl = document.getElementById('doomScoreVal');
@@ -386,7 +389,7 @@
       if (activeGame === 'breakout') scheduleGameLoop('breakout', breakoutLoop);
       if (activeGame === 'dash') scheduleGameLoop('dash', dashLoop);
       if (activeGame === 'whack') scheduleGameLoop('whack', whackLoop);
-      if (activeGame === 'doom') scheduleGameLoop('doom', doomLoop);
+      if (activeGame === 'doom' && !doomThreeFrame) scheduleGameLoop('doom', doomLoop);
     }
 
     const MINE_WORLD_SIZE = 24;
@@ -754,8 +757,8 @@
       miniAmmo: '#e3cf78',
       miniMed: '#7ac2ff'
     };
-    const doomBannerTitleEl = doomPanel.querySelector('.doom-banner strong');
-    const doomBannerSubtitleEl = doomPanel.querySelector('.doom-banner span');
+    const doomBannerTitleEl = doomPanel ? doomPanel.querySelector('.doom-banner strong') : null;
+    const doomBannerSubtitleEl = doomPanel ? doomPanel.querySelector('.doom-banner span') : null;
     const doomKeys = {
       w: false,
       a: false,
@@ -770,7 +773,7 @@
     let doomGameOver = false;
     let doomWon = false;
     let doomLastTs = 0;
-    let doomDepthBuffer = new Array(doomCanvas.width).fill(DOOM_MAX_DEPTH);
+    let doomDepthBuffer = new Array(doomCanvas ? doomCanvas.width : 640).fill(DOOM_MAX_DEPTH);
     let doomMuzzleFlash = 0;
     let doomDamageFlash = 0;
     let doomWeaponKick = 0;
@@ -3954,11 +3957,25 @@
       mineCanvas.style.height = `${Math.floor(mineDisplayWidth / mineAspect)}px`;
 
       const doomWrapWidth = Math.max(260, getInnerWidth(doomWrapEl, shellWidth - 36) - 24);
-      const doomAvailableHeight = Math.min(820, getAvailableHeight(doomCanvas, 260));
-      const doomAspect = doomCanvas.width / doomCanvas.height;
+      const doomAvailableHeight = Math.min(820, getAvailableHeight(doomWrapEl || doomCanvas, 260));
+      const doomAspect = doomCanvas ? (doomCanvas.width / doomCanvas.height) : (16 / 9);
       const doomDisplayWidth = Math.max(260, Math.min(doomWrapWidth, Math.floor(doomAvailableHeight * doomAspect)));
-      doomCanvas.style.width = `${doomDisplayWidth}px`;
-      doomCanvas.style.height = `${Math.floor(doomDisplayWidth / doomAspect)}px`;
+      if (doomCanvas) {
+        doomCanvas.style.width = `${doomDisplayWidth}px`;
+        doomCanvas.style.height = `${Math.floor(doomDisplayWidth / doomAspect)}px`;
+      }
+      if (doomThreeFrame) {
+        doomThreeFrame.style.width = `${doomDisplayWidth}px`;
+        doomThreeFrame.style.height = `${Math.floor(doomDisplayWidth / doomAspect)}px`;
+      }
+      if (riftFrame) {
+        const riftWrapWidth = Math.max(280, getInnerWidth(riftWrapEl || doomWrapEl, shellWidth - 24) - 8);
+        const riftAvailableHeight = Math.min(900, getAvailableHeight(riftWrapEl || riftFrame, 360));
+        const riftAspect = 4 / 3;
+        const riftDisplayWidth = Math.max(280, Math.min(riftWrapWidth, Math.floor(riftAvailableHeight * riftAspect), 1180));
+        riftFrame.style.width = `${riftDisplayWidth}px`;
+        riftFrame.style.height = `${Math.floor(riftDisplayWidth / riftAspect)}px`;
+      }
 
       if (rpgFrame && activeGame === 'rpg') {
         if (rpgTheaterMode) {
@@ -4030,7 +4047,19 @@
         return;
       }
       if (activeGame === 'doom') {
+        if (doomThreeFrame) {
+          doomThreeFrame.src = doomThreeFrame.src;
+          activeGameHintEl.textContent = 'Restarted Hellstorm 3D.';
+          return;
+        }
         resetDoomGame();
+        return;
+      }
+      if (activeGame === 'rift') {
+        if (riftFrame) {
+          riftFrame.src = riftFrame.src;
+          activeGameHintEl.textContent = 'Restarted Rift Raider 2.5D.';
+        }
         return;
       }
       if (activeGame === 'mine') {
@@ -4087,15 +4116,14 @@
       const whackActive = gameName === 'whack';
       const rpgActive = gameName === 'rpg';
       const mineActive = gameName === 'mine';
-      const doomActive = gameName === 'doom';
-      const anyActive = tetrisActive || snakeActive || pongActive || breakoutActive || dashActive || memoryActive || minefieldActive || simonActive || whackActive || rpgActive || mineActive || doomActive;
+      const anyActive = tetrisActive || snakeActive || pongActive || breakoutActive || dashActive || memoryActive || minefieldActive || simonActive || whackActive || rpgActive || mineActive;
       document.body.classList.toggle('rpg-active-mode', rpgActive);
       document.documentElement.classList.toggle('rpg-active-mode', rpgActive);
       rpgTheaterMode = rpgActive;
       rpgPanel.classList.toggle('rpg-theater-mode', rpgActive && rpgTheaterMode);
       document.body.classList.toggle('rpg-theater-mode', rpgActive && rpgTheaterMode);
       document.documentElement.classList.toggle('rpg-theater-mode', rpgActive && rpgTheaterMode);
-      if (!doomActive && document.pointerLockElement === doomCanvas && document.exitPointerLock) {
+      if (document.pointerLockElement === doomCanvas && document.exitPointerLock) {
         document.exitPointerLock();
       }
       rpgFullscreenBtn.classList.toggle('hidden', !rpgActive);
@@ -4113,7 +4141,6 @@
       whackPanel.classList.toggle('active', whackActive);
       rpgPanel.classList.toggle('active', rpgActive);
       minePanel.classList.toggle('active', mineActive);
-      doomPanel.classList.toggle('active', doomActive);
 
       pickTetrisBtn.classList.toggle('active', tetrisActive);
       pickSnakeBtn.classList.toggle('active', snakeActive);
@@ -4126,7 +4153,6 @@
       pickWhackBtn.classList.toggle('active', whackActive);
       pickRpgBtn.classList.toggle('active', rpgActive);
       if (pickMineBtn) pickMineBtn.classList.toggle('active', mineActive);
-      pickDoomBtn.classList.toggle('active', doomActive);
 
       pickTetrisBtn.setAttribute('aria-selected', tetrisActive ? 'true' : 'false');
       pickSnakeBtn.setAttribute('aria-selected', snakeActive ? 'true' : 'false');
@@ -4139,7 +4165,6 @@
       pickWhackBtn.setAttribute('aria-selected', whackActive ? 'true' : 'false');
       pickRpgBtn.setAttribute('aria-selected', rpgActive ? 'true' : 'false');
       if (pickMineBtn) pickMineBtn.setAttribute('aria-selected', mineActive ? 'true' : 'false');
-      pickDoomBtn.setAttribute('aria-selected', doomActive ? 'true' : 'false');
       restartActiveBtn.disabled = !anyActive;
 
       snakePaused = true;
@@ -4246,12 +4271,6 @@
           setMineStatus('BlockCraft online. Q break, E place, 1-5 swap block.');
           activeGameHintEl.textContent = 'Showing BlockCraft. Use the game buttons to switch.';
         }
-      } else if (doomActive) {
-        if (running && !gameOver) {
-          paused = true;
-          setStatus('Paused while Hellstorm is active');
-        }
-        activeGameHintEl.textContent = 'Showing Hellstorm. Use the game buttons to switch.';
       } else {
         if (running && !gameOver) {
           paused = true;
@@ -4275,7 +4294,6 @@
     pickWhackBtn.addEventListener('click', () => setActiveGame('whack'));
     pickRpgBtn.addEventListener('click', () => setActiveGame('rpg'));
     if (pickMineBtn) pickMineBtn.addEventListener('click', () => setActiveGame('mine'));
-    pickDoomBtn.addEventListener('click', () => setActiveGame('doom'));
     backToGridBtn.addEventListener('click', () => setActiveGame(null));
     rpgFullscreenBtn.addEventListener('click', () => {
       toggleRpgFullscreen();
@@ -4292,46 +4310,48 @@
       });
     }
 
-    doomCanvas.addEventListener('mouseenter', (event) => {
-      doomLastMouseX = event.clientX;
-    });
+    if (doomCanvas && !doomThreeFrame) {
+      doomCanvas.addEventListener('mouseenter', (event) => {
+        doomLastMouseX = event.clientX;
+      });
 
-    doomCanvas.addEventListener('mouseleave', () => {
-      doomLastMouseX = null;
-    });
+      doomCanvas.addEventListener('mouseleave', () => {
+        doomLastMouseX = null;
+      });
 
-    doomCanvas.addEventListener('click', () => {
-      if (activeGame !== 'doom') return;
-      if (document.pointerLockElement !== doomCanvas && doomCanvas.requestPointerLock) {
-        doomCanvas.requestPointerLock();
-        return;
-      }
-      doomShoot();
-    });
-
-    doomCanvas.addEventListener('mousedown', (event) => {
-      if (activeGame !== 'doom' || event.button !== 0) return;
-      event.preventDefault();
-      if (document.pointerLockElement === doomCanvas) {
+      doomCanvas.addEventListener('click', () => {
+        if (activeGame !== 'doom') return;
+        if (document.pointerLockElement !== doomCanvas && doomCanvas.requestPointerLock) {
+          doomCanvas.requestPointerLock();
+          return;
+        }
         doomShoot();
-      }
-    });
+      });
+
+      doomCanvas.addEventListener('mousedown', (event) => {
+        if (activeGame !== 'doom' || event.button !== 0) return;
+        event.preventDefault();
+        if (document.pointerLockElement === doomCanvas) {
+          doomShoot();
+        }
+      });
+    }
 
     document.addEventListener('pointerlockchange', () => {
-      if (document.pointerLockElement !== doomCanvas) {
+      if (!doomCanvas || document.pointerLockElement !== doomCanvas) {
         doomLastMouseX = null;
       }
     });
 
     document.addEventListener('mousemove', (event) => {
-      if (document.pointerLockElement === doomCanvas) {
+      if (doomCanvas && document.pointerLockElement === doomCanvas) {
         if (activeGame !== 'doom' || doomPaused || doomGameOver || doomWon) return;
         if (event.movementX) turnDoomPlayer(event.movementX * DOOM_MOUSE_SENSITIVITY);
         if (event.movementY) adjustDoomPitch(-event.movementY * DOOM_MOUSE_PITCH_SENSITIVITY);
         return;
       }
 
-      if (event.target !== doomCanvas) return;
+      if (!doomCanvas || event.target !== doomCanvas) return;
       if (activeGame !== 'doom' || doomPaused || doomGameOver || doomWon) {
         doomLastMouseX = event.clientX;
         return;
@@ -4357,7 +4377,7 @@
       const dashKeysList = ['arrowleft', 'arrowright', 'a', 'd', 'p', 'r'];
       const restartOnlyKeys = ['r'];
       const mineKeysList = useEmbeddedBlockcraft ? [] : ['arrowleft', 'arrowright', 'w', 'a', 's', 'd', 'p', 'r', 'q', 'e', '1', '2', '3', '4', '5'];
-      const doomKeysList = ['arrowleft', 'arrowright', 'w', 'a', 's', 'd', 'p', 'r', ' '];
+      const doomKeysList = doomThreeFrame ? [] : ['arrowleft', 'arrowright', 'w', 'a', 's', 'd', 'p', 'r', ' '];
       if (
         (activeGame === 'tetris' && tetrisKeys.includes(key)) ||
         (activeGame === 'snake' && snakeKeys.includes(key)) ||
@@ -4446,6 +4466,13 @@
           setMineStatus(`Selected ${mineBlockName(mineSelected)}.`);
         }
       } else if (activeGame === 'doom') {
+        if (doomThreeFrame) {
+          if (key === 'r') {
+            doomThreeFrame.src = doomThreeFrame.src;
+            activeGameHintEl.textContent = 'Restarted Hellstorm 3D.';
+          }
+          return;
+        }
         if (key in doomKeys) doomKeys[key] = true;
         if (key === 'p' && !doomGameOver && !doomWon) {
           doomPaused = !doomPaused;
@@ -4478,7 +4505,7 @@
     resetSimonGame();
     resetWhackGame();
     resetMineGame();
-    resetDoomGame();
+    if (!doomThreeFrame) resetDoomGame();
     setActiveGame(null);
     resizeGameCanvases();
     window.addEventListener('resize', resizeGameCanvases);

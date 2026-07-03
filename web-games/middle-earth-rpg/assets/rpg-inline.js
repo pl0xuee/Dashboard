@@ -1107,7 +1107,7 @@
       state.actionLog.forEach((entry) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'action-entry';
-        wrapper.textContent = entry;
+        wrapper.innerHTML = entry;
         dom.actionLog.appendChild(wrapper);
       });
       dom.actionLog.scrollTop = dom.actionLog.scrollHeight;
@@ -1119,7 +1119,7 @@
       state.rollLog.slice().reverse().forEach((entry) => {
         const wrapper = document.createElement('div');
         wrapper.className = 'action-entry';
-        wrapper.textContent = entry;
+        wrapper.innerHTML = entry;
         dom.rollLog.appendChild(wrapper);
       });
     }

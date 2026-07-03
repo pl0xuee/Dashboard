@@ -9,11 +9,11 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Web Games - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260630ultrap3" />
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260702refresh1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
   <link rel="stylesheet" href="./assets/web-games-inline.css?v=20260630modern" />
 </head>
-<body class="home-page games-page">
+<body class="home-page games-page modern-v3">
   <div class="page">
     <header>
       <div class="header-left">
@@ -21,7 +21,7 @@
         <a href="../dashboard/" class="home-button">Dashboard</a>
         <a href="../stream/" class="home-button">Stream</a>
         <a href="../media-portal/" class="home-button">Media</a>
-        <a href="../web-games/" class="home-button">Games</a>
+        <a href="../web-games/" class="home-button" aria-current="page">Games</a>
       </div>
       <div class="header-brand">Command Center</div>
     </header>
@@ -45,7 +45,6 @@
               <button id="pickMinefield" type="button" class="home-button game-picker-btn" data-game="minefield" role="tab" aria-selected="false"><span class="game-picker-art minefield" aria-hidden="true"></span><span class="game-picker-label">Minefield</span></button>
               <button id="pickSimon" type="button" class="home-button game-picker-btn" data-game="simon" role="tab" aria-selected="false"><span class="game-picker-art simon" aria-hidden="true"></span><span class="game-picker-label">Simon Pulse</span></button>
               <button id="pickWhack" type="button" class="home-button game-picker-btn" data-game="whack" role="tab" aria-selected="false"><span class="game-picker-art whack" aria-hidden="true"></span><span class="game-picker-label">Whack-A-Bot</span></button>
-              <button id="pickDoom" type="button" class="home-button game-picker-btn" data-game="doom" role="tab" aria-selected="false"><span class="game-picker-art doom" aria-hidden="true"></span><span class="game-picker-label">Hellstorm</span></button>
             </div>
             <div id="gameToolbarActions" class="game-toolbar-actions">
               <button id="backToGridBtn" type="button" class="home-button back-btn">All Games</button>
@@ -303,44 +302,6 @@
           </div>
         </section>
 
-        <section id="doomPanel" class="games-card game-panel">
-          <h2 class="games-title">Hellstorm</h2>
-          <p class="control-hint">Controls: Click the game to lock the mouse, move the mouse to aim, W A S D move, Left Click or Space shoot, Arrow Left/Right turn, P pause, R restart. Clear enemies, grab pickups, reach the exit.</p>
-          <div class="doom-banner" aria-hidden="true">
-            <strong>Ares Sector</strong>
-            <span>Bay 01 : reactor breach detected</span>
-          </div>
-          <div class="doom-wrap doom-crosshair">
-            <canvas id="doomCanvas" width="640" height="360" aria-label="Hellstorm style game"></canvas>
-            <div class="doom-vignette" aria-hidden="true"></div>
-            <div class="doom-scanlines" aria-hidden="true"></div>
-            <div class="doom-overlay">
-              <div class="doom-hud">
-                <div class="stat">
-                  <div class="stat-label">Health</div>
-                  <div class="stat-value" id="doomHealthVal">100</div>
-                  <div class="doom-meter"><span id="doomHealthBar"></span></div>
-                </div>
-                <div class="stat">
-                  <div class="stat-label">Ammo</div>
-                  <div class="stat-value" id="doomAmmoVal">40</div>
-                  <div class="doom-meter ammo"><span id="doomAmmoBar"></span></div>
-                </div>
-                <div class="stat doom-face" id="doomFace">>:|</div>
-                <div class="stat">
-                  <div class="stat-label">Kills</div>
-                  <div class="stat-value" id="doomKillsVal">0/4</div>
-                </div>
-                <div class="stat">
-                  <div class="stat-label">Score</div>
-                  <div class="stat-value" id="doomScoreVal">0</div>
-                </div>
-              </div>
-              <div class="doom-statusline" id="doomStatusLine">Sector status: searching for hostiles.</div>
-            </div>
-          </div>
-          <p class="doom-note" id="doomStatus">Clear all enemies to win this run.</p>
-        </section>
       </div>
     </main>
   </div>

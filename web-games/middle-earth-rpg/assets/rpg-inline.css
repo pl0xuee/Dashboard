@@ -66,12 +66,6 @@
       font-family: var(--font-body);
     }
 
-    button,
-    input,
-    select {
-      font: inherit;
-    }
-
     .rpg-shell {
       width: calc(100% / var(--game-zoom));
       height: calc(100dvh / var(--game-zoom));
