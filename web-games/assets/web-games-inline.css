@@ -1,6 +1,5 @@
     html,
     body {
-      scrollbar-gutter: stable;
       scrollbar-width: thin;
       scrollbar-color: rgba(210, 168, 108, 0.72) rgba(13, 19, 29, 0.92);
     }
@@ -927,7 +926,6 @@
       height: 100dvh;
       overflow-x: clip;
       overflow-y: auto;
-      scrollbar-gutter: stable;
     }
 
     body.rpg-active-mode .main {

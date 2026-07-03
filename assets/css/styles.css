@@ -75,13 +75,6 @@ html, body {
 
 html,
 body {
-  scrollbar-gutter: stable;
-}
-
-html:has(body.media-page),
-body.media-page,
-html:has(body.games-page),
-body.games-page {
   scrollbar-gutter: auto;
 }
 
