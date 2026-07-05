@@ -400,6 +400,17 @@ body.stream-theater-mode .stream-chat {
 
 body.stream-theater-mode .stream-theater-exit {
   display: inline-flex;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(-10px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+body.stream-theater-mode .stream-container:hover .stream-theater-exit,
+body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
 }
 
 @media (max-width: 1200px) {
