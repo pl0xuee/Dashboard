@@ -699,7 +699,7 @@
             link.addEventListener('click', (event) => {
               event.preventDefault();
               closeStreamerDropdownImmediately();
-              if (item.url) loadStreamDirect(item.url, { autoplay: false });
+              if (item.url) loadStreamDirect(item.url, { autoplay: true });
             });
 
             row.appendChild(link);
