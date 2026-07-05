@@ -53,7 +53,7 @@
     }
 
     function buildTwitchEmbedUrl(channel, options = {}) {
-      const { startUnmuted = false } = options;
+      const { startUnmuted = false, autoplay = true } = options;
       const normalized = normalizeTwitchChannel(channel);
       if (!normalized) return null;
 
@@ -65,18 +65,18 @@
       const params = new URLSearchParams({
         channel: normalized,
         parent: parentHost,
-        autoplay: 'true',
+        autoplay: autoplay ? 'true' : 'false',
         muted: startUnmuted ? 'false' : 'true'
       });
       return `https://player.twitch.tv/?${params.toString()}`;
     }
 
     function loadTwitchEmbed(channel, options = {}) {
-      const { keepInputText = false, startUnmuted = false } = options;
+      const { keepInputText = false, startUnmuted = false, autoplay = true } = options;
       const cleanChannel = normalizeTwitchChannel(channel);
       if (!cleanChannel) return;
 
-      const twitchPlayerUrl = buildTwitchEmbedUrl(cleanChannel, { startUnmuted });
+      const twitchPlayerUrl = buildTwitchEmbedUrl(cleanChannel, { startUnmuted, autoplay });
       if (!twitchPlayerUrl) {
         alert('Twitch embed requires running this page on http(s) with a valid host.');
         return;
@@ -246,9 +246,19 @@
       chat.style.display = (chat.style.display === 'none') ? 'block' : 'none';
     };
 
-    window.loadStreamDirect = function(url) {
+    window.loadStreamDirect = function(url, options = {}) {
       document.getElementById('streamUrl').value = url;
-      loadStream();
+      const input = (url || '').trim();
+      if (!input) return;
+
+      if (input.includes('youtube.com') || input.includes('youtu.be') || input.includes('@')) {
+        loadStream();
+        return;
+      }
+
+      const channel = input.includes('twitch.tv/') ? input.split('twitch.tv/').pop().split('/')[0] : input;
+      const { autoplay = true } = options;
+      loadTwitchEmbed(channel, { startUnmuted: true, autoplay });
     };
 
     function formatViewerCount(n) {
@@ -689,7 +699,7 @@
             link.addEventListener('click', (event) => {
               event.preventDefault();
               closeStreamerDropdownImmediately();
-              if (item.url) loadStreamDirect(item.url);
+              if (item.url) loadStreamDirect(item.url, { autoplay: false });
             });
 
             row.appendChild(link);
