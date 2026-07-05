@@ -67,8 +67,8 @@
       const params = new URLSearchParams({
         channel: normalized,
         parent: parentHost,
-        autoplay: autoplay ? 'true' : 'false',
-        muted: startUnmuted ? 'false' : 'true'
+        autoplay: autoplay ? '1' : '0',
+        muted: startUnmuted ? '0' : '1'
       });
       return `https://player.twitch.tv/?${params.toString()}`;
     }
@@ -88,7 +88,7 @@
       const player = document.getElementById('player');
       const chat = document.getElementById('chat');
 
-      player.innerHTML = `<iframe src="${twitchPlayerUrl}" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+      player.innerHTML = `<iframe src="${twitchPlayerUrl}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
       chat.innerHTML = `<iframe src="https://www.twitch.tv/embed/${encodeURIComponent(cleanChannel)}/chat?parent=${window.location.hostname}&darkpopout"></iframe>`;
       chat.style.display = 'block';
 
