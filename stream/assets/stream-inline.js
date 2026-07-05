@@ -16,6 +16,7 @@
     let youtubeRetryAfter = 0;
     let lastHiddenAt = 0;
     let lastTwitchEmbedLoadAt = 0;
+    let lastTheaterModeToggleAt = 0;
     let twitchResumeTimer = null;
     let activeStream = { platform: null, id: '' };
     let streamTheaterMode = false;
@@ -28,6 +29,7 @@
     }
 
     function setStreamTheaterMode(nextValue) {
+      lastTheaterModeToggleAt = Date.now();
       streamTheaterMode = Boolean(nextValue);
       document.body.classList.toggle('stream-theater-mode', streamTheaterMode);
       document.documentElement.classList.toggle('stream-theater-mode', streamTheaterMode);
@@ -102,6 +104,7 @@
       if (document.visibilityState !== 'visible') return false;
       if (activeStream.platform !== 'twitch' || !activeStream.id) return false;
       if (Date.now() - lastHiddenAt < minHiddenMs) return false;
+      if (Date.now() - lastTheaterModeToggleAt < TWITCH_RESUME_RELOAD_COOLDOWN_MS) return false;
       if (Date.now() - lastTwitchEmbedLoadAt < TWITCH_RESUME_RELOAD_COOLDOWN_MS) return false;
       return true;
     }
@@ -237,7 +240,7 @@
         inputElement.value = "You are Watching: " + videoId;
       } else {
         const channel = input.includes('twitch.tv/') ? input.split('twitch.tv/').pop().split('/')[0] : input;
-        loadTwitchEmbed(channel, { startUnmuted: true });
+        loadTwitchEmbed(channel, { autoplay: true, startUnmuted: false });
       }
     };
 
