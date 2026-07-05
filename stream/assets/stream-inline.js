@@ -18,6 +18,7 @@
     let lastTwitchEmbedLoadAt = 0;
     let lastTheaterModeToggleAt = 0;
     let twitchResumeTimer = null;
+    let twitchEmbedScriptPromise = null;
     let activeStream = { platform: null, id: '' };
     let streamTheaterMode = false;
 
@@ -59,18 +60,62 @@
       const normalized = normalizeTwitchChannel(channel);
       if (!normalized) return null;
 
-      const parentHost = window.location.hostname;
-      if (!parentHost || window.location.protocol === 'file:') {
+      const parentHosts = getTwitchParentHosts();
+      if (!parentHosts.length || window.location.protocol === 'file:') {
         return null;
       }
 
       const params = new URLSearchParams({
         channel: normalized,
-        parent: parentHost,
         autoplay: autoplay ? '1' : '0',
         muted: startUnmuted ? '0' : '1'
       });
+      parentHosts.forEach((host) => params.append('parent', host));
       return `https://player.twitch.tv/?${params.toString()}`;
+    }
+
+    function getTwitchParentHosts() {
+      const hostname = window.location.hostname.trim().toLowerCase();
+      if (!hostname) return [];
+
+      const hosts = new Set([hostname]);
+      hosts.add('pl0xuee.github.io');
+      const parts = hostname.split('.');
+      if (parts.length > 2) {
+        hosts.add(parts.slice(-2).join('.'));
+      }
+      if (!hostname.startsWith('www.')) {
+        hosts.add(`www.${hostname}`);
+      }
+
+      return Array.from(hosts);
+    }
+
+    function loadTwitchEmbedScript() {
+      if (window.Twitch?.Embed) {
+        return Promise.resolve();
+      }
+
+      if (!twitchEmbedScriptPromise) {
+        twitchEmbedScriptPromise = new Promise((resolve, reject) => {
+          const existing = document.querySelector('script[data-twitch-embed-script]');
+          if (existing) {
+            existing.addEventListener('load', () => resolve(), { once: true });
+            existing.addEventListener('error', () => reject(new Error('Failed to load Twitch embed script')), { once: true });
+            return;
+          }
+
+          const script = document.createElement('script');
+          script.src = 'https://embed.twitch.tv/embed/v1.js';
+          script.async = true;
+          script.dataset.twitchEmbedScript = 'true';
+          script.onload = () => resolve();
+          script.onerror = () => reject(new Error('Failed to load Twitch embed script'));
+          document.head.appendChild(script);
+        });
+      }
+
+      return twitchEmbedScriptPromise;
     }
 
     function loadTwitchEmbed(channel, options = {}) {
@@ -78,8 +123,7 @@
       const cleanChannel = normalizeTwitchChannel(channel);
       if (!cleanChannel) return;
 
-      const twitchPlayerUrl = buildTwitchEmbedUrl(cleanChannel, { startUnmuted, autoplay });
-      if (!twitchPlayerUrl) {
+      if (!window.location.hostname || window.location.protocol === 'file:') {
         alert('Twitch embed requires running this page on http(s) with a valid host.');
         return;
       }
@@ -88,7 +132,8 @@
       const player = document.getElementById('player');
       const chat = document.getElementById('chat');
 
-      player.innerHTML = `<iframe src="${twitchPlayerUrl}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe>`;
+
+      player.innerHTML = '<div id="twitch-player" style="width:100%;height:100%;min-height:300px"></div>';
       chat.innerHTML = `<iframe src="https://www.twitch.tv/embed/${encodeURIComponent(cleanChannel)}/chat?parent=${window.location.hostname}&darkpopout"></iframe>`;
       chat.style.display = 'block';
 
@@ -98,6 +143,30 @@
       if (!keepInputText) {
         inputElement.value = 'You are Watching: ' + cleanChannel;
       }
+
+      loadTwitchEmbedScript().then(() => {
+        if (activeStream.platform !== 'twitch' || activeStream.id !== cleanChannel) return;
+
+        const embed = new Twitch.Embed('twitch-player', {
+          width: '100%',
+          height: '100%',
+          channel: cleanChannel,
+          autoplay,
+          muted: !startUnmuted,
+          layout: 'video',
+          parent: getTwitchParentHosts()
+        });
+
+        embed.addEventListener(Twitch.Embed.VIDEO_READY, () => {
+          const twitchPlayer = embed.getPlayer();
+          if (!twitchPlayer) return;
+          twitchPlayer.setMuted(!startUnmuted);
+          if (autoplay) twitchPlayer.play();
+        });
+      }).catch((error) => {
+        console.error(error);
+        player.innerHTML = '<div class="stream-list-empty">Unable to load Twitch embed.</div>';
+      });
     }
 
     function canResumeTwitch(minHiddenMs = TWITCH_TAB_RESUME_MIN_HIDDEN_MS) {
