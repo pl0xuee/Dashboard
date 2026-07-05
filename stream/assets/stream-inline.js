@@ -1054,8 +1054,6 @@
         lastHiddenAt = Date.now();
         return;
       }
-
-      scheduleTwitchResume('visibilitychange');
     });
 
     window.addEventListener('pageshow', function(event) {
