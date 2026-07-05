@@ -257,8 +257,8 @@
       }
 
       const channel = input.includes('twitch.tv/') ? input.split('twitch.tv/').pop().split('/')[0] : input;
-      const { autoplay = true } = options;
-      loadTwitchEmbed(channel, { startUnmuted: true, autoplay });
+      const { autoplay = true, startUnmuted = false } = options;
+      loadTwitchEmbed(channel, { startUnmuted, autoplay });
     };
 
     function formatViewerCount(n) {
@@ -699,7 +699,7 @@
             link.addEventListener('click', (event) => {
               event.preventDefault();
               closeStreamerDropdownImmediately();
-              if (item.url) loadStreamDirect(item.url, { autoplay: true });
+              if (item.url) loadStreamDirect(item.url, { autoplay: true, startUnmuted: false });
             });
 
             row.appendChild(link);
