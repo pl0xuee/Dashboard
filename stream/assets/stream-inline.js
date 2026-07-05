@@ -971,15 +971,8 @@
       scheduleTwitchResume('visibilitychange');
     });
 
-    window.addEventListener('blur', function() {
-      lastHiddenAt = Date.now();
-    });
-
-    window.addEventListener('focus', function() {
-      scheduleTwitchResume('focus');
-    });
-
-    window.addEventListener('pageshow', function() {
+    window.addEventListener('pageshow', function(event) {
+      if (!event.persisted) return;
       scheduleTwitchResume('pageshow');
     });
 
