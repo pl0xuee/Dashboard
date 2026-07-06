@@ -413,16 +413,155 @@
       }
     }
 
+    const MARKET_OPEN_SECONDS = (9 * 3600) + (30 * 60);
+    const MARKET_CLOSE_SECONDS = 16 * 3600;
+    const MARKET_EARLY_CLOSE_SECONDS = 13 * 3600;
+    const marketHolidayCache = {};
+
+    function toDateKey(year, month, day) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+
+    function toDateKeyFromDate(date) {
+      return toDateKey(date.getFullYear(), date.getMonth() + 1, date.getDate());
+    }
+
+    function observedFixedHoliday(year, monthIndexZeroBased, day) {
+      const observed = new Date(year, monthIndexZeroBased, day, 12, 0, 0, 0);
+      const weekday = observed.getDay();
+      if (weekday === 6) observed.setDate(observed.getDate() - 1); // Saturday -> Friday
+      if (weekday === 0) observed.setDate(observed.getDate() + 1); // Sunday -> Monday
+      return observed;
+    }
+
+    function nthWeekdayOfMonth(year, monthIndexZeroBased, weekday, nth) {
+      const date = new Date(year, monthIndexZeroBased, 1, 12, 0, 0, 0);
+      const firstWeekday = date.getDay();
+      const delta = (weekday - firstWeekday + 7) % 7;
+      date.setDate(1 + delta + ((nth - 1) * 7));
+      return date;
+    }
+
+    function lastWeekdayOfMonth(year, monthIndexZeroBased, weekday) {
+      const date = new Date(year, monthIndexZeroBased + 1, 0, 12, 0, 0, 0);
+      const delta = (date.getDay() - weekday + 7) % 7;
+      date.setDate(date.getDate() - delta);
+      return date;
+    }
+
+    function calculateEasterSunday(year) {
+      // Anonymous Gregorian algorithm
+      const a = year % 19;
+      const b = Math.floor(year / 100);
+      const c = year % 100;
+      const d = Math.floor(b / 4);
+      const e = b % 4;
+      const f = Math.floor((b + 8) / 25);
+      const g = Math.floor((b - f + 1) / 3);
+      const h = (19 * a + b - d - g + 15) % 30;
+      const i = Math.floor(c / 4);
+      const k = c % 4;
+      const l = (32 + (2 * e) + (2 * i) - h - k) % 7;
+      const m = Math.floor((a + (11 * h) + (22 * l)) / 451);
+      const month = Math.floor((h + l - (7 * m) + 114) / 31); // 3=Mar, 4=Apr
+      const day = ((h + l - (7 * m) + 114) % 31) + 1;
+      return new Date(year, month - 1, day, 12, 0, 0, 0);
+    }
+
+    function getUsMarketHolidayMap(year) {
+      if (marketHolidayCache[year]) return marketHolidayCache[year];
+
+      const holidays = new Map();
+      const addHoliday = (date, label) => {
+        if (!date || date.getFullYear() !== year) return;
+        holidays.set(toDateKeyFromDate(date), label);
+      };
+
+      // Fixed-date holidays with observed rules.
+      addHoliday(observedFixedHoliday(year, 0, 1), "New Year's Day");
+      addHoliday(observedFixedHoliday(year + 1, 0, 1), "New Year's Day"); // can observe on Dec 31 of current year
+      addHoliday(observedFixedHoliday(year, 5, 19), 'Juneteenth');
+      addHoliday(observedFixedHoliday(year, 6, 4), 'Independence Day');
+      addHoliday(observedFixedHoliday(year, 11, 25), 'Christmas Day');
+
+      // Floating holidays.
+      addHoliday(nthWeekdayOfMonth(year, 0, 1, 3), 'Martin Luther King Jr. Day'); // 3rd Monday Jan
+      addHoliday(nthWeekdayOfMonth(year, 1, 1, 3), "Presidents' Day"); // 3rd Monday Feb
+      addHoliday(lastWeekdayOfMonth(year, 4, 1), 'Memorial Day'); // last Monday May
+      addHoliday(nthWeekdayOfMonth(year, 8, 1, 1), 'Labor Day'); // 1st Monday Sep
+      addHoliday(nthWeekdayOfMonth(year, 10, 4, 4), 'Thanksgiving Day'); // 4th Thursday Nov
+
+      const easterSunday = calculateEasterSunday(year);
+      const goodFriday = new Date(easterSunday);
+      goodFriday.setDate(goodFriday.getDate() - 2);
+      addHoliday(goodFriday, 'Good Friday');
+
+      marketHolidayCache[year] = holidays;
+      return holidays;
+    }
+
+    function isEarlyCloseDate(estDate, holidayMap) {
+      const day = estDate.getDay();
+      const month = estDate.getMonth();
+      const dayOfMonth = estDate.getDate();
+
+      // Day after Thanksgiving (Friday)
+      const thanksgiving = nthWeekdayOfMonth(estDate.getFullYear(), 10, 4, 4);
+      const dayAfterThanksgiving = new Date(thanksgiving);
+      dayAfterThanksgiving.setDate(dayAfterThanksgiving.getDate() + 1);
+      if (toDateKeyFromDate(estDate) === toDateKeyFromDate(dayAfterThanksgiving)) {
+        return true;
+      }
+
+      // Christmas Eve early close when weekday and not already a full holiday.
+      if (month === 11 && dayOfMonth === 24 && day >= 1 && day <= 5 && !holidayMap.has(toDateKeyFromDate(estDate))) {
+        return true;
+      }
+
+      // Typical July 3 early close if weekday and not already observed holiday closure.
+      if (month === 6 && dayOfMonth === 3 && day >= 1 && day <= 5 && !holidayMap.has(toDateKeyFromDate(estDate))) {
+        return true;
+      }
+
+      return false;
+    }
+
+    function getUsMarketSession(estDate) {
+      const day = estDate.getDay();
+      if (day === 0 || day === 6) {
+        return { isTradingDay: false, reason: 'weekend', openSeconds: MARKET_OPEN_SECONDS, closeSeconds: MARKET_CLOSE_SECONDS };
+      }
+
+      const holidayMap = getUsMarketHolidayMap(estDate.getFullYear());
+      const dateKey = toDateKeyFromDate(estDate);
+      if (holidayMap.has(dateKey)) {
+        return {
+          isTradingDay: false,
+          reason: 'holiday',
+          holidayName: holidayMap.get(dateKey),
+          openSeconds: MARKET_OPEN_SECONDS,
+          closeSeconds: MARKET_CLOSE_SECONDS
+        };
+      }
+
+      const earlyClose = isEarlyCloseDate(estDate, holidayMap);
+      return {
+        isTradingDay: true,
+        reason: earlyClose ? 'early-close' : 'regular',
+        openSeconds: MARKET_OPEN_SECONDS,
+        closeSeconds: earlyClose ? MARKET_EARLY_CLOSE_SECONDS : MARKET_CLOSE_SECONDS,
+        isEarlyClose: earlyClose
+      };
+    }
+
     function isUsMarketOpenNow() {
       const now = new Date();
       const estNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
-      const day = estNow.getDay();
-      if (day === 0 || day === 6) return false;
+      const session = getUsMarketSession(estNow);
+      if (!session.isTradingDay) return false;
 
-      const minutes = estNow.getHours() * 60 + estNow.getMinutes();
-      const openMinutes = 9 * 60 + 30;
-      const closeMinutes = 16 * 60;
-      return minutes >= openMinutes && minutes < closeMinutes;
+      const totalSeconds = (estNow.getHours() * 3600) + (estNow.getMinutes() * 60) + estNow.getSeconds();
+      return totalSeconds >= session.openSeconds && totalSeconds < session.closeSeconds;
     }
 
     const TWELVE_DATA_API_KEY = 'e113279daa094cf29e24802ff56566e2';
@@ -622,45 +761,67 @@
 
       fetchSentiment();
     }
+    function formatDuration(secondsRemaining) {
+      const total = Math.max(0, Math.floor(secondsRemaining));
+      const days = Math.floor(total / 86400);
+      const hours = Math.floor((total % 86400) / 3600);
+      const minutes = Math.floor((total % 3600) / 60);
+      const seconds = total % 60;
+
+      if (days > 0) return `${days}d ${hours}h ${minutes}m ${seconds}s`;
+      if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
+      return `${minutes}m ${seconds}s`;
+    }
+
     function updateMarketStatus() {
       const now = new Date();
       // Adjust to EST for accurate market time
-      const estTime = new Date(now.toLocaleString("en-US", {timeZone: "America/New_York"}));
+      const estTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
       const day = estTime.getDay(); // 0 is Sunday, 6 is Saturday
       const marketStatus = document.getElementById('market-status');
+      if (!marketStatus) return;
 
-      // Check if weekend
-      if (day === 0 || day === 6) {
-          const totalMinutes = estTime.getHours() * 60 + estTime.getMinutes();
-          const openTime = 9 * 60 + 30;
-          let daysUntilOpen = day === 6 ? 2 : 1; // Saturday -> 2 days to Monday, Sunday -> 1 day to Monday
-          const minutesUntilOpen = ((24 * 60 - totalMinutes) + openTime) + ((daysUntilOpen - 1) * 24 * 60);
-          marketStatus.textContent = 'Weekend · Opens in ' + Math.floor(minutesUntilOpen / 60 / 24) + 'd ' + Math.floor((minutesUntilOpen / 60) % 24) + 'h';
-          return;
-      }
+      const totalSeconds = (estTime.getHours() * 3600) + (estTime.getMinutes() * 60) + estTime.getSeconds();
+      const session = getUsMarketSession(estTime);
 
-      // TODO: Add holiday logic here if needed (e.g., specific dates)
+      const getSecondsUntilNextOpen = () => {
+        for (let dayOffset = 0; dayOffset < 10; dayOffset++) {
+          const candidate = new Date(estTime.getFullYear(), estTime.getMonth(), estTime.getDate() + dayOffset, estTime.getHours(), estTime.getMinutes(), estTime.getSeconds(), 0);
+          const candidateSession = getUsMarketSession(candidate);
+          if (!candidateSession.isTradingDay) continue;
 
-      const totalMinutes = estTime.getHours() * 60 + estTime.getMinutes();
-      const openTime = 9 * 60 + 30, closeTime = 16 * 60;
-
-      if (totalMinutes >= openTime && totalMinutes < closeTime) {
-          const timeLeft = closeTime - totalMinutes;
-          marketStatus.textContent = 'Market closes in ' + Math.floor(timeLeft/60) + 'h ' + (timeLeft%60) + 'm';
-      } else {
-          // If before 9:30 AM, calculate time until open today
-          if (totalMinutes < openTime) {
-              const timeUntilOpen = openTime - totalMinutes;
-              marketStatus.textContent = 'Market opens in ' + Math.floor(timeUntilOpen/60) + 'h ' + (timeUntilOpen%60) + 'm';
-          } else {
-              // After 4 PM, calculate time until open tomorrow (or Monday)
-              let daysUntilOpen = 1;
-              if (day === 5) daysUntilOpen = 3; // If Friday, open Monday
-
-              const minutesUntilOpen = ((24 * 60 - totalMinutes) + openTime) + ((daysUntilOpen - 1) * 24 * 60);
-              marketStatus.textContent = 'Market opens in ' + Math.floor(minutesUntilOpen / 60) + 'h ' + (minutesUntilOpen % 60) + 'm';
+          if (dayOffset === 0) {
+            if (totalSeconds < candidateSession.openSeconds) {
+              return candidateSession.openSeconds - totalSeconds;
+            }
+            if (totalSeconds < candidateSession.closeSeconds) {
+              return 0;
+            }
+            continue;
           }
+
+          return (dayOffset * 24 * 3600) + candidateSession.openSeconds - totalSeconds;
+        }
+
+        return 0;
+      };
+
+      if (session.isTradingDay && totalSeconds >= session.openSeconds && totalSeconds < session.closeSeconds) {
+        const secondsLeft = session.closeSeconds - totalSeconds;
+        const closeLabel = session.isEarlyClose ? 'Early closes' : 'Closes';
+        marketStatus.textContent = `Market open · ${closeLabel} in ${formatDuration(secondsLeft)}`;
+        marketStatus.style.color = '#8df5b2';
+        marketStatus.style.fontWeight = '700';
+        return;
       }
+
+      const secondsUntilOpen = getSecondsUntilNextOpen();
+      const reasonLabel = session.reason === 'holiday'
+        ? `(${session.holidayName || 'Holiday'})`
+        : (session.reason === 'weekend' ? '(Weekend)' : '');
+      marketStatus.textContent = `Market closed ${reasonLabel} · Opens in ${formatDuration(secondsUntilOpen)}`.replace('  ', ' ').trim();
+      marketStatus.style.color = session.reason === 'weekend' ? '#9ab7db' : '#f0c77e';
+      marketStatus.style.fontWeight = '700';
     }
     function getUserTimeZone() {
       try {
@@ -757,7 +918,7 @@
     function startMarketStatusUpdates() {
       if (marketStatusTimer) return;
       updateMarketStatus();
-      marketStatusTimer = window.setInterval(updateMarketStatus, 60000);
+      marketStatusTimer = window.setInterval(updateMarketStatus, 1000);
     }
 
     function stopMarketStatusUpdates() {
