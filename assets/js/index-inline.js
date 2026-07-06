@@ -239,27 +239,31 @@
         }
 
         const li = document.createElement('li');
-        li.style.marginBottom = '18px';
-        li.style.paddingBottom = '12px';
-        li.style.borderBottom = '1px solid var(--border)';
+        li.style.marginBottom = '10px';
+        li.style.padding = '11px 11px 9px 11px';
+        li.style.border = '1px solid rgba(172, 197, 233, 0.14)';
+        li.style.borderRadius = '12px';
+        li.style.background = 'linear-gradient(180deg, rgba(20, 28, 39, 0.72), rgba(13, 19, 29, 0.78))';
+        li.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.14)';
+        li.style.borderLeft = '2px solid rgba(24, 216, 255, 0.28)';
 
         const link = document.createElement('a');
         link.href = toSafeLink(item.link);
         link.target = '_blank';
         link.rel = 'noopener noreferrer';
-        link.style.color = '#e8ecef';
+        link.style.color = '#e7eef8';
         link.style.textDecoration = 'none';
-        link.style.fontSize = '1.05rem';
+        link.style.fontSize = '1.03rem';
         link.style.lineHeight = '1.5';
-        link.style.fontWeight = '500';
+        link.style.fontWeight = '600';
         link.style.display = 'block';
         link.style.transition = 'color 0.2s';
         link.textContent = displayTitle;
 
         const meta = document.createElement('div');
         meta.style.fontSize = '0.75rem';
-        meta.style.color = '#8892b0';
-        meta.style.marginTop = '6px';
+        meta.style.color = '#92a2bb';
+        meta.style.marginTop = '7px';
         meta.style.fontFamily = 'monospace';
         meta.style.letterSpacing = '0.02em';
         meta.textContent = `🗞️ ${displaySource} • 🕒 ${date}`;
