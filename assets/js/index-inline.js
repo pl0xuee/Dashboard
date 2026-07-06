@@ -301,13 +301,53 @@
         }
       } catch (_) { /* ignore broken cache */ }
 
+      const sentimentSources = [
+        'https://production.dataviz.cnn.io/index/fearandgreed/graphdata',
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://production.dataviz.cnn.io/index/fearandgreed/graphdata')
+      ];
+
+      const readSentimentPayload = async (response) => {
+        if (!response.ok) {
+          throw new Error(`CNN sentiment fetch failed with ${response.status}`);
+        }
+
+        const contentType = String(response.headers.get('content-type') || '').toLowerCase();
+        if (contentType.includes('application/json')) {
+          return response.json();
+        }
+
+        const text = await response.text();
+        try {
+          return JSON.parse(text);
+        } catch (_) {
+          const start = text.indexOf('{');
+          const end = text.lastIndexOf('}');
+          if (start === -1 || end === -1 || end <= start) {
+            throw new Error('CNN sentiment response did not include JSON');
+          }
+          return JSON.parse(text.slice(start, end + 1));
+        }
+      };
+
       // Background (or foreground if no cache) network fetch
       try {
-        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://production.dataviz.cnn.io/index/fearandgreed/graphdata');
-        const res = await fetch(proxyUrl);
-        if (!res.ok) throw new Error('CNN sentiment fetch failed');
+        let data = null;
+        let lastError = null;
 
-        const data = await res.json();
+        for (const sourceUrl of sentimentSources) {
+          try {
+            const res = await fetch(sourceUrl, { cache: 'no-store' });
+            data = await readSentimentPayload(res);
+            break;
+          } catch (error) {
+            lastError = error;
+          }
+        }
+
+        if (!data) {
+          throw lastError || new Error('CNN sentiment fetch failed');
+        }
+
         const score = data?.fear_and_greed?.score;
         const rating = data?.fear_and_greed?.rating;
 

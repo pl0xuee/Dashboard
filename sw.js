@@ -1,4 +1,4 @@
-const CACHE_NAME = 'command-center-v39';
+const CACHE_NAME = 'command-center-v40';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
@@ -6,7 +6,7 @@ const APP_SHELL_FILES = [
   '/assets/css/styles.css?v=20260706gridtight1',
   '/assets/js/script.js',
   '/assets/js/index-inline.js',
-  '/assets/js/index-inline.js?v=20260630b',
+  '/assets/js/index-inline.js?v=20260706sentiment1',
   '/manifest.webmanifest',
   '/assets/icons/favicon.svg',
   '/dashboard/',
