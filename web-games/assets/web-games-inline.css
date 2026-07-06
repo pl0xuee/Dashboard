@@ -1032,6 +1032,17 @@
 
     #rpgPanel.active.rpg-theater-mode .rpg-theater-exit {
       display: inline-flex;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(-10px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    #rpgPanel.active.rpg-theater-mode .rpg-embed-wrap:hover .rpg-theater-exit,
+    #rpgPanel.active.rpg-theater-mode .rpg-embed-wrap:focus-within .rpg-theater-exit {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
     }
 
     body.rpg-active-mode.rpg-theater-mode > .page {

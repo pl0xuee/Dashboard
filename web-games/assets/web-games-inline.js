@@ -4082,15 +4082,19 @@
       rpgFullscreenBtn.textContent = rpgTheaterMode ? 'Default View' : 'Theater Mode';
     }
 
-    function toggleRpgFullscreen() {
+    function setRpgTheaterMode(nextValue) {
       if (!rpgPanel || activeGame !== 'rpg') return;
-      rpgTheaterMode = !rpgTheaterMode;
+      rpgTheaterMode = Boolean(nextValue);
       rpgPanel.classList.toggle('rpg-theater-mode', rpgTheaterMode);
       document.body.classList.toggle('rpg-theater-mode', rpgTheaterMode);
       document.documentElement.classList.toggle('rpg-theater-mode', rpgTheaterMode);
       updateRpgFullscreenButton();
       syncActiveGameLoop();
       requestAnimationFrame(resizeGameCanvases);
+    }
+
+    function toggleRpgFullscreen() {
+      setRpgTheaterMode(!rpgTheaterMode);
     }
 
     document.addEventListener('visibilitychange', () => {
@@ -4300,7 +4304,7 @@
     });
     if (rpgTheaterExitBtn) {
       rpgTheaterExitBtn.addEventListener('click', () => {
-        if (rpgTheaterMode) toggleRpgFullscreen();
+        if (rpgTheaterMode) setRpgTheaterMode(false);
       });
     }
     restartActiveBtn.addEventListener('click', restartActiveGame);
@@ -4369,6 +4373,12 @@
 
     document.addEventListener('keydown', (event) => {
       const key = event.key.toLowerCase();
+
+      if (activeGame === 'rpg' && key === 'escape' && rpgTheaterMode) {
+        event.preventDefault();
+        setRpgTheaterMode(false);
+        return;
+      }
 
       const tetrisKeys = ['arrowleft', 'arrowright', 'arrowdown', 'arrowup', ' ', 'z', 'x', 'p', 'r'];
       const snakeKeys = ['arrowleft', 'arrowright', 'arrowdown', 'arrowup', 'w', 'a', 's', 'd', 'p', 'r'];
