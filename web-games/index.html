@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Web Games - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260702refresh1" />
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260706rpghotspot1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
-  <link rel="stylesheet" href="./assets/web-games-inline.css?v=20260706rpgdefault1" />
+  <link rel="stylesheet" href="./assets/web-games-inline.css?v=20260706gameplayux19" />
 </head>
 <body class="home-page games-page modern-v3">
   <div class="page">
@@ -33,31 +33,36 @@
             <div class="games-toolbar-copy">
               <p class="games-lead">Arcade Station</p>
               <p class="games-sublead">Start with the featured Middle-earth RPG or jump into the arcade grid.</p>
+              <div class="games-toolbar-notes" aria-label="Game selection notes">
+                <p class="games-toolbar-note"><strong>Featured world:</strong> Launch the RPG for the full adventure run.</p>
+                <p class="games-toolbar-note"><strong>Quick arcade:</strong> Pick a challenge for reflex, puzzle, or score chasing.</p>
+                <p class="games-toolbar-note"><strong>Instant play:</strong> Every game starts fast and supports quick restart flow.</p>
+              </div>
             </div>
             <div id="gamePicker" class="game-picker" role="tablist" aria-label="Game selector">
               <button id="pickRpg" type="button" class="home-button game-picker-btn featured game-picker-btn-rpg" data-game="rpg" role="tab" aria-selected="false"><img class="game-picker-banner" src="./middle-earth-rpg/RPG%20Banner/game%20banner.png" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">Featured</span><span class="game-picker-label">Middle-earth RPG</span></span></button>
-              <button id="pickTetris" type="button" class="home-button game-picker-btn" data-game="tetris" role="tab" aria-selected="false"><span class="game-picker-art tetris" aria-hidden="true"></span><span class="game-picker-label">Tetris</span></button>
-              <button id="pickSnake" type="button" class="home-button game-picker-btn" data-game="snake" role="tab" aria-selected="false"><span class="game-picker-art snake" aria-hidden="true"></span><span class="game-picker-label">Snake</span></button>
-              <button id="pickPong" type="button" class="home-button game-picker-btn" data-game="pong" role="tab" aria-selected="false"><span class="game-picker-art pong" aria-hidden="true"></span><span class="game-picker-label">Pong</span></button>
-              <button id="pickBreakout" type="button" class="home-button game-picker-btn" data-game="breakout" role="tab" aria-selected="false"><span class="game-picker-art breakout" aria-hidden="true"></span><span class="game-picker-label">Breakout</span></button>
-              <button id="pickDash" type="button" class="home-button game-picker-btn" data-game="dash" role="tab" aria-selected="false"><span class="game-picker-art dash" aria-hidden="true"></span><span class="game-picker-label">Asteroid Dash</span></button>
-              <button id="pickMemory" type="button" class="home-button game-picker-btn" data-game="memory" role="tab" aria-selected="false"><span class="game-picker-art memory" aria-hidden="true"></span><span class="game-picker-label">Memory Flip</span></button>
-              <button id="pickMinefield" type="button" class="home-button game-picker-btn" data-game="minefield" role="tab" aria-selected="false"><span class="game-picker-art minefield" aria-hidden="true"></span><span class="game-picker-label">Minefield</span></button>
-              <button id="pickSimon" type="button" class="home-button game-picker-btn" data-game="simon" role="tab" aria-selected="false"><span class="game-picker-art simon" aria-hidden="true"></span><span class="game-picker-label">Simon Pulse</span></button>
-              <button id="pickWhack" type="button" class="home-button game-picker-btn" data-game="whack" role="tab" aria-selected="false"><span class="game-picker-art whack" aria-hidden="true"></span><span class="game-picker-label">Whack-A-Bot</span></button>
+              <button id="pickTetris" type="button" class="home-button game-picker-btn" data-game="tetris" role="tab" aria-selected="false"><span class="game-picker-art tetris" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Arcade</span><span class="game-picker-label">Tetris</span><span class="game-picker-meta">Stack fast, clear rows, chase high scores.</span></span></button>
+              <button id="pickSnake" type="button" class="home-button game-picker-btn" data-game="snake" role="tab" aria-selected="false"><span class="game-picker-art snake" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Classic</span><span class="game-picker-label">Snake</span><span class="game-picker-meta">Grow longer while threading tight turns.</span></span></button>
+              <button id="pickPong" type="button" class="home-button game-picker-btn" data-game="pong" role="tab" aria-selected="false"><span class="game-picker-art pong" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Versus</span><span class="game-picker-label">Pong</span><span class="game-picker-meta">Quick rallies and first-to-five pressure.</span></span></button>
+              <button id="pickBreakout" type="button" class="home-button game-picker-btn" data-game="breakout" role="tab" aria-selected="false"><span class="game-picker-art breakout" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Precision</span><span class="game-picker-label">Breakout</span><span class="game-picker-meta">Control angles and sweep every brick.</span></span></button>
+              <button id="pickDash" type="button" class="home-button game-picker-btn" data-game="dash" role="tab" aria-selected="false"><span class="game-picker-art dash" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Reflex</span><span class="game-picker-label">Asteroid Dash</span><span class="game-picker-meta">Dodge waves of debris as speed climbs.</span></span></button>
+              <button id="pickMemory" type="button" class="home-button game-picker-btn" data-game="memory" role="tab" aria-selected="false"><span class="game-picker-art memory" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Puzzle</span><span class="game-picker-label">Memory Flip</span><span class="game-picker-meta">Match pairs in fewer moves each run.</span></span></button>
+              <button id="pickMinefield" type="button" class="home-button game-picker-btn" data-game="minefield" role="tab" aria-selected="false"><span class="game-picker-art minefield" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Strategy</span><span class="game-picker-label">Minefield</span><span class="game-picker-meta">Read the grid, flag safely, clear all.</span></span></button>
+              <button id="pickSimon" type="button" class="home-button game-picker-btn" data-game="simon" role="tab" aria-selected="false"><span class="game-picker-art simon" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Pattern</span><span class="game-picker-label">Simon Pulse</span><span class="game-picker-meta">Memorize longer sequences every round.</span></span></button>
+              <button id="pickWhack" type="button" class="home-button game-picker-btn" data-game="whack" role="tab" aria-selected="false"><span class="game-picker-art whack" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Speed</span><span class="game-picker-label">Whack-A-Bot</span><span class="game-picker-meta">React instantly before bots disappear.</span></span></button>
             </div>
             <div id="gameToolbarActions" class="game-toolbar-actions">
+              <p class="controls-note game-toolbar-hint" id="activeGameHint"><span class="game-toolbar-hint-kicker">Arcade</span><span class="game-toolbar-hint-title">Pick a game</span><span class="game-toolbar-hint-meta">Choose a game to start playing.</span></p>
               <button id="backToGridBtn" type="button" class="home-button back-btn">All Games</button>
               <button id="rpgFullscreenBtn" type="button" class="home-button fullscreen-btn hidden">Theater Mode</button>
               <button id="restartActiveBtn" type="button" class="home-button restart-btn">Restart</button>
             </div>
           </div>
-          <p class="controls-note" id="activeGameHint">Pick a game to start playing.</p>
         </section>
 
         <section id="tetrisPanel" class="games-card game-panel">
           <h1 class="games-title">Tetris</h1>
-          <p class="control-hint">Controls: Arrow keys move, X/Up rotate right, Z rotate left, Space hard drop, P pause, R restart.</p>
+          <p class="control-hint">Controls: A/D move, S soft drop, W rotate, Z rotate left, Space hard drop, P pause, R restart.</p>
           <div class="tetris-board-wrap">
             <canvas id="tetrisBoard" width="300" height="600" aria-label="Tetris game board"></canvas>
           </div>
@@ -95,7 +100,7 @@
 
         <section id="snakePanel" class="games-card game-panel">
           <h2 class="games-title">Snake</h2>
-          <p class="control-hint">Controls: Arrow keys or W A S D to move, P pause, R restart.</p>
+          <p class="control-hint">Controls: W/A/S/D move, P pause, R restart.</p>
           <div class="snake-wrap">
             <canvas id="snakeBoard" width="320" height="320" aria-label="Snake game board"></canvas>
           </div>
@@ -114,7 +119,7 @@
 
         <section id="pongPanel" class="games-card game-panel">
           <h2 class="games-title">Pong</h2>
-          <p class="control-hint">Controls: Arrow Up/Down or W/S move, P pause, R restart. First to 5 points wins.</p>
+          <p class="control-hint">Controls: W/S move, P pause, R restart. First to 5 points wins.</p>
           <div class="pong-wrap">
             <canvas id="pongBoard" width="640" height="360" aria-label="Pong game board"></canvas>
           </div>
@@ -141,7 +146,7 @@
 
         <section id="breakoutPanel" class="games-card game-panel">
           <h2 class="games-title">Breakout</h2>
-          <p class="control-hint">Controls: Arrow Left/Right or A/D move, Space launch, P pause, R restart. Clear every brick to win.</p>
+          <p class="control-hint">Controls: A/D move, Space launch, P pause, R restart. Clear every brick to win.</p>
           <div class="breakout-wrap">
             <canvas id="breakoutBoard" width="640" height="360" aria-label="Breakout game board"></canvas>
           </div>
@@ -168,7 +173,7 @@
 
         <section id="dashPanel" class="games-card game-panel">
           <h2 class="games-title">Asteroid Dash</h2>
-          <p class="control-hint">Controls: Arrow Left/Right or A/D move, P pause, R restart. Dodge the falling debris as long as you can.</p>
+          <p class="control-hint">Controls: A/D move, P pause, R restart. Dodge the falling debris as long as you can.</p>
           <div class="dash-wrap">
             <canvas id="dashBoard" width="640" height="360" aria-label="Asteroid Dash game board"></canvas>
           </div>
@@ -181,7 +186,7 @@
 
         <section id="memoryPanel" class="games-card game-panel">
           <h2 class="games-title">Memory Flip</h2>
-          <p class="control-hint">Controls: Click two cards to match them. Clear the full board in as few moves as possible.</p>
+          <p class="control-hint">Controls: W/A/S/D move card focus, Space or Enter flip, R restart. Clear the full board in as few moves as possible.</p>
           <div class="memory-grid-wrap">
             <div id="memoryGrid" class="memory-grid" aria-label="Memory card grid"></div>
           </div>
@@ -195,7 +200,7 @@
 
         <section id="minefieldPanel" class="games-card game-panel">
           <h2 class="games-title">Minefield</h2>
-          <p class="control-hint">Controls: Left click to reveal, right click to flag. Clear every safe tile without hitting a mine.</p>
+          <p class="control-hint">Controls: W/A/S/D move tile focus, Space or Enter reveal, F flag, R restart. Clear every safe tile without hitting a mine.</p>
           <div class="minefield-controls" aria-label="Minefield settings">
             <label class="minefield-control" for="minefieldDifficultySelect">
               <span>Difficulty</span>
@@ -228,7 +233,7 @@
 
         <section id="simonPanel" class="games-card game-panel">
           <h2 class="games-title">Simon Pulse</h2>
-          <p class="control-hint">Controls: Watch the pattern, then repeat it by clicking the pads in order.</p>
+          <p class="control-hint">Controls: W north, D east, S south, A west, R restart. Repeat the pulse pattern in order.</p>
           <div class="simon-wrap">
             <div class="simon-grid" aria-label="Simon pad grid">
               <button id="simonPad0" type="button" class="simon-pad" data-pad="0">North</button>
@@ -246,7 +251,7 @@
 
         <section id="whackPanel" class="games-card game-panel">
           <h2 class="games-title">Whack-A-Bot</h2>
-          <p class="control-hint">Controls: Click the lit bot before it disappears. Survive the full timer with the highest score you can.</p>
+          <p class="control-hint">Controls: W/A/S/D move focus, Space or Enter whack, P pause, R restart. Survive the full timer with the highest score you can.</p>
           <div class="whack-grid-wrap">
             <div id="whackGrid" class="whack-grid" aria-label="Whack-a-Bot grid"></div>
           </div>
@@ -262,7 +267,8 @@
           <h2 class="games-title">Shadows of the Greenwood March</h2>
           <p class="control-hint">A full party-driven Middle-earth RPG with procedural acts, automated companions, explicit d20 rolls, and local save/load.</p>
           <div class="rpg-embed-wrap">
-            <button id="rpgTheaterExitBtn" type="button" class="home-button rpg-theater-exit">Default View</button>
+            <div class="rpg-theater-exit-trigger" aria-hidden="true"></div>
+            <button id="rpgTheaterExitBtn" type="button" class="home-button rpg-theater-exit">Back to Games</button>
             <iframe id="rpgFrame" src="./middle-earth-rpg/index.html" title="Middle-earth RPG" loading="lazy"></iframe>
           </div>
         </section>
@@ -307,6 +313,6 @@
   </div>
 
   <script src="../assets/js/script.js"></script>
-  <script src="./assets/web-games-inline.js?v=20260706rpgdefault1"></script>
+  <script src="./assets/web-games-inline.js?v=20260706gameplayux10"></script>
 </body>
 </html>

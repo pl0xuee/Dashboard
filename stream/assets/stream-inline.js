@@ -40,6 +40,12 @@
       setStreamTheaterMode(!streamTheaterMode);
     }
 
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && streamTheaterMode) {
+        setStreamTheaterMode(false);
+      }
+    });
+
     function normalizeTwitchChannel(value) {
       const raw = (value || '').trim();
       if (!raw) return '';

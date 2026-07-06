@@ -1024,7 +1024,11 @@ body:has(.dashboard-header) .tradingview-grid::before {
 }
 
 .dashboard-theater-exit,
-.dashboard-theater-exit.home-button {
+.dashboard-theater-exit.home-button,
+.stream-theater-exit,
+.stream-theater-exit.home-button,
+.rpg-theater-exit,
+.rpg-theater-exit.home-button {
   position: fixed;
   top: 16px;
   left: 50%;
@@ -1093,7 +1097,8 @@ body.dashboard-theater-mode .tv-widget {
   border-radius: 0;
 }
 
-body.dashboard-theater-mode .dashboard-theater-exit {
+body.dashboard-theater-mode .dashboard-theater-exit,
+body.stream-theater-mode .stream-theater-exit {
   display: inline-flex;
   opacity: 0;
   pointer-events: none;
@@ -1102,7 +1107,9 @@ body.dashboard-theater-mode .dashboard-theater-exit {
 }
 
 body.dashboard-theater-mode .tradingview-grid:hover .dashboard-theater-exit,
-body.dashboard-theater-mode .tradingview-grid:focus-within .dashboard-theater-exit {
+body.dashboard-theater-mode .tradingview-grid:focus-within .dashboard-theater-exit,
+body.stream-theater-mode .stream-container:hover .stream-theater-exit,
+body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
   opacity: 1;
   pointer-events: auto;
   transform: translateX(-50%) translateY(0);

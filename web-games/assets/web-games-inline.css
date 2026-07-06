@@ -55,8 +55,16 @@
     }
 
     .games-toolbar-copy {
-      flex: 1 1 240px;
-      min-width: 220px;
+      flex: 0 1 320px;
+      min-width: 260px;
+      padding: 18px;
+      border: 1px solid rgba(182, 203, 230, 0.18);
+      border-radius: 18px;
+      background:
+        linear-gradient(180deg, rgba(20, 27, 39, 0.94), rgba(12, 18, 28, 0.98)),
+        radial-gradient(circle at top left, rgba(210, 168, 108, 0.12), transparent 52%),
+        radial-gradient(circle at 85% 100%, rgba(95, 194, 203, 0.08), transparent 45%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 16px 30px rgba(5, 10, 18, 0.18);
     }
 
     .games-lead {
@@ -69,19 +77,43 @@
     }
 
     .games-sublead {
-      margin: 4px 0 0;
+      margin: 6px 0 0;
       color: var(--text-muted);
-      font-size: 0.82rem;
-      line-height: 1.4;
+      font-size: 0.88rem;
+      line-height: 1.5;
+      max-width: 34ch;
+    }
+
+    .games-toolbar-notes {
+      display: grid;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .games-toolbar-note {
+      margin: 0;
+      padding: 9px 10px;
+      border-radius: 12px;
+      border: 1px solid rgba(167, 188, 255, 0.14);
+      background: rgba(255, 255, 255, 0.03);
+      color: #dbe7fb;
+      font-size: 0.77rem;
+      line-height: 1.45;
+    }
+
+    .games-toolbar-note strong {
+      color: #f3dfb6;
+      font-weight: 700;
     }
 
     .game-picker {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(176px, 1fr));
-      gap: 12px;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
       margin: 0;
       flex: 1 1 680px;
       width: 100%;
+      align-items: stretch;
     }
 
     .game-picker.hidden {
@@ -91,12 +123,96 @@
     .game-toolbar-actions {
       display: none;
       gap: 10px;
-      margin-left: auto;
+      margin-left: 0;
+      flex: 1 1 100%;
+      width: 100%;
       align-items: center;
+      flex-wrap: wrap;
+      justify-content: flex-start;
     }
 
     .game-toolbar-actions.visible {
       display: flex;
+    }
+
+    .game-toolbar-hint {
+      margin: 0;
+      min-height: 0;
+      padding: 11px 16px 12px;
+      border-radius: 18px;
+      border: 1px solid rgba(167, 188, 255, 0.32);
+      background:
+        linear-gradient(180deg, rgba(27, 37, 53, 0.98), rgba(16, 23, 35, 0.99)),
+        radial-gradient(circle at top left, rgba(126, 232, 255, 0.14), transparent 56%),
+        radial-gradient(circle at 90% 120%, rgba(241, 215, 170, 0.12), transparent 46%);
+      color: #dce8fb;
+      font-size: 0.88rem;
+      line-height: 1.3;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 14px 30px rgba(0, 0, 0, 0.26), 0 0 0 1px rgba(117, 177, 255, 0.08);
+      display: flex;
+      align-items: center;
+      align-content: center;
+      flex-wrap: wrap;
+      column-gap: 10px;
+      row-gap: 4px;
+      text-align: left;
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+      flex: 0 1 auto;
+      width: fit-content;
+      min-width: min(220px, 100%);
+      max-width: min(46ch, 100%);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .game-toolbar-hint-kicker,
+    .game-toolbar-hint-title,
+    .game-toolbar-hint-meta {
+      display: block;
+      position: relative;
+      z-index: 1;
+      padding-left: 0;
+    }
+
+    .game-toolbar-hint-kicker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: fit-content;
+      max-width: 100%;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(241, 215, 170, 0.24);
+      background: linear-gradient(180deg, rgba(73, 58, 35, 0.42), rgba(37, 30, 20, 0.36));
+      color: #f1d7aa;
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      box-shadow: inset 0 1px 0 rgba(255, 245, 220, 0.08), 0 6px 14px rgba(0, 0, 0, 0.16);
+    }
+
+    .game-toolbar-hint-title {
+      color: #f4f8ff;
+      font-size: 1.08rem;
+      font-weight: 800;
+      letter-spacing: 0.035em;
+      line-height: 1.12;
+      text-wrap: balance;
+      flex: 0 1 auto;
+    }
+
+    .game-toolbar-hint-meta {
+      flex: 1 0 100%;
+      color: #c8d8f2;
+      font-size: 0.78rem;
+      line-height: 1.42;
+    }
+
+    .game-toolbar-actions .back-btn {
+      margin-left: auto;
     }
 
     .fullscreen-btn.hidden {
@@ -113,16 +229,52 @@
       position: relative;
       overflow: hidden;
       width: 100%;
-      min-height: 86px;
+      min-height: 102px;
       padding: 16px 18px;
       border-radius: 18px;
-      border: 1px solid rgba(165, 188, 214, 0.2);
+      border: 1px solid rgba(177, 200, 230, 0.28);
       background:
         linear-gradient(180deg, rgba(27, 35, 49, 0.96), rgba(17, 23, 34, 0.98)),
         radial-gradient(circle at top left, var(--game-tint), transparent 56%),
         radial-gradient(circle at 88% 110%, var(--game-accent), transparent 50%);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 16px 32px rgba(5, 10, 18, 0.22);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 18px 34px rgba(5, 10, 18, 0.28);
       transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease, background 140ms ease, filter 140ms ease;
+      white-space: normal;
+      text-align: left;
+      min-width: 0;
+    }
+
+    .game-picker-btn:not(.game-picker-btn-rpg) {
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      column-gap: 12px;
+      padding: 16px 16px 15px;
+      min-height: 126px;
+      height: auto;
+      align-items: flex-start;
+      border-color: rgba(184, 207, 235, 0.36);
+      background:
+        linear-gradient(160deg, rgba(31, 44, 63, 0.96), rgba(16, 24, 37, 0.98)),
+        radial-gradient(circle at 8% -10%, var(--game-tint), transparent 62%),
+        radial-gradient(circle at 95% 120%, var(--game-accent), transparent 54%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.06),
+        inset 0 -1px 0 rgba(104, 140, 194, 0.2),
+        0 22px 34px rgba(3, 9, 18, 0.34);
+      isolation: isolate;
+    }
+
+    .game-picker-btn:not(.game-picker-btn-rpg)::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 3px;
+      background: linear-gradient(90deg, rgba(96, 214, 255, 0), rgba(96, 214, 255, 0.85), rgba(249, 196, 125, 0));
+      opacity: 0.7;
+      pointer-events: none;
+      z-index: 0;
     }
 
     .game-picker-btn-rpg {
@@ -252,24 +404,28 @@
 
     .game-picker-label {
       line-height: 1.15;
-      font-size: 0.96rem;
+      font-size: 1.08rem;
       font-weight: 800;
-      letter-spacing: 0.04em;
+      letter-spacing: 0.045em;
       text-transform: none;
       color: #f3f6ff;
       min-width: 0;
       max-width: 100%;
       white-space: normal;
       overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .game-picker-copy {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 6px;
       align-items: flex-start;
       min-width: 0;
       flex: 1 1 auto;
+      position: relative;
+      z-index: 1;
+      white-space: normal;
     }
 
     .game-picker-kicker {
@@ -283,24 +439,50 @@
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .game-picker-meta {
+      display: block;
+      color: rgba(217, 229, 250, 0.78);
+      font-size: 0.73rem;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      line-height: 1.22;
+      max-width: 24ch;
+      overflow-wrap: anywhere;
+      word-break: break-word;
     }
 
     .game-picker-art {
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
       border: 1px solid rgba(183, 203, 225, 0.24);
       position: relative;
-      flex: 0 0 34px;
+      flex: 0 0 40px;
       box-shadow: inset 0 0 0 1px rgba(10, 18, 33, 0.4), 0 6px 14px rgba(8, 14, 26, 0.26);
       overflow: hidden;
+      align-self: flex-start;
+      margin-top: 2px;
     }
 
     .game-picker-btn:hover {
       transform: translateY(-2px);
-      border-color: rgba(210, 168, 108, 0.42);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 18px 34px rgba(8, 18, 34, 0.28), 0 0 0 1px rgba(210, 168, 108, 0.12);
+      border-color: rgba(218, 181, 119, 0.52);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 20px 36px rgba(8, 18, 34, 0.32), 0 0 0 1px rgba(210, 168, 108, 0.16);
       filter: saturate(1.06);
+    }
+
+    .game-picker-btn:not(.game-picker-btn-rpg):hover {
+      transform: translateY(-3px) scale(1.01);
+      border-color: rgba(236, 203, 145, 0.66);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.09),
+        inset 0 -1px 0 rgba(107, 164, 244, 0.24),
+        0 24px 36px rgba(5, 15, 28, 0.4),
+        0 0 0 1px rgba(245, 203, 136, 0.18);
+      filter: saturate(1.1);
     }
 
     .game-picker-btn:hover .game-picker-art {
@@ -630,6 +812,23 @@
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 16px 30px rgba(18, 32, 64, 0.34), 0 0 0 1px rgba(123, 178, 255, 0.28);
     }
 
+    .game-picker-btn:not(.game-picker-btn-rpg).active {
+      background:
+        linear-gradient(165deg, rgba(70, 100, 166, 0.96), rgba(34, 51, 92, 0.98)),
+        radial-gradient(circle at top left, rgba(145, 188, 255, 0.32), transparent 58%);
+      border-color: rgba(167, 205, 255, 0.8);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.14),
+        inset 0 -1px 0 rgba(98, 162, 255, 0.36),
+        0 22px 36px rgba(14, 33, 70, 0.48),
+        0 0 0 1px rgba(130, 186, 255, 0.3);
+    }
+
+    .game-picker-btn:not(.game-picker-btn-rpg).active .game-picker-kicker {
+      background: rgba(182, 214, 255, 0.24);
+      color: #e6f4ff;
+    }
+
     .game-picker-btn.active .game-picker-art {
       transform: scale(1.05);
     }
@@ -657,6 +856,217 @@
 
     .game-panel.active {
       display: block;
+    }
+
+    body.gameplay-active-mode .games-main {
+      padding-top: 6px;
+      padding-bottom: 0;
+    }
+
+    body.gameplay-active-mode .games-shell {
+      max-width: min(1500px, calc(100vw - 18px));
+      gap: 10px;
+      grid-template-rows: auto minmax(0, 1fr);
+      margin-bottom: 0;
+    }
+
+    body.gameplay-active-mode .games-card {
+      padding: 12px;
+      box-shadow: none;
+    }
+
+    body.gameplay-active-mode .games-toolbar {
+      align-items: center;
+      gap: 10px;
+    }
+
+    body.gameplay-active-mode .games-toolbar-copy {
+      display: none;
+    }
+
+    body.gameplay-active-mode .game-panel.active {
+      display: grid;
+      gap: 10px;
+      align-content: start;
+      min-height: 0;
+      border-color: rgba(132, 182, 255, 0.36);
+      box-shadow: inset 0 0 0 1px rgba(130, 189, 255, 0.09);
+    }
+
+    body.gameplay-active-mode .game-panel.active > .games-title {
+      display: none;
+    }
+
+    body.gameplay-active-mode .game-panel.active .control-hint {
+      margin-top: 2px;
+      padding: 8px 10px;
+      font-size: 0.78rem;
+      line-height: 1.3;
+    }
+
+    body.gameplay-active-mode #snakePanel.active,
+    body.gameplay-active-mode #pongPanel.active,
+    body.gameplay-active-mode #breakoutPanel.active,
+    body.gameplay-active-mode #dashPanel.active,
+    body.gameplay-active-mode #memoryPanel.active,
+    body.gameplay-active-mode #minefieldPanel.active,
+    body.gameplay-active-mode #simonPanel.active,
+    body.gameplay-active-mode #whackPanel.active {
+      grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+      column-gap: 14px;
+      align-items: start;
+    }
+
+    body.gameplay-active-mode #snakePanel.active .snake-wrap,
+    body.gameplay-active-mode #pongPanel.active .pong-wrap,
+    body.gameplay-active-mode #breakoutPanel.active .breakout-wrap,
+    body.gameplay-active-mode #dashPanel.active .dash-wrap,
+    body.gameplay-active-mode #memoryPanel.active .memory-grid-wrap,
+    body.gameplay-active-mode #minefieldPanel.active .minefield-grid-wrap,
+    body.gameplay-active-mode #simonPanel.active .simon-wrap,
+    body.gameplay-active-mode #whackPanel.active .whack-grid-wrap {
+      grid-column: 1;
+      grid-row: 1 / span 4;
+      margin-top: 0;
+      width: 100%;
+      align-self: start;
+    }
+
+    body.gameplay-active-mode #snakePanel.active .control-hint,
+    body.gameplay-active-mode #pongPanel.active .control-hint,
+    body.gameplay-active-mode #breakoutPanel.active .control-hint,
+    body.gameplay-active-mode #dashPanel.active .control-hint,
+    body.gameplay-active-mode #memoryPanel.active .control-hint,
+    body.gameplay-active-mode #minefieldPanel.active .control-hint,
+    body.gameplay-active-mode #simonPanel.active .control-hint,
+    body.gameplay-active-mode #whackPanel.active .control-hint {
+      grid-column: 2;
+      grid-row: 1;
+      margin-top: 0;
+    }
+
+    body.gameplay-active-mode #snakePanel.active .snake-stats,
+    body.gameplay-active-mode #pongPanel.active .pong-stats,
+    body.gameplay-active-mode #breakoutPanel.active .breakout-stats,
+    body.gameplay-active-mode #dashPanel.active .dash-stats,
+    body.gameplay-active-mode #memoryPanel.active .memory-stats,
+    body.gameplay-active-mode #minefieldPanel.active .minefield-stats,
+    body.gameplay-active-mode #simonPanel.active .simon-stats,
+    body.gameplay-active-mode #whackPanel.active .whack-stats {
+      grid-column: 2;
+      grid-row: 2;
+      margin-top: 0;
+      grid-template-columns: 1fr;
+    }
+
+    body.gameplay-active-mode #snakePanel.active #snakeStatus,
+    body.gameplay-active-mode #pongPanel.active #pongStatus,
+    body.gameplay-active-mode #breakoutPanel.active #breakoutStatus,
+    body.gameplay-active-mode #dashPanel.active #dashStatus,
+    body.gameplay-active-mode #memoryPanel.active #memoryStatus,
+    body.gameplay-active-mode #minefieldPanel.active #minefieldStatus,
+    body.gameplay-active-mode #simonPanel.active #simonStatus,
+    body.gameplay-active-mode #whackPanel.active #whackStatus {
+      grid-column: 2;
+      grid-row: 3;
+      margin: 0;
+      padding: 10px 12px;
+      border: 1px solid rgba(167, 188, 255, 0.18);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.03);
+      color: #d9e7ff;
+      min-height: 0;
+      line-height: 1.35;
+      font-size: 0.84rem;
+    }
+
+    body.gameplay-active-mode #minefieldPanel.active .minefield-controls {
+      grid-column: 2;
+      grid-row: 2;
+      margin-top: 0;
+      grid-template-columns: 1fr;
+    }
+
+    body.gameplay-active-mode #minefieldPanel.active .minefield-stats {
+      grid-row: 3;
+    }
+
+    body.gameplay-active-mode #minefieldPanel.active #minefieldStatus {
+      grid-row: 4;
+    }
+
+    body.gameplay-active-mode #tetrisPanel.active {
+      grid-template-columns: minmax(320px, 1fr) minmax(240px, 320px);
+      column-gap: 14px;
+    }
+
+    body.gameplay-active-mode #tetrisPanel.active .control-hint {
+      grid-column: 2;
+      grid-row: 1;
+      margin-top: 0;
+    }
+
+    body.gameplay-active-mode #tetrisPanel.active .tetris-board-wrap {
+      grid-column: 1;
+      grid-row: 1 / span 3;
+    }
+
+    body.gameplay-active-mode #tetrisPanel.active .stats-grid {
+      grid-column: 2;
+      grid-row: 2;
+      grid-template-columns: 1fr;
+    }
+
+    body.gameplay-active-mode #tetrisPanel.active .side-layout {
+      grid-column: 2;
+      grid-row: 3;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    body.gameplay-active-mode .game-panel.active .stats-grid,
+    body.gameplay-active-mode .game-panel.active .snake-stats,
+    body.gameplay-active-mode .game-panel.active .pong-stats,
+    body.gameplay-active-mode .game-panel.active .breakout-stats,
+    body.gameplay-active-mode .game-panel.active .dash-stats,
+    body.gameplay-active-mode .game-panel.active .memory-stats,
+    body.gameplay-active-mode .game-panel.active .minefield-stats,
+    body.gameplay-active-mode .game-panel.active .simon-stats,
+    body.gameplay-active-mode .game-panel.active .whack-stats {
+      margin-top: 8px;
+    }
+
+    body.gameplay-active-mode .tetris-board-wrap,
+    body.gameplay-active-mode .snake-wrap,
+    body.gameplay-active-mode .pong-wrap,
+    body.gameplay-active-mode .breakout-wrap,
+    body.gameplay-active-mode .dash-wrap,
+    body.gameplay-active-mode .memory-grid-wrap,
+    body.gameplay-active-mode .minefield-grid-wrap,
+    body.gameplay-active-mode .simon-wrap,
+    body.gameplay-active-mode .whack-grid-wrap {
+      margin-top: 8px;
+      padding: 10px;
+    }
+
+    body.gameplay-active-mode #tetrisBoard {
+      width: auto;
+      max-width: 100%;
+      height: min(76vh, calc(100dvh - 230px));
+      max-height: min(76vh, calc(100dvh - 230px));
+    }
+
+    body.gameplay-active-mode #snakeBoard {
+      width: min(100%, 900px);
+      max-height: min(76vh, calc(100dvh - 230px));
+    }
+
+    body.gameplay-active-mode #pongBoard,
+    body.gameplay-active-mode #breakoutBoard,
+    body.gameplay-active-mode #dashBoard {
+      width: min(100%, 1260px);
+      max-height: min(76vh, calc(100dvh - 230px));
+      height: auto;
     }
 
     .games-card {
@@ -848,33 +1258,16 @@
       border-radius: 18px;
       background: linear-gradient(180deg, rgba(22, 20, 18, 0.98), rgba(8, 10, 16, 0.98));
       padding: 0;
-      box-shadow: inset 0 0 0 1px rgba(255, 223, 170, 0.04), 0 18px 36px rgba(0, 0, 0, 0.28);
+      box-shadow: inset 0 0 0 1px rgba(255, 223, 170, 0.04);
       overflow: hidden;
     }
 
     .rpg-theater-exit {
-      display: none;
-      position: absolute;
-      top: 16px;
-      bottom: auto;
-      left: 50%;
-      right: auto;
-      transform: translateX(-50%);
       min-width: 170px;
-      pointer-events: auto;
-      z-index: 80;
-      border-color: rgba(134, 194, 255, 0.72);
-      background: linear-gradient(180deg, rgba(20, 40, 78, 0.9), rgba(10, 22, 46, 0.9));
-      color: #e9f6ff;
-      backdrop-filter: blur(6px);
-      box-shadow: 0 10px 24px rgba(3, 10, 22, 0.45), inset 0 0 0 1px rgba(196, 227, 255, 0.16);
     }
 
-    .rpg-theater-exit:hover {
-      transform: translateX(-50%) translateY(-2px);
-      border-color: rgba(161, 214, 255, 0.9);
-      background: linear-gradient(180deg, rgba(30, 56, 102, 0.94), rgba(14, 30, 62, 0.94));
-      box-shadow: 0 12px 28px rgba(6, 16, 34, 0.52), 0 0 0 1px rgba(124, 182, 255, 0.32);
+    .rpg-theater-exit-trigger {
+      display: none;
     }
 
     #rpgFrame {
@@ -952,6 +1345,7 @@
     body.rpg-active-mode .games-card {
       min-height: 0;
       padding: 14px;
+      box-shadow: none;
     }
 
     body.rpg-active-mode .games-toolbar {
@@ -1026,23 +1420,36 @@
       border-radius: 0;
     }
 
-    body.rpg-active-mode.rpg-theater-mode #rpgFullscreenBtn {
-      display: none;
+    #rpgPanel.active.rpg-theater-mode .rpg-theater-exit-trigger {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 50%;
+      width: 220px;
+      height: 52px;
+      transform: translateX(-50%);
+      z-index: 35;
+      background: transparent;
     }
 
     #rpgPanel.active.rpg-theater-mode .rpg-theater-exit {
       display: inline-flex;
       opacity: 0;
       pointer-events: none;
-      transform: translateX(-50%) translateY(-10px);
+      transform: translateX(-50%) translateY(-18px);
       transition: opacity 0.18s ease, transform 0.18s ease;
     }
 
-    #rpgPanel.active.rpg-theater-mode .rpg-embed-wrap:hover .rpg-theater-exit,
-    #rpgPanel.active.rpg-theater-mode .rpg-embed-wrap:focus-within .rpg-theater-exit {
+    #rpgPanel.active.rpg-theater-mode .rpg-theater-exit-trigger:hover + .rpg-theater-exit,
+    #rpgPanel.active.rpg-theater-mode .rpg-theater-exit:hover,
+    #rpgPanel.active.rpg-theater-mode .rpg-theater-exit:focus-visible {
       opacity: 1;
       pointer-events: auto;
       transform: translateX(-50%) translateY(0);
+    }
+
+    body.rpg-active-mode.rpg-theater-mode #rpgFullscreenBtn {
+      display: none;
     }
 
     body.rpg-active-mode.rpg-theater-mode > .page {
@@ -1203,7 +1610,7 @@
     }
 
     .memory-grid {
-      max-width: 520px;
+      max-width: 560px;
       margin: 0 auto;
     }
 
@@ -1356,7 +1763,7 @@
     .minefield-grid,
     .whack-grid {
       display: grid;
-      gap: 8px;
+      gap: 10px;
       margin-top: 14px;
     }
 
@@ -1387,22 +1794,122 @@
     }
 
     .memory-card {
-      aspect-ratio: 1;
+      position: relative;
+      aspect-ratio: 5 / 6;
       display: grid;
       place-items: center;
-      font-size: 1.4rem;
+      min-height: 104px;
+      padding: 0;
+      overflow: hidden;
+      background:
+        linear-gradient(180deg, rgba(28, 40, 60, 0.96), rgba(13, 20, 33, 0.98)),
+        radial-gradient(circle at 20% 18%, rgba(113, 210, 255, 0.16), transparent 38%),
+        radial-gradient(circle at 82% 84%, rgba(224, 183, 111, 0.12), transparent 34%);
+      border-color: rgba(147, 180, 232, 0.24);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 12px 24px rgba(4, 9, 18, 0.28);
+      font-size: clamp(1.55rem, 2vw, 2rem);
       font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #eef6ff;
+      isolation: isolate;
+    }
+
+    .memory-card::before {
+      content: '?';
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: rgba(226, 239, 255, 0.78);
+      font-size: clamp(1.35rem, 1.8vw, 1.7rem);
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      z-index: 1;
+    }
+
+    .memory-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 32%),
+        repeating-linear-gradient(135deg, rgba(123, 178, 255, 0.09) 0 8px, rgba(10, 16, 28, 0) 8px 16px);
+      opacity: 0.9;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .memory-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(150, 214, 255, 0.42);
+    }
+
+    .memory-card:active {
+      transform: translateY(0);
     }
 
     .memory-card.revealed,
     .memory-card.matched {
-      background: rgba(113, 210, 255, 0.14);
-      border-color: rgba(113, 210, 255, 0.44);
+      color: #08111d;
+      text-shadow: none;
+      transform: translateY(-2px);
+    }
+
+    .memory-card.revealed::before,
+    .memory-card.revealed::after,
+    .memory-card.matched::before,
+    .memory-card.matched::after {
+      opacity: 0;
+    }
+
+    .memory-card.revealed {
+      background:
+        linear-gradient(180deg, rgba(218, 241, 255, 0.98), rgba(178, 225, 255, 0.96)),
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.9), transparent 50%);
+      border-color: rgba(113, 210, 255, 0.5);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3), 0 14px 28px rgba(8, 18, 34, 0.22);
     }
 
     .memory-card.matched {
-      background: rgba(140, 241, 138, 0.14);
-      border-color: rgba(140, 241, 138, 0.34);
+      background:
+        linear-gradient(180deg, rgba(220, 255, 212, 0.98), rgba(173, 238, 168, 0.96)),
+        radial-gradient(circle at top left, rgba(255, 255, 255, 0.76), transparent 48%);
+      border-color: rgba(140, 241, 138, 0.42);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), 0 14px 28px rgba(12, 28, 16, 0.2);
+      color: #102313;
+    }
+
+    .memory-card:disabled {
+      cursor: default;
+    }
+
+    #memoryPanel.active .memory-grid-wrap {
+      max-width: 620px;
+      border-color: rgba(150, 214, 255, 0.24);
+      background:
+        linear-gradient(180deg, rgba(15, 24, 38, 0.97), rgba(10, 15, 24, 0.98)),
+        radial-gradient(circle at top left, rgba(113, 210, 255, 0.1), transparent 38%),
+        radial-gradient(circle at 85% 100%, rgba(224, 183, 111, 0.08), transparent 30%);
+      padding: 18px;
+    }
+
+    #memoryPanel.active .memory-stats .stat {
+      background: linear-gradient(180deg, rgba(18, 28, 42, 0.88), rgba(12, 18, 28, 0.92));
+      border-color: rgba(145, 176, 224, 0.22);
+    }
+
+    #memoryPanel.active #memoryStatus {
+      margin-top: 0;
+      padding: 12px 14px;
+      border: 1px solid rgba(150, 214, 255, 0.18);
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(18, 27, 39, 0.88), rgba(11, 17, 28, 0.9));
+      color: #e1edff;
+      min-height: 52px;
+      display: flex;
+      align-items: center;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
 
     .minefield-grid-wrap,
@@ -1862,6 +2369,75 @@
     }
 
     @media (max-width: 1100px) {
+      .game-picker {
+        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      }
+
+      body.gameplay-active-mode #tetrisPanel.active,
+      body.gameplay-active-mode #snakePanel.active,
+      body.gameplay-active-mode #pongPanel.active,
+      body.gameplay-active-mode #breakoutPanel.active,
+      body.gameplay-active-mode #dashPanel.active,
+      body.gameplay-active-mode #memoryPanel.active,
+      body.gameplay-active-mode #minefieldPanel.active,
+      body.gameplay-active-mode #simonPanel.active,
+      body.gameplay-active-mode #whackPanel.active {
+        grid-template-columns: 1fr;
+      }
+
+      body.gameplay-active-mode #tetrisPanel.active .tetris-board-wrap,
+      body.gameplay-active-mode #snakePanel.active .snake-wrap,
+      body.gameplay-active-mode #pongPanel.active .pong-wrap,
+      body.gameplay-active-mode #breakoutPanel.active .breakout-wrap,
+      body.gameplay-active-mode #dashPanel.active .dash-wrap,
+      body.gameplay-active-mode #memoryPanel.active .memory-grid-wrap,
+      body.gameplay-active-mode #minefieldPanel.active .minefield-grid-wrap,
+      body.gameplay-active-mode #simonPanel.active .simon-wrap,
+      body.gameplay-active-mode #whackPanel.active .whack-grid-wrap,
+      body.gameplay-active-mode #tetrisPanel.active .control-hint,
+      body.gameplay-active-mode #snakePanel.active .control-hint,
+      body.gameplay-active-mode #pongPanel.active .control-hint,
+      body.gameplay-active-mode #breakoutPanel.active .control-hint,
+      body.gameplay-active-mode #dashPanel.active .control-hint,
+      body.gameplay-active-mode #memoryPanel.active .control-hint,
+      body.gameplay-active-mode #minefieldPanel.active .control-hint,
+      body.gameplay-active-mode #simonPanel.active .control-hint,
+      body.gameplay-active-mode #whackPanel.active .control-hint,
+      body.gameplay-active-mode #tetrisPanel.active .stats-grid,
+      body.gameplay-active-mode #snakePanel.active .snake-stats,
+      body.gameplay-active-mode #pongPanel.active .pong-stats,
+      body.gameplay-active-mode #breakoutPanel.active .breakout-stats,
+      body.gameplay-active-mode #dashPanel.active .dash-stats,
+      body.gameplay-active-mode #memoryPanel.active .memory-stats,
+      body.gameplay-active-mode #minefieldPanel.active .minefield-controls,
+      body.gameplay-active-mode #minefieldPanel.active .minefield-stats,
+      body.gameplay-active-mode #simonPanel.active .simon-stats,
+      body.gameplay-active-mode #whackPanel.active .whack-stats,
+      body.gameplay-active-mode #tetrisPanel.active .side-layout,
+      body.gameplay-active-mode #snakePanel.active #snakeStatus,
+      body.gameplay-active-mode #pongPanel.active #pongStatus,
+      body.gameplay-active-mode #breakoutPanel.active #breakoutStatus,
+      body.gameplay-active-mode #dashPanel.active #dashStatus,
+      body.gameplay-active-mode #memoryPanel.active #memoryStatus,
+      body.gameplay-active-mode #minefieldPanel.active #minefieldStatus,
+      body.gameplay-active-mode #simonPanel.active #simonStatus,
+      body.gameplay-active-mode #whackPanel.active #whackStatus {
+        grid-column: auto;
+        grid-row: auto;
+      }
+
+      body.gameplay-active-mode #tetrisPanel.active .stats-grid,
+      body.gameplay-active-mode #snakePanel.active .snake-stats,
+      body.gameplay-active-mode #pongPanel.active .pong-stats,
+      body.gameplay-active-mode #breakoutPanel.active .breakout-stats,
+      body.gameplay-active-mode #dashPanel.active .dash-stats,
+      body.gameplay-active-mode #memoryPanel.active .memory-stats,
+      body.gameplay-active-mode #minefieldPanel.active .minefield-stats,
+      body.gameplay-active-mode #simonPanel.active .simon-stats,
+      body.gameplay-active-mode #whackPanel.active .whack-stats {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
       #tetrisPanel.active {
         display: block;
       }
@@ -1872,6 +2448,47 @@
     }
 
     @media (max-width: 620px) {
+      .games-toolbar-copy {
+        min-width: 0;
+        width: 100%;
+        padding: 14px;
+      }
+
+      .games-sublead {
+        max-width: none;
+      }
+
+      body.gameplay-active-mode .game-panel.active {
+        min-height: 0;
+      }
+
+      body.gameplay-active-mode .game-panel.active .control-hint {
+        font-size: 0.74rem;
+      }
+
+      .game-picker {
+        grid-template-columns: 1fr;
+      }
+
+      .game-picker-btn:not(.game-picker-btn-rpg) {
+        min-height: 0;
+        padding: 14px 12px;
+      }
+
+      .game-picker-art {
+        width: 34px;
+        height: 34px;
+        flex-basis: 34px;
+      }
+
+      .game-picker-label {
+        font-size: 0.92rem;
+      }
+
+      .game-picker-meta {
+        font-size: 0.66rem;
+      }
+
       .side-layout,
       .stats-grid,
       .snake-stats,
@@ -1894,6 +2511,19 @@
 
       .game-toolbar-actions.visible .home-button {
         flex: 1 1 0;
+      }
+
+      .game-toolbar-hint {
+        width: 100%;
+        max-width: none;
+      }
+
+      .game-toolbar-hint-title {
+        font-size: 1rem;
+      }
+
+      .game-toolbar-hint-meta {
+        font-size: 0.76rem;
       }
 
       #doomCanvas {

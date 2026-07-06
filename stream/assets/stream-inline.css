@@ -116,19 +116,6 @@ iframe {
   box-shadow: 0 0 0 1px rgba(24, 216, 255, 0.35), 0 14px 28px rgba(0, 0, 0, 0.35);
 }
 
-.stream-theater-exit,
-.stream-theater-exit.home-button {
-  position: absolute;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 25;
-  display: none;
-  background: rgba(8, 13, 20, 0.5);
-  border-color: rgba(186, 210, 245, 0.2);
-  backdrop-filter: blur(10px);
-  color: rgba(226, 239, 255, 0.76);
-}
 
 .streamer-dropdown-title {
   padding: 4px 6px 2px;
@@ -396,21 +383,6 @@ body.stream-theater-mode .stream-player {
 
 body.stream-theater-mode .stream-chat {
   border-right: 0;
-}
-
-body.stream-theater-mode .stream-theater-exit {
-  display: inline-flex;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(-50%) translateY(-10px);
-  transition: opacity 0.18s ease, transform 0.18s ease;
-}
-
-body.stream-theater-mode .stream-container:hover .stream-theater-exit,
-body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateX(-50%) translateY(0);
 }
 
 @media (max-width: 1200px) {

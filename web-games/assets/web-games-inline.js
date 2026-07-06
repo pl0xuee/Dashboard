@@ -392,6 +392,66 @@
       if (activeGame === 'doom' && !doomThreeFrame) scheduleGameLoop('doom', doomLoop);
     }
 
+    function getFocusableButtons(container, selector = 'button:not([disabled])') {
+      if (!container) return [];
+      return Array.from(container.querySelectorAll(selector));
+    }
+
+    function focusButtonByIndex(buttons, index) {
+      if (!buttons.length) return;
+      const nextIndex = Math.max(0, Math.min(buttons.length - 1, index));
+      buttons[nextIndex].focus();
+    }
+
+    function moveGridFocus(container, columns, deltaRow, deltaCol, selector) {
+      const buttons = getFocusableButtons(container, selector);
+      if (!buttons.length) return false;
+      const activeIndex = buttons.indexOf(document.activeElement);
+      if (activeIndex === -1) {
+        focusButtonByIndex(buttons, 0);
+        return true;
+      }
+      const rowCount = Math.max(1, Math.ceil(buttons.length / columns));
+      const currentRow = Math.floor(activeIndex / columns);
+      const currentCol = activeIndex % columns;
+      const nextRow = Math.max(0, Math.min(rowCount - 1, currentRow + deltaRow));
+      const nextCol = Math.max(0, Math.min(columns - 1, currentCol + deltaCol));
+      const nextIndex = Math.min(buttons.length - 1, nextRow * columns + nextCol);
+      focusButtonByIndex(buttons, nextIndex);
+      return true;
+    }
+
+    function pressFocusedButton(container, selector) {
+      const buttons = getFocusableButtons(container, selector);
+      if (!buttons.length) return false;
+      const currentButton = buttons.includes(document.activeElement) ? document.activeElement : buttons[0];
+      currentButton.click();
+      currentButton.focus();
+      return true;
+    }
+
+    function setActiveGameHint(kicker, title, detail) {
+      if (!activeGameHintEl) return;
+      activeGameHintEl.textContent = '';
+
+      const kickerEl = document.createElement('span');
+      kickerEl.className = 'game-toolbar-hint-kicker';
+      kickerEl.textContent = kicker;
+
+      const titleEl = document.createElement('span');
+      titleEl.className = 'game-toolbar-hint-title';
+      titleEl.textContent = title;
+
+      activeGameHintEl.append(kickerEl, titleEl);
+
+      if (detail) {
+        const detailEl = document.createElement('span');
+        detailEl.className = 'game-toolbar-hint-meta';
+        detailEl.textContent = detail;
+        activeGameHintEl.append(detailEl);
+      }
+    }
+
     const MINE_WORLD_SIZE = 24;
     const MINE_FOV = Math.PI / 3;
     const MINE_MAX_RAY = 18;
@@ -2519,7 +2579,7 @@
       snakeGameOver = false;
       snakeLastStepAt = 0;
       snakeScoreEl.textContent = '0';
-      setSnakeStatus('Running. Use arrow keys or W A S D.');
+      setSnakeStatus('Running. Use W A S D.');
       placeSnakeFood();
       drawSnake();
     }
@@ -2614,7 +2674,7 @@
     function toggleSnakePause() {
       if (snakeGameOver) return;
       snakePaused = !snakePaused;
-      setSnakeStatus(snakePaused ? 'Paused' : 'Running. Use arrow keys or W A S D.');
+          setSnakeStatus(snakePaused ? 'Paused' : 'Running. Use W A S D.');
     }
 
     function setMineStatus(text) {
@@ -3501,6 +3561,10 @@
       memoryStatusEl.textContent = text;
     }
 
+    function getMemoryPairsLeft() {
+      return MEMORY_SYMBOLS.length - memoryMatches;
+    }
+
     function updateMemoryHud() {
       memoryMovesEl.textContent = String(memoryMoves);
       memoryMatchesEl.textContent = `${memoryMatches}/${MEMORY_SYMBOLS.length}`;
@@ -3508,13 +3572,24 @@
     }
 
     function renderMemoryGrid() {
+      const currentButtons = getFocusableButtons(memoryGridEl, '.memory-card');
+      const focusedIndex = Math.max(0, currentButtons.indexOf(document.activeElement));
       memoryGridEl.innerHTML = '';
       memoryCards.forEach((card, index) => {
         const button = document.createElement('button');
         button.type = 'button';
         button.className = `memory-card${card.revealed ? ' revealed' : ''}${card.matched ? ' matched' : ''}`;
-        button.textContent = card.revealed || card.matched ? card.symbol : '?';
+        button.dataset.index = String(index);
+        button.dataset.symbol = card.symbol;
+        button.textContent = card.revealed || card.matched ? card.symbol : '';
         button.disabled = card.matched;
+        button.setAttribute(
+          'aria-label',
+          card.revealed || card.matched
+            ? `Memory card ${card.symbol}${card.matched ? ', matched' : ', revealed'}`
+            : 'Hidden memory card'
+        );
+        button.setAttribute('aria-pressed', card.revealed || card.matched ? 'true' : 'false');
         button.addEventListener('click', () => {
           if (activeGame !== 'memory' || memoryBusy || card.revealed || card.matched || memoryFlipped.length === 2) return;
           card.revealed = true;
@@ -3537,9 +3612,9 @@
                 memoryBest = memoryMoves;
                 localStorage.setItem('memoryBestMoves', String(memoryBest));
               }
-              setMemoryStatus('Perfect recall. Press Restart for a fresh shuffle.');
+              setMemoryStatus(`Perfect recall in ${memoryMoves} moves. Press Restart for a fresh shuffle.`);
             } else {
-              setMemoryStatus('Match found. Keep going.');
+              setMemoryStatus(`Match found. ${getMemoryPairsLeft()} pairs left.`);
             }
             renderMemoryGrid();
             updateMemoryHud();
@@ -3547,7 +3622,7 @@
           }
 
           memoryBusy = true;
-          setMemoryStatus('Not a match. Memorize the pattern.');
+          setMemoryStatus(`Not a match. ${getMemoryPairsLeft()} pairs left.`);
           updateMemoryHud();
           setTimeout(() => {
             first.revealed = false;
@@ -3559,6 +3634,10 @@
         });
         memoryGridEl.appendChild(button);
       });
+      const nextButtons = getFocusableButtons(memoryGridEl, '.memory-card');
+      if (activeGame === 'memory' && nextButtons.length) {
+        focusButtonByIndex(nextButtons, focusedIndex);
+      }
     }
 
     function resetMemoryGame() {
@@ -3569,7 +3648,7 @@
       memoryMatches = 0;
       memoryBusy = false;
       updateMemoryHud();
-      setMemoryStatus('Flip two cards to start matching.');
+      setMemoryStatus(`Flip two cards to start. ${getMemoryPairsLeft()} pairs left.`);
       renderMemoryGrid();
     }
 
@@ -3641,12 +3720,15 @@
     }
 
     function renderMinefieldGrid() {
+      const currentButtons = getFocusableButtons(minefieldGridEl, '.minefield-cell');
+      const focusedIndex = Math.max(0, currentButtons.indexOf(document.activeElement));
       minefieldGridEl.innerHTML = '';
       minefieldCells.forEach((rowCells, row) => {
         rowCells.forEach((cell, col) => {
           const button = document.createElement('button');
           button.type = 'button';
           button.className = `minefield-cell${cell.revealed ? ' revealed' : ''}${cell.revealed && cell.mine ? ' mine' : ''}`;
+          button.dataset.index = String(row * minefieldSize + col);
           button.textContent = cell.revealed ? (cell.mine ? 'X' : (cell.adjacent || '')) : (cell.flagged ? '!' : '');
           button.addEventListener('click', () => {
             if (activeGame !== 'minefield' || minefieldGameOver || cell.flagged || cell.revealed) return;
@@ -3680,6 +3762,10 @@
           minefieldGridEl.appendChild(button);
         });
       });
+      const nextButtons = getFocusableButtons(minefieldGridEl, '.minefield-cell');
+      if (activeGame === 'minefield' && nextButtons.length) {
+        focusButtonByIndex(nextButtons, focusedIndex);
+      }
     }
 
     function resetMinefieldGame() {
@@ -3876,6 +3962,7 @@
         const button = document.createElement('button');
         button.type = 'button';
         button.className = 'whack-cell';
+        button.dataset.index = String(index);
         button.textContent = '...';
         button.addEventListener('click', () => {
           if (activeGame !== 'whack' || whackPaused || whackGameOver) return;
@@ -4043,13 +4130,13 @@
       }
       if (activeGame === 'rpg') {
         if (rpgFrame) rpgFrame.src = rpgFrame.src;
-        activeGameHintEl.textContent = 'Restarted the Middle-earth RPG.';
+        setActiveGameHint('Restarted', 'Middle-earth RPG', 'Adventure reloaded.');
         return;
       }
       if (activeGame === 'doom') {
         if (doomThreeFrame) {
           doomThreeFrame.src = doomThreeFrame.src;
-          activeGameHintEl.textContent = 'Restarted Hellstorm 3D.';
+          setActiveGameHint('Restarted', 'Hellstorm 3D', 'Run relaunched.');
           return;
         }
         resetDoomGame();
@@ -4058,28 +4145,28 @@
       if (activeGame === 'rift') {
         if (riftFrame) {
           riftFrame.src = riftFrame.src;
-          activeGameHintEl.textContent = 'Restarted Rift Raider 2.5D.';
+          setActiveGameHint('Restarted', 'Rift Raider 2.5D', 'Mission reset.');
         }
         return;
       }
       if (activeGame === 'mine') {
         if (useEmbeddedBlockcraft) {
           embeddedBlockcraftFrame.src = embeddedBlockcraftFrame.src;
-          activeGameHintEl.textContent = 'Restarted BlockCraft 3D.';
+          setActiveGameHint('Restarted', 'BlockCraft 3D', 'Sandbox refreshed.');
           return;
         }
         resetMineGame();
         return;
       }
       if (activeGame === null) {
-        activeGameHintEl.textContent = 'Pick a game first, then use Restart if needed.';
+        setActiveGameHint('Arcade', 'Pick a game first', 'Choose a game before restarting.');
         return;
       }
     }
 
     function updateRpgFullscreenButton() {
       if (!rpgFullscreenBtn) return;
-      rpgFullscreenBtn.textContent = rpgTheaterMode ? 'Default View' : 'Theater Mode';
+      rpgFullscreenBtn.textContent = rpgTheaterMode ? 'Back to Games' : 'Theater Mode';
     }
 
     function setRpgTheaterMode(nextValue) {
@@ -4094,7 +4181,11 @@
     }
 
     function toggleRpgFullscreen() {
-      setRpgTheaterMode(!rpgTheaterMode);
+      if (rpgTheaterMode) {
+        setActiveGame(null);
+        return;
+      }
+      setRpgTheaterMode(true);
     }
 
     document.addEventListener('visibilitychange', () => {
@@ -4121,8 +4212,11 @@
       const rpgActive = gameName === 'rpg';
       const mineActive = gameName === 'mine';
       const anyActive = tetrisActive || snakeActive || pongActive || breakoutActive || dashActive || memoryActive || minefieldActive || simonActive || whackActive || rpgActive || mineActive;
+      const gameplayActive = anyActive && !rpgActive;
       document.body.classList.toggle('rpg-active-mode', rpgActive);
       document.documentElement.classList.toggle('rpg-active-mode', rpgActive);
+      document.body.classList.toggle('gameplay-active-mode', gameplayActive);
+      document.documentElement.classList.toggle('gameplay-active-mode', gameplayActive);
       rpgTheaterMode = rpgActive;
       rpgPanel.classList.toggle('rpg-theater-mode', rpgActive && rpgTheaterMode);
       document.body.classList.toggle('rpg-theater-mode', rpgActive && rpgTheaterMode);
@@ -4133,6 +4227,7 @@
       rpgFullscreenBtn.classList.toggle('hidden', !rpgActive);
       updateRpgFullscreenButton();
       gamePickerEl.classList.toggle('hidden', anyActive);
+      gamePickerEl.classList.remove('gameplay-compact');
       gameToolbarActionsEl.classList.toggle('visible', anyActive);
       tetrisPanel.classList.toggle('active', tetrisActive);
       snakePanel.classList.toggle('active', snakeActive);
@@ -4186,17 +4281,17 @@
           paused = false;
           setStatus('Game running');
         }
-        activeGameHintEl.textContent = 'Showing Tetris. Use the game buttons to switch.';
+        setActiveGameHint('Now Playing', 'Tetris', '');
       } else if (snakeActive) {
         if (!snakeGameOver) {
           snakePaused = false;
-          setSnakeStatus('Running. Use arrow keys or W A S D.');
+          setSnakeStatus('Running. Use W A S D.');
         }
         if (running && !gameOver) {
           paused = true;
           setStatus('Paused while Snake is active');
         }
-        activeGameHintEl.textContent = 'Showing Snake. Use the game buttons to switch.';
+        setActiveGameHint('Now Playing', 'Snake', '');
       } else if (pongActive) {
         if (!pongGameOver) {
           pongPaused = false;
@@ -4206,7 +4301,7 @@
           paused = true;
           setStatus('Paused while Pong is active');
         }
-        activeGameHintEl.textContent = 'Showing Pong. Use Restart to reset the match.';
+        setActiveGameHint('Now Playing', 'Pong', '');
       } else if (breakoutActive) {
         if (!breakoutGameOver && !breakoutWon) {
           breakoutPaused = false;
@@ -4216,7 +4311,7 @@
           paused = true;
           setStatus('Paused while Breakout is active');
         }
-        activeGameHintEl.textContent = 'Showing Breakout. Clear every brick to win.';
+        setActiveGameHint('Now Playing', 'Breakout', '');
       } else if (dashActive) {
         if (!dashGameOver) {
           dashPaused = false;
@@ -4226,27 +4321,27 @@
           paused = true;
           setStatus('Paused while Asteroid Dash is active');
         }
-        activeGameHintEl.textContent = 'Showing Asteroid Dash. Survive the debris field.';
+        setActiveGameHint('Now Playing', 'Asteroid Dash', '');
       } else if (memoryActive) {
         if (running && !gameOver) {
           paused = true;
           setStatus('Paused while Memory Flip is active');
         }
-        setMemoryStatus(memoryMatches === MEMORY_SYMBOLS.length ? 'Perfect recall. Press Restart for a fresh shuffle.' : 'Flip two cards to start matching.');
-        activeGameHintEl.textContent = 'Showing Memory Flip. Clear the board in as few moves as possible.';
+        setMemoryStatus(memoryMatches === MEMORY_SYMBOLS.length ? `Perfect recall in ${memoryMoves} moves. Press Restart for a fresh shuffle.` : `Flip two cards to start. ${getMemoryPairsLeft()} pairs left.`);
+        setActiveGameHint('Now Playing', 'Memory Flip', '');
       } else if (minefieldActive) {
         if (running && !gameOver) {
           paused = true;
           setStatus('Paused while Minefield is active');
         }
-        activeGameHintEl.textContent = 'Showing Minefield. Right click flags suspected mines.';
+        setActiveGameHint('Now Playing', 'Minefield', '');
       } else if (simonActive) {
         if (running && !gameOver) {
           paused = true;
           setStatus('Paused while Simon Pulse is active');
         }
         if (simonRound === 0) startSimonRound();
-        activeGameHintEl.textContent = 'Showing Simon Pulse. Watch the pattern before repeating it.';
+        setActiveGameHint('Now Playing', 'Simon Pulse', '');
       } else if (whackActive) {
         if (!whackGameOver) {
           whackPaused = false;
@@ -4256,13 +4351,13 @@
           paused = true;
           setStatus('Paused while Whack-A-Bot is active');
         }
-        activeGameHintEl.textContent = 'Showing Whack-A-Bot. Smash the lit bot before it moves.';
+        setActiveGameHint('Now Playing', 'Whack-A-Bot', '');
       } else if (rpgActive) {
         if (running && !gameOver) {
           paused = true;
           setStatus('Paused while the Middle-earth RPG is active');
         }
-        activeGameHintEl.textContent = 'Showing the Middle-earth RPG. Follow the fellowship through a procedural northern campaign.';
+        setActiveGameHint('Now Playing', 'Middle-earth RPG', '');
       } else if (mineActive) {
         minePaused = useEmbeddedBlockcraft;
         if (running && !gameOver) {
@@ -4270,17 +4365,17 @@
           setStatus('Paused while BlockCraft is active');
         }
         if (useEmbeddedBlockcraft) {
-          activeGameHintEl.textContent = 'Showing BlockCraft 3D. Click inside the game to play.';
+          setActiveGameHint('Now Playing', 'BlockCraft 3D', '');
         } else {
           setMineStatus('BlockCraft online. Q break, E place, 1-5 swap block.');
-          activeGameHintEl.textContent = 'Showing BlockCraft. Use the game buttons to switch.';
+          setActiveGameHint('Now Playing', 'BlockCraft', '');
         }
       } else {
         if (running && !gameOver) {
           paused = true;
           setStatus('Paused until you pick a game');
         }
-        activeGameHintEl.textContent = 'Pick a game to start playing.';
+        setActiveGameHint('Arcade', 'Pick a game', 'Choose a game to start.');
       }
 
       syncActiveGameLoop();
@@ -4304,7 +4399,7 @@
     });
     if (rpgTheaterExitBtn) {
       rpgTheaterExitBtn.addEventListener('click', () => {
-        if (rpgTheaterMode) setRpgTheaterMode(false);
+        if (rpgTheaterMode) setActiveGame(null);
       });
     }
     restartActiveBtn.addEventListener('click', restartActiveGame);
@@ -4376,16 +4471,19 @@
 
       if (activeGame === 'rpg' && key === 'escape' && rpgTheaterMode) {
         event.preventDefault();
-        setRpgTheaterMode(false);
+        setActiveGame(null);
         return;
       }
 
-      const tetrisKeys = ['arrowleft', 'arrowright', 'arrowdown', 'arrowup', ' ', 'z', 'x', 'p', 'r'];
+      const tetrisKeys = ['arrowleft', 'arrowright', 'arrowdown', 'arrowup', ' ', 'z', 'x', 'w', 'a', 's', 'd', 'p', 'r'];
       const snakeKeys = ['arrowleft', 'arrowright', 'arrowdown', 'arrowup', 'w', 'a', 's', 'd', 'p', 'r'];
       const pongKeysList = ['arrowup', 'arrowdown', 'w', 's', 'p', 'r'];
       const breakoutKeysList = ['arrowleft', 'arrowright', 'a', 'd', 'p', 'r', ' '];
       const dashKeysList = ['arrowleft', 'arrowright', 'a', 'd', 'p', 'r'];
-      const restartOnlyKeys = ['r'];
+      const memoryKeysList = ['w', 'a', 's', 'd', 'enter', ' ', 'r'];
+      const minefieldKeysList = ['w', 'a', 's', 'd', 'enter', ' ', 'f', 'r'];
+      const simonKeysList = ['w', 'a', 's', 'd', 'r'];
+      const whackKeysList = ['w', 'a', 's', 'd', 'enter', ' ', 'p', 'r'];
       const mineKeysList = useEmbeddedBlockcraft ? [] : ['arrowleft', 'arrowright', 'w', 'a', 's', 'd', 'p', 'r', 'q', 'e', '1', '2', '3', '4', '5'];
       const doomKeysList = doomThreeFrame ? [] : ['arrowleft', 'arrowright', 'w', 'a', 's', 'd', 'p', 'r', ' '];
       if (
@@ -4394,10 +4492,10 @@
         (activeGame === 'pong' && pongKeysList.includes(key)) ||
         (activeGame === 'breakout' && breakoutKeysList.includes(key)) ||
         (activeGame === 'dash' && dashKeysList.includes(key)) ||
-        (activeGame === 'memory' && restartOnlyKeys.includes(key)) ||
-        (activeGame === 'minefield' && restartOnlyKeys.includes(key)) ||
-        (activeGame === 'simon' && restartOnlyKeys.includes(key)) ||
-        (activeGame === 'whack' && ['p', 'r'].includes(key)) ||
+        (activeGame === 'memory' && memoryKeysList.includes(key)) ||
+        (activeGame === 'minefield' && minefieldKeysList.includes(key)) ||
+        (activeGame === 'simon' && simonKeysList.includes(key)) ||
+        (activeGame === 'whack' && whackKeysList.includes(key)) ||
         (activeGame === 'mine' && mineKeysList.includes(key)) ||
         (activeGame === 'doom' && doomKeysList.includes(key))
       ) {
@@ -4405,10 +4503,10 @@
       }
 
       if (activeGame === 'tetris') {
-        if (key === 'arrowleft') handleAction('left');
-        else if (key === 'arrowright') handleAction('right');
-        else if (key === 'arrowdown') handleAction('down');
-        else if (key === 'arrowup' || key === 'x') handleAction('rotateR');
+        if (key === 'arrowleft' || key === 'a') handleAction('left');
+        else if (key === 'arrowright' || key === 'd') handleAction('right');
+        else if (key === 'arrowdown' || key === 's') handleAction('down');
+        else if (key === 'arrowup' || key === 'x' || key === 'w') handleAction('rotateR');
         else if (key === 'z') handleAction('rotateL');
         else if (key === ' ') handleAction('drop');
         else if (key === 'p') handleAction('pause');
@@ -4447,13 +4545,38 @@
           resetDashGame();
         }
       } else if (activeGame === 'memory') {
-        if (key === 'r') resetMemoryGame();
+        if (key === 'w') moveGridFocus(memoryGridEl, 4, -1, 0, '.memory-card');
+        else if (key === 'a') moveGridFocus(memoryGridEl, 4, 0, -1, '.memory-card');
+        else if (key === 's') moveGridFocus(memoryGridEl, 4, 1, 0, '.memory-card');
+        else if (key === 'd') moveGridFocus(memoryGridEl, 4, 0, 1, '.memory-card');
+        else if (key === ' ' || key === 'enter') pressFocusedButton(memoryGridEl, '.memory-card');
+        else if (key === 'r') resetMemoryGame();
       } else if (activeGame === 'minefield') {
-        if (key === 'r') resetMinefieldGame();
+        if (key === 'w') moveGridFocus(minefieldGridEl, minefieldSize, -1, 0, '.minefield-cell');
+        else if (key === 'a') moveGridFocus(minefieldGridEl, minefieldSize, 0, -1, '.minefield-cell');
+        else if (key === 's') moveGridFocus(minefieldGridEl, minefieldSize, 1, 0, '.minefield-cell');
+        else if (key === 'd') moveGridFocus(minefieldGridEl, minefieldSize, 0, 1, '.minefield-cell');
+        else if (key === ' ' || key === 'enter') pressFocusedButton(minefieldGridEl, '.minefield-cell');
+        else if (key === 'f') {
+          const minefieldButtons = getFocusableButtons(minefieldGridEl, '.minefield-cell');
+          const focusedButton = minefieldButtons.includes(document.activeElement) ? document.activeElement : minefieldButtons[0];
+          if (focusedButton) {
+            focusedButton.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+          }
+        } else if (key === 'r') resetMinefieldGame();
       } else if (activeGame === 'simon') {
-        if (key === 'r') resetSimonGame();
+        if (key === 'w') simonPads[0]?.click();
+        else if (key === 'd') simonPads[1]?.click();
+        else if (key === 's') simonPads[2]?.click();
+        else if (key === 'a') simonPads[3]?.click();
+        else if (key === 'r') resetSimonGame();
       } else if (activeGame === 'whack') {
-        if (key === 'p' && !whackGameOver) {
+        if (key === 'w') moveGridFocus(whackGridEl, 3, -1, 0, '.whack-cell');
+        else if (key === 'a') moveGridFocus(whackGridEl, 3, 0, -1, '.whack-cell');
+        else if (key === 's') moveGridFocus(whackGridEl, 3, 1, 0, '.whack-cell');
+        else if (key === 'd') moveGridFocus(whackGridEl, 3, 0, 1, '.whack-cell');
+        else if (key === ' ' || key === 'enter') pressFocusedButton(whackGridEl, '.whack-cell');
+        else if (key === 'p' && !whackGameOver) {
           whackPaused = !whackPaused;
           setWhackStatus(whackPaused ? 'Paused' : 'Click the active bot as quickly as you can.');
         } else if (key === 'r') {
