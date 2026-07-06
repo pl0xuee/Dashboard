@@ -1,12 +1,15 @@
     let allNewsItems = [];
     const NEWS_MAX_ITEMS = 10;
     const NEWS_CACHE_PREFIX = 'homeNewsCache:';
+    const NEWS_REQUEST_TIMEOUT_MS = 9000;
+    const NEWS_LOADING_TIMEOUT_MS = 12000;
     const WEATHER_CACHE_TTL_MS = 15 * 60 * 1000;
     const WEATHER_LOCATION_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
     const WEATHER_LAST_SNAPSHOT_KEY = 'homeWeatherLastSnapshot';
     const WEATHER_APPROX_LOCATION_KEY = 'homeWeatherApproxLocation';
     const NASCAR_CACHE_PREFIX = 'homeNascarSchedule:';
     const NASCAR_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+    let newsRequestSeq = 0;
 
     function readStorageJson(key, storage = localStorage) {
       try {
@@ -61,7 +64,19 @@
 
     async function showNews(type) {
       const container = document.getElementById('news-container');
+      if (!container) return;
+
+      const requestId = ++newsRequestSeq;
       container.textContent = 'Loading...';
+
+      const loadingWatchdog = window.setTimeout(() => {
+        if (requestId !== newsRequestSeq) return;
+        if (String(container.textContent || '').trim() !== 'Loading...') return;
+
+        allNewsItems = Array.isArray(FALLBACK_NEWS.items) ? FALLBACK_NEWS.items : [];
+        renderNews();
+      }, NEWS_LOADING_TIMEOUT_MS);
+
       try {
         let feedUrl = '';
 
@@ -77,12 +92,17 @@
         }
 
         let data = await fetchNewsWithCache(feedUrl, type);
+        if (requestId !== newsRequestSeq) return;
 
         allNewsItems = Array.isArray(data?.items) ? data.items : [];
         renderNews();
       } catch (e) { 
+        if (requestId !== newsRequestSeq) return;
         console.error('News error:', e);
-        container.textContent = 'Could not load news. Try refreshing in a moment.'; 
+        allNewsItems = Array.isArray(FALLBACK_NEWS.items) ? FALLBACK_NEWS.items : [];
+        renderNews();
+      } finally {
+        clearTimeout(loadingWatchdog);
       }
     }
 
@@ -169,7 +189,13 @@
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
           // Use RSS2JSON API to convert RSS to JSON
-          const response = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl));
+          const controller = new AbortController();
+          const timeoutId = window.setTimeout(() => controller.abort(), NEWS_REQUEST_TIMEOUT_MS);
+          const response = await fetch(
+            'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl),
+            { signal: controller.signal }
+          );
+          clearTimeout(timeoutId);
           
           if (!response.ok) {
             console.warn(`HTTP ${response.status} on attempt ${attempt + 1}`);
