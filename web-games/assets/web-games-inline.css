@@ -312,6 +312,11 @@
       --game-accent: rgba(255, 188, 120, 0.16);
     }
 
+    .game-picker-btn[data-game='retrodoom'] {
+      --game-tint: rgba(225, 98, 84, 0.2);
+      --game-accent: rgba(103, 153, 226, 0.18);
+    }
+
     .game-picker-btn::before {
       content: '';
       position: absolute;
@@ -954,6 +959,20 @@
       font-size: 0.84rem;
     }
 
+    body.gameplay-active-mode #retroDoomPanel.active {
+      grid-template-columns: minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    body.gameplay-active-mode #retroDoomPanel.active .control-hint {
+      margin-top: 0;
+    }
+
+    body.gameplay-active-mode #retroDoomPanel.active .retro-doom-embed-wrap {
+      margin-top: 0;
+      padding: 0;
+    }
+
     body.gameplay-active-mode #minefieldPanel.active .minefield-controls {
       grid-column: 2;
       grid-row: 2;
@@ -1234,6 +1253,30 @@
       padding: 0;
       box-shadow: inset 0 0 0 1px rgba(255, 223, 170, 0.04);
       overflow: hidden;
+    }
+
+    .retro-doom-embed-wrap {
+      position: relative;
+      margin-top: 14px;
+      border: 1px solid rgba(157, 181, 227, 0.28);
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(13, 18, 30, 0.98), rgba(8, 10, 16, 0.99));
+      padding: 0;
+      box-shadow: inset 0 0 0 1px rgba(197, 215, 255, 0.06);
+      overflow: hidden;
+    }
+
+    #retroDoomFrame {
+      width: 100%;
+      height: min(78vh, calc(100vh - 260px));
+      border: 0;
+      display: block;
+      background: #070b12;
+    }
+
+    #retroDoomPanel.active #retroDoomFrame {
+      height: min(78vh, calc(100dvh - 260px));
+      min-height: 430px;
     }
 
     .rpg-theater-exit {

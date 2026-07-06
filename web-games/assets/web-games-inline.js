@@ -46,6 +46,7 @@
     const pickMinefieldBtn = document.getElementById('pickMinefield');
     const pickSimonBtn = document.getElementById('pickSimon');
     const pickWhackBtn = document.getElementById('pickWhack');
+    const pickRetroDoomBtn = document.getElementById('pickRetroDoom');
     const pickRpgBtn = document.getElementById('pickRpg');
     const pickMineBtn = document.getElementById('pickMine');
     const backToGridBtn = document.getElementById('backToGridBtn');
@@ -61,6 +62,7 @@
     const minefieldPanel = document.getElementById('minefieldPanel');
     const simonPanel = document.getElementById('simonPanel');
     const whackPanel = document.getElementById('whackPanel');
+    const retroDoomPanel = document.getElementById('retroDoomPanel');
     const rpgPanel = document.getElementById('rpgPanel');
     const minePanel = document.getElementById('minePanel');
     const doomPanel = document.getElementById('doomPanel');
@@ -182,6 +184,9 @@
     const doomHealthBarEl = document.getElementById('doomHealthBar');
     const doomAmmoBarEl = document.getElementById('doomAmmoBar');
     const doomFaceEl = document.getElementById('doomFace');
+    const doomHudReady = Boolean(
+      doomHealthEl && doomAmmoEl && doomScoreEl && doomKillsEl && doomStatusEl && doomStatusLineEl && doomHealthBarEl && doomAmmoBarEl && doomFaceEl
+    );
 
     const snakeCanvas = document.getElementById('snakeBoard');
     const snakeCtx = snakeCanvas.getContext('2d');
@@ -232,6 +237,7 @@
     const mineStatusEl = document.getElementById('mineStatus');
     const mineObjectiveEl = document.getElementById('mineObjective');
     const embeddedBlockcraftFrame = document.getElementById('embeddedBlockcraftFrame');
+    const retroDoomFrame = document.getElementById('retroDoomFrame');
     const useEmbeddedBlockcraft = Boolean(embeddedBlockcraftFrame);
     const gamesMainEl = document.querySelector('.games-main');
 
@@ -860,6 +866,7 @@
     snakeBestEl.textContent = String(snakeBest);
 
     function updateDoomHud() {
+      if (!doomHudReady) return;
       const health = Math.max(0, Math.floor(doomPlayer.health));
       const ammo = Math.max(0, doomPlayer.ammo);
       doomHealthEl.textContent = String(health);
@@ -885,6 +892,7 @@
     }
 
     function setDoomStatus(text) {
+      if (!doomStatusEl || !doomStatusLineEl) return;
       doomStatusEl.textContent = text;
       doomStatusLineEl.textContent = `Sector status: ${text}`;
     }
@@ -4128,6 +4136,13 @@
         resetWhackGame();
         return;
       }
+      if (activeGame === 'retrodoom') {
+        if (retroDoomFrame) {
+          retroDoomFrame.src = retroDoomFrame.src;
+          setActiveGameHint('Restarted', 'Sector 93', 'Sector reset. Re-engage pointer lock to continue.');
+        }
+        return;
+      }
       if (activeGame === 'rpg') {
         if (rpgFrame) rpgFrame.src = rpgFrame.src;
         setActiveGameHint('Restarted', 'Middle-earth RPG', 'Adventure reloaded.');
@@ -4209,9 +4224,10 @@
       const minefieldActive = gameName === 'minefield';
       const simonActive = gameName === 'simon';
       const whackActive = gameName === 'whack';
+      const retroDoomActive = gameName === 'retrodoom';
       const rpgActive = gameName === 'rpg';
       const mineActive = gameName === 'mine';
-      const anyActive = tetrisActive || snakeActive || pongActive || breakoutActive || dashActive || memoryActive || minefieldActive || simonActive || whackActive || rpgActive || mineActive;
+      const anyActive = tetrisActive || snakeActive || pongActive || breakoutActive || dashActive || memoryActive || minefieldActive || simonActive || whackActive || retroDoomActive || rpgActive || mineActive;
       const gameplayActive = anyActive && !rpgActive;
       document.body.classList.toggle('rpg-active-mode', rpgActive);
       document.documentElement.classList.toggle('rpg-active-mode', rpgActive);
@@ -4238,6 +4254,7 @@
       minefieldPanel.classList.toggle('active', minefieldActive);
       simonPanel.classList.toggle('active', simonActive);
       whackPanel.classList.toggle('active', whackActive);
+      retroDoomPanel.classList.toggle('active', retroDoomActive);
       rpgPanel.classList.toggle('active', rpgActive);
       minePanel.classList.toggle('active', mineActive);
 
@@ -4250,6 +4267,7 @@
       pickMinefieldBtn.classList.toggle('active', minefieldActive);
       pickSimonBtn.classList.toggle('active', simonActive);
       pickWhackBtn.classList.toggle('active', whackActive);
+      pickRetroDoomBtn.classList.toggle('active', retroDoomActive);
       pickRpgBtn.classList.toggle('active', rpgActive);
       if (pickMineBtn) pickMineBtn.classList.toggle('active', mineActive);
 
@@ -4262,6 +4280,7 @@
       pickMinefieldBtn.setAttribute('aria-selected', minefieldActive ? 'true' : 'false');
       pickSimonBtn.setAttribute('aria-selected', simonActive ? 'true' : 'false');
       pickWhackBtn.setAttribute('aria-selected', whackActive ? 'true' : 'false');
+      pickRetroDoomBtn.setAttribute('aria-selected', retroDoomActive ? 'true' : 'false');
       pickRpgBtn.setAttribute('aria-selected', rpgActive ? 'true' : 'false');
       if (pickMineBtn) pickMineBtn.setAttribute('aria-selected', mineActive ? 'true' : 'false');
       restartActiveBtn.disabled = !anyActive;
@@ -4352,6 +4371,12 @@
           setStatus('Paused while Whack-A-Bot is active');
         }
         setActiveGameHint('Now Playing', 'Whack-A-Bot', '');
+      } else if (retroDoomActive) {
+        if (running && !gameOver) {
+          paused = true;
+          setStatus('Paused while Sector 93 is active');
+        }
+        setActiveGameHint('Now Playing', 'Sector 93', 'Click the viewport to lock cursor and start moving.');
       } else if (rpgActive) {
         if (running && !gameOver) {
           paused = true;
@@ -4391,6 +4416,7 @@
     pickMinefieldBtn.addEventListener('click', () => setActiveGame('minefield'));
     pickSimonBtn.addEventListener('click', () => setActiveGame('simon'));
     pickWhackBtn.addEventListener('click', () => setActiveGame('whack'));
+    pickRetroDoomBtn.addEventListener('click', () => setActiveGame('retrodoom'));
     pickRpgBtn.addEventListener('click', () => setActiveGame('rpg'));
     if (pickMineBtn) pickMineBtn.addEventListener('click', () => setActiveGame('mine'));
     backToGridBtn.addEventListener('click', () => setActiveGame(null));
@@ -4638,7 +4664,7 @@
     resetSimonGame();
     resetWhackGame();
     resetMineGame();
-    if (!doomThreeFrame) resetDoomGame();
+    if (doomPanel && !doomThreeFrame) resetDoomGame();
     setActiveGame(null);
     resizeGameCanvases();
     window.addEventListener('resize', resizeGameCanvases);
