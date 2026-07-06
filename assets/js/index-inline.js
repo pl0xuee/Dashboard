@@ -396,7 +396,7 @@
     }
 
     const TWELVE_DATA_API_KEY = 'e113279daa094cf29e24802ff56566e2';
-    const ALPHA_VANTAGE_API_KEY = 'JUIUIHXXSHB4IAJW';
+    const MAJOR_INDEX_CACHE_KEY = 'majorIndexCache:v2';
     const TWELVE_DATA_BACKOFF_KEY = 'twelveDataBackoffUntil';
     const TWELVE_DATA_BACKOFF_MS = 12 * 60 * 60 * 1000;
 
@@ -487,7 +487,7 @@
       // Show cached data immediately if fresh enough, skipping the network entirely
       let hadCache = false;
       try {
-        const cached = JSON.parse(localStorage.getItem('majorIndexCache') || 'null');
+        const cached = JSON.parse(localStorage.getItem(MAJOR_INDEX_CACHE_KEY) || 'null');
         if (cached && cached.updatedAt && hasUsableCachedQuote(cached)) {
           const age = Date.now() - cached.updatedAt;
           if (age < cacheTTL) {
@@ -499,43 +499,11 @@
           applyIndexCache(cached);
           hadCache = true;
         } else if (cached && cached.updatedAt) {
-          localStorage.removeItem('majorIndexCache');
+          localStorage.removeItem(MAJOR_INDEX_CACHE_KEY);
         }
       } catch (_) { /* ignore broken cache */ }
 
-      // --- Helper: fetch a single ETF proxy quote from Alpha Vantage ---
-      async function fetchAlphaVantageQuote(symbol) {
-        const url = `https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${encodeURIComponent(symbol)}&apikey=${ALPHA_VANTAGE_API_KEY}`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error(`Alpha Vantage ${symbol} ${res.status}`);
-
-        const data = await res.json();
-        if (data?.Information || data?.Note || data?.['Error Message']) {
-          throw new Error(`Alpha Vantage ${symbol} unavailable`);
-        }
-
-        const quote = data?.['Global Quote'];
-        if (!quote || Object.keys(quote).length === 0) {
-          throw new Error(`Alpha Vantage ${symbol} missing quote`);
-        }
-
-        const price = parseFloat(quote['05. price']);
-        const change = parseFloat(quote['09. change']);
-        const pctText = quote['10. change percent'] || '';
-        const pct = parseFloat(pctText.replace('%', ''));
-        if (Number.isNaN(price) || Number.isNaN(change) || Number.isNaN(pct)) {
-          throw new Error(`Alpha Vantage ${symbol} invalid numbers`);
-        }
-
-        return {
-          close: price,
-          change,
-          percent_change: pct,
-          is_market_open: isUsMarketOpenNow()
-        };
-      }
-
-      // --- Helper: fetch a single ETF proxy quote from Yahoo Finance via r.jina.ai ---
+      // --- Helper: fetch a single index quote from Yahoo Finance via r.jina.ai ---
       async function fetchJinaYahooQuote(symbol) {
         const url = `https://r.jina.ai/http://https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=2d`;
         const res = await fetch(url);
@@ -584,47 +552,20 @@
           ixicQuote = requestedData['.IXIC'] || null;
           spxQuote = requestedData['.SPX'] || null;
 
-          // Twelve Data sometimes rejects dotted index symbols — fall back to ETF proxies
-          if (!isUsableQuote(djiQuote) || !isUsableQuote(ixicQuote) || !isUsableQuote(spxQuote)) {
-            const fallbackRes = await fetch(`https://api.twelvedata.com/quote?symbol=DIA,QQQ,SPY&apikey=${TWELVE_DATA_API_KEY}`);
-            if (fallbackRes.status === 429) {
-              markTwelveDataBackoff();
-              throw new Error('Twelve Data rate limited');
-            }
-            const fallbackData = await fallbackRes.json();
-            if (!isUsableQuote(djiQuote)) djiQuote = fallbackData.DIA || null;
-            if (!isUsableQuote(ixicQuote)) ixicQuote = fallbackData.QQQ || null;
-            if (!isUsableQuote(spxQuote)) spxQuote = fallbackData.SPY || null;
-          }
-
           if (isUsableQuote(djiQuote) && isUsableQuote(ixicQuote) && isUsableQuote(spxQuote)) {
             twelveDataOk = true;
             clearTwelveDataBackoff();
           }
-        } catch (_) { /* fall through to Alpha Vantage */ }
+        } catch (_) { /* fall through to Yahoo index symbols */ }
       }
 
-      // --- Tier 2: Alpha Vantage ETF proxies ---
+      // --- Tier 2: Yahoo Finance index symbols via r.jina.ai ---
       if (!twelveDataOk) {
         try {
-          const [aDji, aIxic, aSpx] = await Promise.all([
-            fetchAlphaVantageQuote('DIA'),
-            fetchAlphaVantageQuote('QQQ'),
-            fetchAlphaVantageQuote('SPY')
-          ]);
-          if (!isUsableQuote(djiQuote)) djiQuote = aDji;
-          if (!isUsableQuote(ixicQuote)) ixicQuote = aIxic;
-          if (!isUsableQuote(spxQuote)) spxQuote = aSpx;
-        } catch (_) { /* fall through to Yahoo via r.jina.ai */ }
-      }
-
-      // --- Tier 3: Yahoo Finance ETF proxies via r.jina.ai ---
-      if (!isUsableQuote(djiQuote) || !isUsableQuote(ixicQuote) || !isUsableQuote(spxQuote)) {
-        try {
           const [yDji, yIxic, ySpx] = await Promise.all([
-            fetchJinaYahooQuote('DIA'),
-            fetchJinaYahooQuote('QQQ'),
-            fetchJinaYahooQuote('SPY')
+            fetchJinaYahooQuote('^DJI'),
+            fetchJinaYahooQuote('^IXIC'),
+            fetchJinaYahooQuote('^GSPC')
           ]);
           if (!isUsableQuote(djiQuote)) djiQuote = yDji;
           if (!isUsableQuote(ixicQuote)) ixicQuote = yIxic;
@@ -637,7 +578,7 @@
         updateIndexRow('idx-ixic', ixicQuote);
         updateIndexRow('idx-gspc', spxQuote);
 
-        localStorage.setItem('majorIndexCache', JSON.stringify({
+        localStorage.setItem(MAJOR_INDEX_CACHE_KEY, JSON.stringify({
           dji: djiQuote,
           ixic: ixicQuote,
           spx: spxQuote,
