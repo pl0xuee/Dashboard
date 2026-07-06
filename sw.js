@@ -1,4 +1,4 @@
-const CACHE_NAME = 'command-center-v40';
+const CACHE_NAME = 'command-center-v54';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
@@ -12,7 +12,7 @@ const APP_SHELL_FILES = [
   '/dashboard/',
   '/dashboard/index.html',
   '/dashboard/assets/dashboard-widgets.js',
-  '/dashboard/assets/dashboard-widgets.js?v=20260706market48h1',
+  '/dashboard/assets/dashboard-widgets.js?v=20260706market48h15',
   '/stream/',
   '/stream/index.html',
   '/stream/assets/config-inline.js?v=20260630c',
