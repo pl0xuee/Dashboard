@@ -1,9 +1,9 @@
-const CACHE_NAME = 'command-center-v31';
+const CACHE_NAME = 'command-center-v38';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
   '/assets/css/styles.css',
-  '/assets/css/styles.css?v=20260702refresh1',
+  '/assets/css/styles.css?v=20260706gridtight1',
   '/assets/js/script.js',
   '/assets/js/index-inline.js',
   '/assets/js/index-inline.js?v=20260630b',
@@ -12,7 +12,7 @@ const APP_SHELL_FILES = [
   '/dashboard/',
   '/dashboard/index.html',
   '/dashboard/assets/dashboard-widgets.js',
-  '/dashboard/assets/dashboard-widgets.js?v=20260630ultra4',
+  '/dashboard/assets/dashboard-widgets.js?v=20260706market48h1',
   '/stream/',
   '/stream/index.html',
   '/stream/assets/config-inline.js?v=20260630c',

@@ -4,12 +4,13 @@ if (!window.__dashboardWidgetsInitialized) {
   const defaultTvTickers = ['GOOGL', 'SPCX', 'SPY', 'BTCUSD'];
   const PACIFIC_TIME_ZONE = 'America/Los_Angeles';
   const CHART_WINDOW_SECONDS = 24 * 60 * 60;
+  const CHART_HISTORY_RANGE = '2d';
   const CHART_REFRESH_MS = 5 * 1000;
   const DEFAULT_PANEL_STAGGER_MS = 260;
   const INITIAL_YAHOO_REQUEST_SPACING_MS = 1000;
   const YAHOO_REQUEST_SPACING_MS = 2400;
   const CHART_CACHE_TTL_MS = 15 * 60 * 1000;
-  const CHART_CACHE_KEY_PREFIX = 'dashboardChartCache:';
+  const CHART_CACHE_KEY_PREFIX = 'dashboardChartCache:v2:';
   const YAHOO_SYMBOL_MAP = {
     BTCUSD: 'BTC-USD',
     ETHUSD: 'ETH-USD',
@@ -17,6 +18,142 @@ if (!window.__dashboardWidgetsInitialized) {
   };
   let yahooRequestQueue = Promise.resolve();
   let yahooLastRequestAt = 0;
+  let dashboardTheaterMode = false;
+  let dashboardTheaterScope = 'all';
+  let dashboardTheaterPanelIndex = null;
+  let dashboardTheaterMenuPanelIndex = null;
+  const dashboardChartsByPanel = new Map();
+  let dashboardResizeRaf = 0;
+
+  function getDashboardPanels() {
+    return Array.from(document.querySelectorAll('.tv-panel'));
+  }
+
+  function clearDashboardTheaterPanelTargets() {
+    getDashboardPanels().forEach((panel) => panel.classList.remove('dashboard-theater-target'));
+  }
+
+  function applyDashboardTheaterPanelTarget() {
+    clearDashboardTheaterPanelTargets();
+    if (!dashboardTheaterMode || dashboardTheaterScope !== 'panel' || !Number.isInteger(dashboardTheaterPanelIndex)) {
+      return;
+    }
+
+    const targetPanel = getDashboardPanels()[dashboardTheaterPanelIndex];
+    if (targetPanel) {
+      targetPanel.classList.add('dashboard-theater-target');
+    }
+  }
+
+  function closeDashboardTheaterMenu() {
+    const menu = document.getElementById('dashboardTheaterMenu');
+    if (!menu) return;
+    menu.hidden = true;
+    menu.style.top = '';
+    menu.style.left = '';
+    dashboardTheaterMenuPanelIndex = null;
+  }
+
+  function openDashboardTheaterMenu(anchorButton, panelIndex) {
+    const menu = document.getElementById('dashboardTheaterMenu');
+    if (!menu || !anchorButton) return;
+
+    dashboardTheaterMenuPanelIndex = panelIndex;
+    menu.hidden = false;
+
+    const rect = anchorButton.getBoundingClientRect();
+    const menuWidth = 170;
+    const viewportPadding = 10;
+    const unclampedLeft = rect.right - menuWidth;
+    const left = Math.max(viewportPadding, Math.min(unclampedLeft, window.innerWidth - menuWidth - viewportPadding));
+    menu.style.top = `${Math.round(rect.bottom + 8)}px`;
+    menu.style.left = `${Math.round(left)}px`;
+  }
+
+  function unregisterDashboardChart(index) {
+    const existing = dashboardChartsByPanel.get(index);
+    if (existing && existing.chart && typeof existing.chart.remove === 'function') {
+      existing.chart.remove();
+    }
+    dashboardChartsByPanel.delete(index);
+  }
+
+  function resizeDashboardChartsNow() {
+    dashboardChartsByPanel.forEach(({ chart, chartDiv }) => {
+      if (!chart || !chartDiv || !chartDiv.isConnected) return;
+
+      const width = Math.floor(chartDiv.clientWidth);
+      const height = Math.floor(chartDiv.clientHeight);
+      if (width <= 0 || height <= 0) return;
+
+      if (typeof chart.resize === 'function') {
+        chart.resize(width, height);
+      } else {
+        chart.applyOptions({ width, height });
+      }
+    });
+  }
+
+  function scheduleDashboardChartsResize() {
+    if (dashboardResizeRaf) {
+      cancelAnimationFrame(dashboardResizeRaf);
+    }
+
+    dashboardResizeRaf = requestAnimationFrame(() => {
+      dashboardResizeRaf = 0;
+      resizeDashboardChartsNow();
+    });
+  }
+
+  function updateDashboardTheaterModeButton() {
+    const theaterButtons = document.querySelectorAll('.dashboard-theater-toggle-btn');
+    theaterButtons.forEach((button) => {
+      const buttonPanelIndex = Number(button.dataset.panel);
+      const isTargetedPanel = dashboardTheaterMode
+        && dashboardTheaterScope === 'panel'
+        && buttonPanelIndex === dashboardTheaterPanelIndex;
+      const isAllMode = dashboardTheaterMode && dashboardTheaterScope === 'all';
+
+      button.textContent = isTargetedPanel || isAllMode ? 'Default View' : 'Theater Mode';
+      button.setAttribute('aria-pressed', isTargetedPanel || isAllMode ? 'true' : 'false');
+    });
+  }
+
+  function setDashboardTheaterMode(nextValue, scope = 'all', panelIndex = null) {
+    dashboardTheaterMode = Boolean(nextValue);
+    dashboardTheaterScope = scope === 'panel' ? 'panel' : 'all';
+    dashboardTheaterPanelIndex = dashboardTheaterScope === 'panel' ? Number(panelIndex) : null;
+
+    document.body.classList.toggle('dashboard-theater-mode', dashboardTheaterMode);
+    document.documentElement.classList.toggle('dashboard-theater-mode', dashboardTheaterMode);
+    document.body.classList.toggle('dashboard-theater-scope-all', dashboardTheaterMode && dashboardTheaterScope === 'all');
+    document.body.classList.toggle('dashboard-theater-scope-panel', dashboardTheaterMode && dashboardTheaterScope === 'panel');
+    document.documentElement.classList.toggle('dashboard-theater-scope-all', dashboardTheaterMode && dashboardTheaterScope === 'all');
+    document.documentElement.classList.toggle('dashboard-theater-scope-panel', dashboardTheaterMode && dashboardTheaterScope === 'panel');
+
+    applyDashboardTheaterPanelTarget();
+    updateDashboardTheaterModeButton();
+    closeDashboardTheaterMenu();
+
+    // Layout changes happen across frames when switching theater mode.
+    // Resize charts immediately and once more after styles settle.
+    scheduleDashboardChartsResize();
+    setTimeout(scheduleDashboardChartsResize, 220);
+  }
+
+  function toggleDashboardTheaterMode(scope, panelIndex = null) {
+    const normalizedScope = scope === 'panel' ? 'panel' : 'all';
+    const normalizedPanelIndex = normalizedScope === 'panel' ? Number(panelIndex) : null;
+    const isSamePanelMode = normalizedScope === 'panel' && dashboardTheaterScope === 'panel' && dashboardTheaterPanelIndex === normalizedPanelIndex;
+    const isSameAllMode = normalizedScope === 'all' && dashboardTheaterScope === 'all';
+
+    if (dashboardTheaterMode && (isSamePanelMode || isSameAllMode)) {
+      setDashboardTheaterMode(false, normalizedScope, normalizedPanelIndex);
+      return;
+    }
+
+    setDashboardTheaterMode(true, normalizedScope, normalizedPanelIndex);
+  }
 
   const pacificAxisFormatter = new Intl.DateTimeFormat('en-US', {
     timeZone: PACIFIC_TIME_ZONE,
@@ -155,7 +292,7 @@ if (!window.__dashboardWidgetsInitialized) {
   }
 
   function getYahooChartUrl(symbol) {
-    return `https://r.jina.ai/http://https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1m&range=1d`;
+    return `https://r.jina.ai/http://https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1m&range=${CHART_HISTORY_RANGE}&includePrePost=true`;
   }
 
   function getChartCacheKey(symbol) {
@@ -322,6 +459,7 @@ if (!window.__dashboardWidgetsInitialized) {
       return null;
     }
 
+    // Default viewport is current regular trading hours; history still includes 48h.
     const periods = result && result.meta && result.meta.currentTradingPeriod;
     const regularStart = periods && periods.regular && Number(periods.regular.start);
     const regularEnd = periods && periods.regular && Number(periods.regular.end);
@@ -354,6 +492,7 @@ if (!window.__dashboardWidgetsInitialized) {
     if (!container) return;
 
     clearChartInterval(index);
+    unregisterDashboardChart(index);
 
     const media = parseMediaSource(symbol);
     container.innerHTML = '';
@@ -447,6 +586,8 @@ if (!window.__dashboardWidgetsInitialized) {
       }
     });
 
+    dashboardChartsByPanel.set(index, { chart, chartDiv });
+
     const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
       upColor: '#22d6bf',
       downColor: '#ff7e79',
@@ -511,6 +652,8 @@ if (!window.__dashboardWidgetsInitialized) {
         requestSpacingMs: YAHOO_REQUEST_SPACING_MS
       });
     }, CHART_REFRESH_MS);
+
+    scheduleDashboardChartsResize();
   }
 
   async function loadChartData(ticker, candleSeries, volumeSeries, chart, index, toolTip, options = {}) {
@@ -620,6 +763,8 @@ if (!window.__dashboardWidgetsInitialized) {
     const container = document.getElementById(`tvWidget${index}`);
     if (!container) return;
 
+    unregisterDashboardChart(index);
+
     container.innerHTML = '';
 
     const notification = document.createElement('div');
@@ -715,21 +860,68 @@ if (!window.__dashboardWidgetsInitialized) {
     });
 
     document.querySelectorAll('.tv-panel-header button').forEach((button) => {
-      button.addEventListener('click', () => {
-        const panelIndex = Number(button.dataset.panel);
-        if (button.getAttribute('title') === 'Search YouTube/Twitch') {
-          const symbolInput = tvTickerInputs[panelIndex];
-          const query = symbolInput ? symbolInput.value.trim() : '';
-          if (query) {
-            const searchUrl = `https://search.brave.com/search?q=${encodeURIComponent(query)}`;
-            const popup = window.open(searchUrl, '_blank', 'noopener,noreferrer');
-            if (popup) popup.opener = null;
-          }
-        } else {
-          updatePanel(panelIndex);
+      button.addEventListener('click', (event) => {
+        if (button.dataset.action === 'theater') {
+          event.preventDefault();
+          event.stopPropagation();
+          openDashboardTheaterMenu(button, Number(button.dataset.panel));
+          return;
         }
+
+        const panelIndex = Number(button.dataset.panel);
+        updatePanel(panelIndex);
       });
     });
+
+    const theaterExitBtn = document.getElementById('dashboardTheaterExitBtn');
+    if (theaterExitBtn) {
+      theaterExitBtn.addEventListener('click', () => {
+        if (dashboardTheaterMode) setDashboardTheaterMode(false, dashboardTheaterScope, dashboardTheaterPanelIndex);
+      });
+    }
+
+    const theaterMenu = document.getElementById('dashboardTheaterMenu');
+    if (theaterMenu) {
+      theaterMenu.querySelectorAll('.dashboard-theater-menu-btn').forEach((menuButton) => {
+        menuButton.addEventListener('click', () => {
+          const scope = menuButton.dataset.scope;
+          if (scope === 'panel') {
+            toggleDashboardTheaterMode('panel', dashboardTheaterMenuPanelIndex);
+            return;
+          }
+
+          toggleDashboardTheaterMode('all');
+        });
+      });
+    }
+
+    document.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && dashboardTheaterMode) {
+        setDashboardTheaterMode(false, dashboardTheaterScope, dashboardTheaterPanelIndex);
+      } else if (event.key === 'Escape') {
+        closeDashboardTheaterMenu();
+      }
+    });
+
+    document.addEventListener('click', (event) => {
+      const target = event.target;
+      const clickedTheaterToggle = target && target.closest && target.closest('.dashboard-theater-toggle-btn');
+      const clickedTheaterMenu = target && target.closest && target.closest('#dashboardTheaterMenu');
+      if (!clickedTheaterToggle && !clickedTheaterMenu) {
+        closeDashboardTheaterMenu();
+      }
+    });
+
+    updateDashboardTheaterModeButton();
+
+    if (tradingviewGrid && typeof ResizeObserver === 'function') {
+      const observer = new ResizeObserver(() => {
+        scheduleDashboardChartsResize();
+      });
+      observer.observe(tradingviewGrid);
+    }
+
+    window.addEventListener('resize', scheduleDashboardChartsResize);
   }
 
   document.addEventListener('DOMContentLoaded', initializeTradingViewPage);
