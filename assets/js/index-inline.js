@@ -619,7 +619,8 @@
       changeEl.textContent = changeText;
       changeEl.className = `market-index-change ${change > 0 ? 'up' : change < 0 ? 'down' : 'flat'}`;
 
-      const quoteIsLive = isQuoteLive(quote);
+      // Never show "Live" unless local market-hours logic says the market is open.
+      const quoteIsLive = isUsMarketOpenNow() && isQuoteLive(quote);
       stateEl.textContent = quoteIsLive ? 'Live' : 'Last';
       stateEl.className = `market-index-state ${quoteIsLive ? 'live' : 'last'}`;
     }
