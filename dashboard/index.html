@@ -9,12 +9,12 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Dashboard - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260706gridtight1" />
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260706tickerdropdown2" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
   <!-- Include the library for the charts -->
   <script src="https://unpkg.com/lightweight-charts@5.0.9/dist/lightweight-charts.standalone.production.js" integrity="sha384-6/iv/tWhS2LqjhNmDWcisQfhsuS0IqxtaOo1ZnA8dzgpK1sYsn8Al1icSvt0qirp" crossorigin="anonymous"></script>
   <script src="../assets/js/script.js"></script>
-    <script src="./assets/dashboard-widgets.js?v=20260706market48h15"></script>
+    <script src="./assets/dashboard-widgets.js?v=20260706tickerdropdown2"></script>
 </head>
 <body class="home-page modern-v3">
   <div class="page">
@@ -43,7 +43,8 @@
           <div class="tv-panel-header">
             <input id="tvTicker0" type="text" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
             <button type="button" data-panel="0" data-action="theater" class="dashboard-theater-toggle-btn">Theater Mode</button>
-            <button type="button" data-panel="0">Update</button>
+            <button type="button" id="tvTickerSelect0" class="ticker-select-trigger" data-panel="0" data-action="ticker-menu" aria-haspopup="listbox" aria-expanded="false">Select ticker</button>
+            <button type="button" data-panel="0" data-action="add-ticker" class="ticker-add-btn">Add Ticker</button>
           </div>
           <div class="tv-widget" id="tvWidget0"></div>
         </div>
@@ -51,7 +52,8 @@
           <div class="tv-panel-header">
             <input id="tvTicker1" type="text" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
             <button type="button" data-panel="1" data-action="theater" class="dashboard-theater-toggle-btn">Theater Mode</button>
-            <button type="button" data-panel="1">Update</button>
+            <button type="button" id="tvTickerSelect1" class="ticker-select-trigger" data-panel="1" data-action="ticker-menu" aria-haspopup="listbox" aria-expanded="false">Select ticker</button>
+            <button type="button" data-panel="1" data-action="add-ticker" class="ticker-add-btn">Add Ticker</button>
           </div>
           <div class="tv-widget" id="tvWidget1"></div>
         </div>
@@ -59,7 +61,8 @@
           <div class="tv-panel-header">
             <input id="tvTicker2" type="text" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
             <button type="button" data-panel="2" data-action="theater" class="dashboard-theater-toggle-btn">Theater Mode</button>
-            <button type="button" data-panel="2">Update</button>
+            <button type="button" id="tvTickerSelect2" class="ticker-select-trigger" data-panel="2" data-action="ticker-menu" aria-haspopup="listbox" aria-expanded="false">Select ticker</button>
+            <button type="button" data-panel="2" data-action="add-ticker" class="ticker-add-btn">Add Ticker</button>
           </div>
           <div class="tv-widget" id="tvWidget2"></div>
         </div>
@@ -67,7 +70,8 @@
           <div class="tv-panel-header">
             <input id="tvTicker3" type="text" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
             <button type="button" data-panel="3" data-action="theater" class="dashboard-theater-toggle-btn">Theater Mode</button>
-            <button type="button" data-panel="3">Update</button>
+            <button type="button" id="tvTickerSelect3" class="ticker-select-trigger" data-panel="3" data-action="ticker-menu" aria-haspopup="listbox" aria-expanded="false">Select ticker</button>
+            <button type="button" data-panel="3" data-action="add-ticker" class="ticker-add-btn">Add Ticker</button>
           </div>
           <div class="tv-widget" id="tvWidget3"></div>
         </div>

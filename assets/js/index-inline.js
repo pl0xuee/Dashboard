@@ -691,14 +691,52 @@
           }
       }
     }
+    function getUserTimeZone() {
+      try {
+        const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (typeof zone === 'string' && zone.trim()) return zone;
+      } catch (_) {
+        // Fallback handled by caller.
+      }
+      return null;
+    }
+
+    function formatTimeZoneLabel(zone) {
+      if (!zone) return 'Local';
+
+      try {
+        const parts = new Intl.DateTimeFormat('en-US', {
+          timeZone: zone,
+          timeZoneName: 'short'
+        }).formatToParts(new Date());
+
+        const tzPart = parts.find((part) => part.type === 'timeZoneName');
+        if (tzPart && tzPart.value) return tzPart.value;
+      } catch (_) {
+        // Fallback handled below.
+      }
+
+      return zone;
+    }
+
     function updateClock() {
+      const zone = getUserTimeZone();
+      const titleEl = document.getElementById('clock-title');
+      if (titleEl) {
+        titleEl.textContent = `Time (${formatTimeZoneLabel(zone)})`;
+      }
+
       const options = {
-        timeZone: 'America/Los_Angeles',
         hour: 'numeric',
         minute: '2-digit',
         second: '2-digit',
         hour12: true
       };
+
+      if (zone) {
+        options.timeZone = zone;
+      }
+
       document.getElementById('clock').textContent = new Date().toLocaleTimeString('en-US', options);
     }
 

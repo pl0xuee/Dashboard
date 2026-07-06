@@ -12,6 +12,27 @@ if (!window.__dashboardWidgetsInitialized) {
   const YAHOO_RATE_LIMIT_COOLDOWN_MS = 120 * 1000;
   const CHART_CACHE_TTL_MS = 15 * 60 * 1000;
   const CHART_CACHE_KEY_PREFIX = 'dashboardChartCache:v3:';
+  const CUSTOM_TICKERS_STORAGE_KEY = 'dashboardCustomTickers:v1';
+  const MAX_VISIBLE_TICKER_OPTIONS = 10;
+  const INITIAL_VISIBLE_TICKER_OPTIONS = 6;
+  const TOP_TICKER_OPTIONS = [
+    { value: 'AAPL', label: 'AAPL - Apple', group: 'Stocks' },
+    { value: 'MSFT', label: 'MSFT - Microsoft', group: 'Stocks' },
+    { value: 'NVDA', label: 'NVDA - Nvidia', group: 'Stocks' },
+    { value: 'AMZN', label: 'AMZN - Amazon', group: 'Stocks' },
+    { value: 'GOOGL', label: 'GOOGL - Alphabet', group: 'Stocks' },
+    { value: 'META', label: 'META - Meta', group: 'Stocks' },
+    { value: 'TSLA', label: 'TSLA - Tesla', group: 'Stocks' },
+    { value: 'SPCX', label: 'SPCX - SpaceX', group: 'Stocks' },
+    { value: 'SPY', label: 'SPY - S&P 500 ETF', group: 'ETFs' },
+    { value: 'QQQ', label: 'QQQ - Nasdaq 100 ETF', group: 'ETFs' },
+    { value: 'OIL', label: 'OIL - WTI Crude Oil', group: 'Commodities' },
+    { value: 'BTCUSD', label: 'BTCUSD - Bitcoin', group: 'Crypto' },
+    { value: 'ETHUSD', label: 'ETHUSD - Ethereum', group: 'Crypto' },
+    { value: 'XRPUSD', label: 'XRPUSD - XRP', group: 'Crypto' },
+    { value: 'BNBUSD', label: 'BNBUSD - BNB', group: 'Crypto' },
+    { value: 'SOLUSD', label: 'SOLUSD - Solana', group: 'Crypto' }
+  ];
   const YAHOO_SYMBOL_MAP = {
     CL: 'CL=F',
     'CRUDE OIL': 'CL=F',
@@ -22,6 +43,8 @@ if (!window.__dashboardWidgetsInitialized) {
     'BRENT OIL': 'BZ=F',
     BTCUSD: 'BTC-USD',
     ETHUSD: 'ETH-USD',
+    XRPUSD: 'XRP-USD',
+    BNBUSD: 'BNB-USD',
     SOLUSD: 'SOL-USD'
   };
   let yahooRequestQueue = Promise.resolve();
@@ -31,6 +54,8 @@ if (!window.__dashboardWidgetsInitialized) {
   let dashboardTheaterScope = 'all';
   let dashboardTheaterPanelIndex = null;
   let dashboardTheaterMenuPanelIndex = null;
+  let tickerMenuPanelIndex = null;
+  let tickerMenuOptions = [];
   const dashboardChartsByPanel = new Map();
   let dashboardResizeRaf = 0;
 
@@ -315,6 +340,269 @@ if (!window.__dashboardWidgetsInitialized) {
       document.getElementById('tvTicker2'),
       document.getElementById('tvTicker3')
     ];
+  }
+
+  function getTickerSelects() {
+    return [
+      document.getElementById('tvTickerSelect0'),
+      document.getElementById('tvTickerSelect1'),
+      document.getElementById('tvTickerSelect2'),
+      document.getElementById('tvTickerSelect3')
+    ];
+  }
+
+  function normalizeCustomTickerValue(rawValue) {
+    return String(rawValue || '')
+      .trim()
+      .toUpperCase()
+      .replace(/\s+/g, '');
+  }
+
+  function readCustomTickers() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(CUSTOM_TICKERS_STORAGE_KEY) || '[]');
+      if (!Array.isArray(parsed)) return [];
+      return parsed
+        .map((value) => normalizeCustomTickerValue(value))
+        .filter(Boolean);
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function writeCustomTickers(tickers) {
+    try {
+      localStorage.setItem(CUSTOM_TICKERS_STORAGE_KEY, JSON.stringify(tickers));
+    } catch (_) {
+      // Ignore storage failures and continue.
+    }
+  }
+
+  function buildTickerOptionEntries() {
+    const seen = new Set();
+    const options = [];
+
+    TOP_TICKER_OPTIONS.forEach((entry) => {
+      const value = normalizeCustomTickerValue(entry.value);
+      if (!value || seen.has(value)) return;
+      seen.add(value);
+      options.push({ value, label: entry.label, group: entry.group || 'General', isCustom: false });
+    });
+
+    readCustomTickers().forEach((ticker) => {
+      if (!ticker || seen.has(ticker)) return;
+      seen.add(ticker);
+      options.push({ value: ticker, label: `${ticker} - Custom`, group: 'Custom', isCustom: true });
+    });
+
+    return options;
+  }
+
+  function getTickerOptionByValue(value) {
+    const normalizedValue = normalizeCustomTickerValue(value);
+    if (!normalizedValue) return null;
+    return tickerMenuOptions.find((entry) => entry.value === normalizedValue) || null;
+  }
+
+  function setTickerTriggerLabel(trigger, tickerValue) {
+    if (!trigger) return;
+
+    const normalizedTicker = normalizeCustomTickerValue(tickerValue);
+    trigger.dataset.value = normalizedTicker;
+
+    if (!normalizedTicker) {
+      trigger.textContent = 'Select ticker';
+      return;
+    }
+
+    const knownOption = getTickerOptionByValue(normalizedTicker);
+    trigger.textContent = knownOption ? knownOption.label : `${normalizedTicker} - Custom`;
+  }
+
+  function refreshTickerSelects(tickerInputs) {
+    tickerMenuOptions = buildTickerOptionEntries();
+    getTickerSelects().forEach((trigger, index) => {
+      if (!trigger) return;
+      const fallbackTicker = defaultTvTickers[index] || '';
+      const selected = trigger.dataset.value || (tickerInputs[index] && tickerInputs[index].value) || fallbackTicker;
+      setTickerTriggerLabel(trigger, selected);
+      trigger.setAttribute('aria-expanded', 'false');
+    });
+  }
+
+  function getTickerMenu() {
+    let menu = document.getElementById('dashboardTickerMenu');
+    if (menu) return menu;
+
+    menu = document.createElement('div');
+    menu.id = 'dashboardTickerMenu';
+    menu.className = 'ticker-overlay-menu';
+    menu.setAttribute('role', 'listbox');
+    menu.hidden = true;
+    document.body.appendChild(menu);
+    return menu;
+  }
+
+  function closeTickerMenu() {
+    const menu = document.getElementById('dashboardTickerMenu');
+    if (menu) {
+      menu.hidden = true;
+      menu.innerHTML = '';
+      menu.style.top = '';
+      menu.style.left = '';
+      menu.style.width = '';
+    }
+
+    getTickerSelects().forEach((trigger) => {
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    });
+
+    tickerMenuPanelIndex = null;
+  }
+
+  function openTickerMenu(trigger, panelIndex, tickerInputs) {
+    if (!trigger) return;
+
+    if (tickerMenuPanelIndex === panelIndex) {
+      closeTickerMenu();
+      return;
+    }
+
+    const menu = getTickerMenu();
+    tickerMenuPanelIndex = panelIndex;
+    menu.innerHTML = '';
+
+    const selectedTicker = normalizeCustomTickerValue(
+      (tickerInputs[panelIndex] && tickerInputs[panelIndex].value)
+      || trigger.dataset.value
+      || defaultTvTickers[panelIndex]
+      || ''
+    );
+
+    let lastGroup = '';
+    tickerMenuOptions.forEach((entry) => {
+      const groupName = entry.group || 'General';
+      if (groupName !== lastGroup) {
+        const groupHeader = document.createElement('div');
+        groupHeader.className = 'ticker-overlay-group-header';
+        groupHeader.textContent = groupName;
+        menu.appendChild(groupHeader);
+        lastGroup = groupName;
+      }
+
+      const optionButton = document.createElement('button');
+      optionButton.type = 'button';
+      optionButton.className = 'ticker-overlay-option';
+      optionButton.setAttribute('role', 'option');
+      optionButton.dataset.value = entry.value;
+      optionButton.textContent = entry.label;
+      if (entry.value === selectedTicker) {
+        optionButton.classList.add('is-active');
+      }
+
+      optionButton.addEventListener('click', () => {
+        const ticker = normalizeCustomTickerValue(optionButton.dataset.value);
+        if (!ticker) return;
+
+        const symbolInput = tickerInputs[panelIndex];
+        if (symbolInput) {
+          symbolInput.dataset.lastInput = ticker;
+          symbolInput.value = ticker;
+        }
+
+        setTickerTriggerLabel(trigger, ticker);
+        createTradingViewWidget(panelIndex, ticker);
+        closeTickerMenu();
+      });
+
+      if (!entry.isCustom) {
+        menu.appendChild(optionButton);
+        return;
+      }
+
+      const row = document.createElement('div');
+      row.className = 'ticker-overlay-row';
+      row.appendChild(optionButton);
+
+      const deleteButton = document.createElement('button');
+      deleteButton.type = 'button';
+      deleteButton.className = 'ticker-overlay-delete';
+      deleteButton.title = `Delete ${entry.value}`;
+      deleteButton.setAttribute('aria-label', `Delete ${entry.value}`);
+      deleteButton.textContent = 'x';
+      deleteButton.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+
+        removeCustomTicker(entry.value);
+        refreshTickerSelects(tickerInputs);
+
+        tickerMenuPanelIndex = null;
+        openTickerMenu(trigger, panelIndex, tickerInputs);
+      });
+
+      row.appendChild(deleteButton);
+      menu.appendChild(row);
+    });
+
+    let totalGridRows = 0;
+    let currentGroup = '';
+    let itemsInGroup = 0;
+    tickerMenuOptions.forEach((entry) => {
+      const groupName = entry.group || 'General';
+      if (groupName !== currentGroup) {
+        if (itemsInGroup > 0) {
+          totalGridRows += Math.ceil(itemsInGroup / 2);
+          itemsInGroup = 0;
+        }
+        totalGridRows += 1; // Group header row.
+        currentGroup = groupName;
+      }
+      itemsInGroup += 1;
+    });
+    if (itemsInGroup > 0) {
+      totalGridRows += Math.ceil(itemsInGroup / 2);
+    }
+    totalGridRows = Math.max(1, totalGridRows);
+
+    const visibleRows = Math.min(INITIAL_VISIBLE_TICKER_OPTIONS, totalGridRows);
+    menu.style.setProperty('--ticker-visible-rows', String(visibleRows));
+
+    const rect = trigger.getBoundingClientRect();
+    const width = Math.max(360, Math.min(520, Math.round((rect.width * 2) + 120)));
+    const viewportPadding = 10;
+    const left = Math.max(viewportPadding, Math.min(Math.round(rect.left), window.innerWidth - width - viewportPadding));
+    const top = Math.max(viewportPadding, Math.min(Math.round(rect.bottom + 6), window.innerHeight - 390));
+
+    menu.style.width = `${width}px`;
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+    menu.hidden = false;
+
+    getTickerSelects().forEach((item) => {
+      if (item) item.setAttribute('aria-expanded', item === trigger ? 'true' : 'false');
+    });
+  }
+
+  function addCustomTicker(rawValue) {
+    const normalized = normalizeCustomTickerValue(rawValue);
+    if (!normalized) return null;
+
+    const nextTickers = readCustomTickers();
+    if (!nextTickers.includes(normalized) && !TOP_TICKER_OPTIONS.some((entry) => normalizeCustomTickerValue(entry.value) === normalized)) {
+      nextTickers.push(normalized);
+      writeCustomTickers(nextTickers);
+    }
+
+    return normalized;
+  }
+
+  function removeCustomTicker(rawValue) {
+    const normalized = normalizeCustomTickerValue(rawValue);
+    if (!normalized) return;
+
+    const filtered = readCustomTickers().filter((ticker) => ticker !== normalized);
+    writeCustomTickers(filtered);
   }
 
   function getYahooChartUrl(symbol) {
@@ -1192,11 +1480,13 @@ if (!window.__dashboardWidgetsInitialized) {
 
   function initializeTradingViewPage() {
     const tvTickerInputs = getTickerInputs();
+    const tickerSelects = getTickerSelects();
     const tradingviewGrid = document.getElementById('tradingviewGrid');
     if (tradingviewGrid) {
       tradingviewGrid.classList.add('show');
     }
     renderDefaultTradingViewWidgets();
+    refreshTickerSelects(tvTickerInputs);
 
     const updatePanel = (index) => {
       const symbolInput = tvTickerInputs[index];
@@ -1205,6 +1495,7 @@ if (!window.__dashboardWidgetsInitialized) {
       if (symbol) {
         symbolInput.dataset.lastInput = symbol;
         symbolInput.value = symbol;
+        setTickerTriggerLabel(tickerSelects[index], symbol);
         createTradingViewWidget(index, symbol);
       }
     };
@@ -1231,6 +1522,33 @@ if (!window.__dashboardWidgetsInitialized) {
           event.preventDefault();
           event.stopPropagation();
           openDashboardTheaterMenu(button, Number(button.dataset.panel));
+          return;
+        }
+
+        if (button.dataset.action === 'add-ticker') {
+          const panelIndex = Number(button.dataset.panel);
+          const rawTicker = window.prompt('Enter a ticker symbol to add (example: AMD, XOM, CL=F):', '');
+          const ticker = addCustomTicker(rawTicker);
+          if (!ticker) return;
+
+          refreshTickerSelects(tvTickerInputs);
+          setTickerTriggerLabel(tickerSelects[panelIndex], ticker);
+
+          const symbolInput = tvTickerInputs[panelIndex];
+          if (symbolInput) {
+            symbolInput.dataset.lastInput = ticker;
+            symbolInput.value = ticker;
+          }
+
+          createTradingViewWidget(panelIndex, ticker);
+          closeTickerMenu();
+          return;
+        }
+
+        if (button.dataset.action === 'ticker-menu') {
+          const panelIndex = Number(button.dataset.panel);
+          refreshTickerSelects(tvTickerInputs);
+          openTickerMenu(button, panelIndex, tvTickerInputs);
           return;
         }
 
@@ -1266,6 +1584,7 @@ if (!window.__dashboardWidgetsInitialized) {
         setDashboardTheaterMode(false, dashboardTheaterScope, dashboardTheaterPanelIndex);
       } else if (event.key === 'Escape') {
         closeDashboardTheaterMenu();
+        closeTickerMenu();
       }
     });
 
@@ -1273,8 +1592,13 @@ if (!window.__dashboardWidgetsInitialized) {
       const target = event.target;
       const clickedTheaterToggle = target && target.closest && target.closest('.dashboard-theater-toggle-btn');
       const clickedTheaterMenu = target && target.closest && target.closest('#dashboardTheaterMenu');
+      const clickedTickerToggle = target && target.closest && target.closest('.ticker-select-trigger');
+      const clickedTickerMenu = target && target.closest && target.closest('#dashboardTickerMenu');
       if (!clickedTheaterToggle && !clickedTheaterMenu) {
         closeDashboardTheaterMenu();
+      }
+      if (!clickedTickerToggle && !clickedTickerMenu) {
+        closeTickerMenu();
       }
     });
 
@@ -1287,7 +1611,10 @@ if (!window.__dashboardWidgetsInitialized) {
       observer.observe(tradingviewGrid);
     }
 
-    window.addEventListener('resize', scheduleDashboardChartsResize);
+    window.addEventListener('resize', () => {
+      closeTickerMenu();
+      scheduleDashboardChartsResize();
+    });
   }
 
   document.addEventListener('DOMContentLoaded', initializeTradingViewPage);
