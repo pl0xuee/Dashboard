@@ -78,6 +78,10 @@ body {
   scrollbar-gutter: auto;
 }
 
+html:has(body.home-page) {
+  scrollbar-gutter: stable;
+}
+
 /* Standard body padding and box-sizing for all pages */
 body {
   padding: 20px;
@@ -1749,9 +1753,12 @@ body.modern-v3 .tv-panel-header button {
     body.modern-v3.stream-page .page-header,
     body.modern-v3.media-page header,
     body.modern-v3.games-page header {
-      background: linear-gradient(180deg, rgba(8, 12, 22, 0.92), rgba(8, 13, 24, 0.86));
-      border: 1px solid rgba(123, 160, 221, 0.26);
-      box-shadow: 0 20px 44px rgba(3, 6, 14, 0.46), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      background:
+        linear-gradient(180deg, rgba(21, 28, 40, 0.94), rgba(13, 18, 27, 0.97)),
+        radial-gradient(circle at 15% 10%, rgba(241, 170, 74, 0.12), transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(89, 177, 229, 0.12), transparent 36%);
+      border: 1px solid rgba(212, 228, 255, 0.14);
+      box-shadow: 0 18px 40px rgba(3, 7, 15, 0.42);
       border-radius: 18px;
       padding: 12px 14px;
     }
