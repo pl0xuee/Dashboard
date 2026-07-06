@@ -1543,6 +1543,26 @@ body.modern-v3 .tv-panel-header button {
     }
     .clock-value {
       font-family: 'Inter', monospace;
+      margin: 4px 0 0;
+      padding: 8px 10px;
+      border: 1px solid rgba(166, 189, 224, 0.18);
+      border-radius: 10px;
+      background: linear-gradient(180deg, rgba(23, 31, 44, 0.78), rgba(14, 21, 31, 0.84));
+      text-align: center;
+      font-size: 1.55rem;
+      font-weight: 750;
+      letter-spacing: 0.03em;
+      color: #e8f1ff;
+      font-variant-numeric: tabular-nums;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+    #clock-title.home-box-title {
+      margin-bottom: 8px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: #9fb1cb;
     }
     .nascar-meta {
       display: grid;
