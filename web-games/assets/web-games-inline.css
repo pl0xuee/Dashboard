@@ -1,33 +1,7 @@
     html,
-    body {
-      scrollbar-width: thin;
-      scrollbar-color: rgba(210, 168, 108, 0.72) rgba(13, 19, 29, 0.92);
-    }
-
+    body,
     * {
-      scrollbar-width: thin;
-      scrollbar-color: rgba(210, 168, 108, 0.68) rgba(13, 19, 29, 0.9);
-    }
-
-    *::-webkit-scrollbar {
-      width: 11px;
-      height: 11px;
-    }
-
-    *::-webkit-scrollbar-track {
-      background: linear-gradient(180deg, rgba(12, 17, 26, 0.94), rgba(9, 13, 20, 0.96));
-      border-radius: 999px;
-    }
-
-    *::-webkit-scrollbar-thumb {
-      background: linear-gradient(180deg, rgba(210, 168, 108, 0.9), rgba(123, 91, 49, 0.92));
-      border: 2px solid rgba(13, 18, 27, 0.9);
-      border-radius: 999px;
-      box-shadow: inset 0 1px 0 rgba(255, 237, 205, 0.22);
-    }
-
-    *::-webkit-scrollbar-thumb:hover {
-      background: linear-gradient(180deg, rgba(230, 191, 127, 0.94), rgba(142, 106, 57, 0.96));
+      scrollbar-width: auto;
     }
 
     .games-main {
