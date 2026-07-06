@@ -719,6 +719,16 @@ if (!window.__dashboardWidgetsInitialized) {
     return upperSymbol === 'CL=F' || upperSymbol === 'BZ=F';
   }
 
+  function isCryptoSymbol(symbol) {
+    const normalized = normalizeChartSymbol(symbol);
+    const upperSymbol = String(normalized || '').trim().toUpperCase();
+    return upperSymbol === 'BTC-USD'
+      || upperSymbol === 'ETH-USD'
+      || upperSymbol === 'XRP-USD'
+      || upperSymbol === 'BNB-USD'
+      || upperSymbol === 'SOL-USD';
+  }
+
   function getTradingViewSymbol(symbol) {
     const normalized = normalizeChartSymbol(symbol);
     if (normalized === 'CL=F') {
@@ -1053,11 +1063,27 @@ if (!window.__dashboardWidgetsInitialized) {
     return { candles: finalCandles, volumes: finalVolumes };
   }
 
-  function getInitialLogicalRange(result, candles) {
+  function getInitialLogicalRange(result, candles, symbol = '') {
     const firstBar = candles[0];
     const lastBar = candles[candles.length - 1];
     if (!firstBar || !lastBar) {
       return null;
+    }
+
+    // Crypto trades 24/7, so keep a rolling window ending at the most recent bar.
+    if (isCryptoSymbol(symbol)) {
+      const rollingStart = Math.max(firstBar.time, lastBar.time - CHART_WINDOW_SECONDS);
+      const startIndex = candles.findIndex((bar) => bar.time >= rollingStart);
+      const endIndex = candles.length - 1;
+
+      if (startIndex < 0 || endIndex < 0) {
+        return null;
+      }
+
+      return {
+        from: Math.max(0, startIndex - 1),
+        to: endIndex + 2
+      };
     }
 
     // Default viewport is current regular trading hours; history still includes 48h.
@@ -1221,7 +1247,7 @@ if (!window.__dashboardWidgetsInitialized) {
       volumeSeries.setData(cachedChartData.volumes);
       updateChartTooltip(toolTip, symbol, cachedChartData.candles, cachedResult);
 
-      const initialRange = getInitialLogicalRange(cachedResult, cachedChartData.candles);
+      const initialRange = getInitialLogicalRange(cachedResult, cachedChartData.candles, symbol);
       if (initialRange) {
         chart.timeScale().setVisibleLogicalRange(initialRange);
       } else {
@@ -1303,7 +1329,7 @@ if (!window.__dashboardWidgetsInitialized) {
         setCachedChartData(ticker, candles, volumes, result);
         window[`chartRateLimitCount${index}`] = 0;
         if (!window[`hasChartData${index}`]) {
-          const initialRange = getInitialLogicalRange(result, candles);
+          const initialRange = getInitialLogicalRange(result, candles, ticker);
           if (initialRange) {
             chart.timeScale().setVisibleLogicalRange(initialRange);
           } else {
@@ -1332,7 +1358,7 @@ if (!window.__dashboardWidgetsInitialized) {
           volumeSeries.setData(cachedChartData.volumes);
           updateChartTooltip(toolTip, ticker, cachedChartData.candles, cachedResult);
 
-          const initialRange = getInitialLogicalRange(cachedResult, cachedChartData.candles);
+          const initialRange = getInitialLogicalRange(cachedResult, cachedChartData.candles, ticker);
           if (initialRange) {
             chart.timeScale().setVisibleLogicalRange(initialRange);
           } else {
