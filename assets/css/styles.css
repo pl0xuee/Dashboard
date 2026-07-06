@@ -1430,6 +1430,39 @@ body.modern-v3 .tv-panel-header button {
       overflow: visible;
       padding-right: 6px;
     }
+    .news-list {
+      padding-left: 0;
+      margin: 0;
+      list-style: none;
+    }
+    .news-item-card {
+      margin-bottom: 10px;
+      padding: 11px 11px 9px 11px;
+      border: 1px solid rgba(172, 197, 233, 0.14);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(20, 28, 39, 0.72), rgba(13, 19, 29, 0.78));
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
+      border-left: 2px solid rgba(24, 216, 255, 0.28);
+    }
+    .news-item-link {
+      color: #e7eef8;
+      text-decoration: none;
+      font-size: 1.03rem;
+      line-height: 1.5;
+      font-weight: 600;
+      display: block;
+      transition: color 0.2s ease;
+    }
+    .news-item-link:hover {
+      color: #f4f9ff;
+    }
+    .news-item-meta {
+      font-size: 0.75rem;
+      color: #92a2bb;
+      margin-top: 7px;
+      font-family: monospace;
+      letter-spacing: 0.02em;
+    }
     .news-toggle {
       display: none;
       margin-top: 20px;
