@@ -1,0 +1,17 @@
+# Backup files (local only, not versioned)
+*.backup.*
+index.html.backup.*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Dependencies
+node_modules/
+
+# Logs
+*.log
