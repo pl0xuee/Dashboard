@@ -52,6 +52,7 @@
     const backToGridBtn = document.getElementById('backToGridBtn');
     const rpgFullscreenBtn = document.getElementById('rpgFullscreenBtn');
     const rpgTheaterExitBtn = document.getElementById('rpgTheaterExitBtn');
+    const retroDoomTheaterExitBtn = document.getElementById('retroDoomTheaterExitBtn');
     const restartActiveBtn = document.getElementById('restartActiveBtn');
     const tetrisPanel = document.getElementById('tetrisPanel');
     const snakePanel = document.getElementById('snakePanel');
@@ -353,6 +354,7 @@
     let whackSwapTimer = 0;
     let activeGame = null;
     let rpgTheaterMode = false;
+    let retroDoomTheaterMode = false;
     const scheduledGameLoops = {
       tetris: false,
       snake: false,
@@ -4179,9 +4181,17 @@
       }
     }
 
-    function updateRpgFullscreenButton() {
+    function updateActiveTheaterButton() {
       if (!rpgFullscreenBtn) return;
-      rpgFullscreenBtn.textContent = rpgTheaterMode ? 'Back to Games' : 'Theater Mode';
+      if (activeGame === 'rpg') {
+        rpgFullscreenBtn.textContent = rpgTheaterMode ? 'Back to Games' : 'Theater Mode';
+        return;
+      }
+      if (activeGame === 'retrodoom') {
+        rpgFullscreenBtn.textContent = retroDoomTheaterMode ? 'Back to Games' : 'Theater Mode';
+        return;
+      }
+      rpgFullscreenBtn.textContent = 'Theater Mode';
     }
 
     function setRpgTheaterMode(nextValue) {
@@ -4190,17 +4200,57 @@
       rpgPanel.classList.toggle('rpg-theater-mode', rpgTheaterMode);
       document.body.classList.toggle('rpg-theater-mode', rpgTheaterMode);
       document.documentElement.classList.toggle('rpg-theater-mode', rpgTheaterMode);
-      updateRpgFullscreenButton();
+      updateActiveTheaterButton();
       syncActiveGameLoop();
       requestAnimationFrame(resizeGameCanvases);
     }
 
-    function toggleRpgFullscreen() {
-      if (rpgTheaterMode) {
-        setActiveGame(null);
+    function syncRetroDoomFrameViewport() {
+      if (!retroDoomFrame || !retroDoomFrame.contentWindow) return;
+      requestAnimationFrame(() => {
+        try {
+          retroDoomFrame.contentWindow.dispatchEvent(new Event('resize'));
+        } catch (_) {
+          // Same-origin expected; ignore if not ready yet.
+        }
+      });
+      requestAnimationFrame(() => {
+        try {
+          retroDoomFrame.contentWindow.dispatchEvent(new Event('resize'));
+        } catch (_) {
+          // Same-origin expected; ignore if not ready yet.
+        }
+      });
+    }
+
+    function setRetroDoomTheaterMode(nextValue) {
+      if (!retroDoomPanel || activeGame !== 'retrodoom') return;
+      retroDoomTheaterMode = Boolean(nextValue);
+      retroDoomPanel.classList.toggle('retrodoom-theater-mode', retroDoomTheaterMode);
+      document.body.classList.toggle('retrodoom-theater-mode', retroDoomTheaterMode);
+      document.documentElement.classList.toggle('retrodoom-theater-mode', retroDoomTheaterMode);
+      updateActiveTheaterButton();
+      syncActiveGameLoop();
+      requestAnimationFrame(resizeGameCanvases);
+      syncRetroDoomFrameViewport();
+    }
+
+    function toggleActiveGameTheaterMode() {
+      if (activeGame === 'rpg') {
+        if (rpgTheaterMode) {
+          setActiveGame(null);
+          return;
+        }
+        setRpgTheaterMode(true);
         return;
       }
-      setRpgTheaterMode(true);
+      if (activeGame === 'retrodoom') {
+        if (retroDoomTheaterMode) {
+          setActiveGame(null);
+          return;
+        }
+        setRetroDoomTheaterMode(true);
+      }
     }
 
     document.addEventListener('visibilitychange', () => {
@@ -4231,17 +4281,23 @@
       const gameplayActive = anyActive && !rpgActive;
       document.body.classList.toggle('rpg-active-mode', rpgActive);
       document.documentElement.classList.toggle('rpg-active-mode', rpgActive);
+      document.body.classList.toggle('retrodoom-active-mode', retroDoomActive);
+      document.documentElement.classList.toggle('retrodoom-active-mode', retroDoomActive);
       document.body.classList.toggle('gameplay-active-mode', gameplayActive);
       document.documentElement.classList.toggle('gameplay-active-mode', gameplayActive);
       rpgTheaterMode = rpgActive;
+      retroDoomTheaterMode = retroDoomActive;
       rpgPanel.classList.toggle('rpg-theater-mode', rpgActive && rpgTheaterMode);
       document.body.classList.toggle('rpg-theater-mode', rpgActive && rpgTheaterMode);
       document.documentElement.classList.toggle('rpg-theater-mode', rpgActive && rpgTheaterMode);
+      retroDoomPanel.classList.toggle('retrodoom-theater-mode', retroDoomActive && retroDoomTheaterMode);
+      document.body.classList.toggle('retrodoom-theater-mode', retroDoomActive && retroDoomTheaterMode);
+      document.documentElement.classList.toggle('retrodoom-theater-mode', retroDoomActive && retroDoomTheaterMode);
       if (document.pointerLockElement === doomCanvas && document.exitPointerLock) {
         document.exitPointerLock();
       }
-      rpgFullscreenBtn.classList.toggle('hidden', !rpgActive);
-      updateRpgFullscreenButton();
+      rpgFullscreenBtn.classList.toggle('hidden', !(rpgActive || retroDoomActive));
+      updateActiveTheaterButton();
       gamePickerEl.classList.toggle('hidden', anyActive);
       gamePickerEl.classList.remove('gameplay-compact');
       gameToolbarActionsEl.classList.toggle('visible', anyActive);
@@ -4405,6 +4461,7 @@
 
       syncActiveGameLoop();
       requestAnimationFrame(resizeGameCanvases);
+      if (retroDoomActive) syncRetroDoomFrameViewport();
     }
 
     pickTetrisBtn.addEventListener('click', () => setActiveGame('tetris'));
@@ -4421,17 +4478,30 @@
     if (pickMineBtn) pickMineBtn.addEventListener('click', () => setActiveGame('mine'));
     backToGridBtn.addEventListener('click', () => setActiveGame(null));
     rpgFullscreenBtn.addEventListener('click', () => {
-      toggleRpgFullscreen();
+      toggleActiveGameTheaterMode();
     });
     if (rpgTheaterExitBtn) {
       rpgTheaterExitBtn.addEventListener('click', () => {
         if (rpgTheaterMode) setActiveGame(null);
       });
     }
+    if (retroDoomTheaterExitBtn) {
+      retroDoomTheaterExitBtn.addEventListener('click', () => {
+        if (retroDoomTheaterMode) setActiveGame(null);
+      });
+    }
     restartActiveBtn.addEventListener('click', restartActiveGame);
     if (rpgFrame) {
       rpgFrame.addEventListener('load', () => {
         if (activeGame === 'rpg') requestAnimationFrame(resizeGameCanvases);
+      });
+    }
+    if (retroDoomFrame) {
+      retroDoomFrame.addEventListener('load', () => {
+        if (activeGame === 'retrodoom') {
+          requestAnimationFrame(resizeGameCanvases);
+          syncRetroDoomFrameViewport();
+        }
       });
     }
 
@@ -4496,6 +4566,12 @@
       const key = event.key.toLowerCase();
 
       if (activeGame === 'rpg' && key === 'escape' && rpgTheaterMode) {
+        event.preventDefault();
+        setActiveGame(null);
+        return;
+      }
+
+      if (activeGame === 'retrodoom' && key === 'escape' && retroDoomTheaterMode) {
         event.preventDefault();
         setActiveGame(null);
         return;

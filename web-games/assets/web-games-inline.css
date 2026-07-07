@@ -1287,6 +1287,19 @@
       display: none;
     }
 
+    .retrodoom-theater-exit {
+      display: none;
+      min-width: 170px;
+      position: fixed;
+      top: 10px;
+      left: 50%;
+      z-index: 36;
+    }
+
+    .retrodoom-theater-exit-trigger {
+      display: none;
+    }
+
     #rpgFrame {
       width: 100%;
       height: min(82vh, calc(100vh - 190px));
@@ -1483,6 +1496,93 @@
     body.rpg-active-mode.rpg-theater-mode .games-main,
     body.rpg-active-mode.rpg-theater-mode .main,
     body.rpg-active-mode.rpg-theater-mode .games-shell {
+      overflow: visible;
+      margin: 0;
+      padding: 0;
+      max-width: none;
+      height: 100dvh;
+    }
+
+    #retroDoomPanel.active.retrodoom-theater-mode {
+      position: fixed;
+      inset: 0;
+      border-radius: 0;
+      border: 0;
+      padding: 0;
+      background: #070b12;
+      display: grid;
+      grid-template-rows: minmax(0, 1fr);
+      gap: 0;
+      z-index: 30;
+    }
+
+    #retroDoomPanel.active.retrodoom-theater-mode .games-title,
+    #retroDoomPanel.active.retrodoom-theater-mode .control-hint {
+      display: none;
+    }
+
+    #retroDoomPanel.active.retrodoom-theater-mode .retro-doom-embed-wrap {
+      margin: 0;
+      border: 0;
+      border-radius: 0;
+      box-shadow: none;
+      height: 100%;
+      width: 100%;
+    }
+
+    #retroDoomPanel.active.retrodoom-theater-mode #retroDoomFrame {
+      min-height: 0;
+      height: 100%;
+      width: 100%;
+      border-radius: 0;
+    }
+
+    #retroDoomPanel.active.retrodoom-theater-mode .retrodoom-theater-exit-trigger {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 50%;
+      width: 220px;
+      height: 52px;
+      transform: translateX(-50%);
+      z-index: 35;
+      background: transparent;
+    }
+
+    #retroDoomPanel.active.retrodoom-theater-mode .retrodoom-theater-exit {
+      display: inline-flex;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-50%) translateY(-18px);
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    #retroDoomPanel.active.retrodoom-theater-mode .retrodoom-theater-exit-trigger:hover + .retrodoom-theater-exit,
+    #retroDoomPanel.active.retrodoom-theater-mode .retrodoom-theater-exit:hover,
+    #retroDoomPanel.active.retrodoom-theater-mode .retrodoom-theater-exit:focus-visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    body.retrodoom-active-mode.retrodoom-theater-mode #rpgFullscreenBtn {
+      display: none;
+    }
+
+    body.retrodoom-active-mode.retrodoom-theater-mode > .page {
+      margin: 0;
+      padding: 0;
+      height: 100dvh;
+    }
+
+    body.retrodoom-active-mode.retrodoom-theater-mode > .page > header,
+    body.retrodoom-active-mode.retrodoom-theater-mode .games-shell > section:first-child {
+      display: none;
+    }
+
+    body.retrodoom-active-mode.retrodoom-theater-mode .games-main,
+    body.retrodoom-active-mode.retrodoom-theater-mode .main,
+    body.retrodoom-active-mode.retrodoom-theater-mode .games-shell {
       overflow: visible;
       margin: 0;
       padding: 0;
