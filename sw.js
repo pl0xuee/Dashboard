@@ -1,30 +1,27 @@
-const CACHE_NAME = 'command-center-v54';
+const CACHE_NAME = 'command-center-v55';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
-  '/assets/css/styles.css',
-  '/assets/css/styles.css?v=20260706gridtight1',
+  '/assets/css/styles.css?v=20260706headercolor5',
   '/assets/js/script.js',
-  '/assets/js/index-inline.js',
-  '/assets/js/index-inline.js?v=20260706sentiment1',
+  '/assets/js/index-inline.js?v=20260706marketcalendar1',
   '/manifest.webmanifest',
   '/assets/icons/favicon.svg',
   '/dashboard/',
   '/dashboard/index.html',
-  '/dashboard/assets/dashboard-widgets.js',
-  '/dashboard/assets/dashboard-widgets.js?v=20260706market48h15',
+  '/dashboard/assets/dashboard-widgets.js?v=20260706crypto247a',
   '/stream/',
   '/stream/index.html',
   '/stream/assets/config-inline.js?v=20260630c',
-  '/stream/assets/stream-inline.css?v=20260630ultrap4',
-  '/stream/assets/stream-inline.js?v=20260630ultrap3',
+  '/stream/assets/stream-inline.css?v=20260706theaterexit1',
+  '/stream/assets/stream-inline.js?v=20260706theaterexit1',
   '/media-portal/',
   '/media-portal/index.html',
   '/media-portal/assets/media-inline.js?v=20260630b',
   '/web-games/',
   '/web-games/index.html',
-  '/web-games/assets/web-games-inline.css?v=20260706rpgdefault1',
-  '/web-games/assets/web-games-inline.js?v=20260706rpgdefault1',
+  '/web-games/assets/web-games-inline.css?v=20260706gameplayux27',
+  '/web-games/assets/web-games-inline.js?v=20260706gameplayux15',
   '/web-games/middle-earth-rpg/',
   '/web-games/middle-earth-rpg/index.html',
   '/web-games/middle-earth-rpg/assets/rpg-inline.css?v=20260702refresh1',
@@ -112,8 +109,7 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (isAppShellAsset(requestUrl)) {
-    // Prefer fresh app-shell assets so style/script edits show immediately.
-    event.respondWith(networkFirst(request));
+    event.respondWith(staleWhileRevalidate(request));
     return;
   }
 

@@ -22,6 +22,7 @@
       './Canvas Pictures/rpg.png',
       './rpg.png'
     ];
+    const LOCAL_SCENE_ART_PREFER_WEBP = true;
     const YOUTUBE_SOUNDTRACK_ID = 'stgT4hOG8lU';
     const VERSION = 1;
     const SKILL_TO_ABILITY = {
@@ -382,7 +383,11 @@
       const startIndex = hashSeed(`${seedBase}:scene-art`) % total;
       const ordered = [];
       for (let offset = 0; offset < total; offset += 1) {
-        ordered.push(LOCAL_SCENE_ART_SOURCES[(startIndex + offset) % total]);
+        const source = LOCAL_SCENE_ART_SOURCES[(startIndex + offset) % total];
+        if (LOCAL_SCENE_ART_PREFER_WEBP && /\.png$/i.test(source)) {
+          ordered.push(source.replace(/\.png$/i, '.webp'));
+        }
+        ordered.push(source);
       }
       return ordered;
     }

@@ -285,6 +285,21 @@
       const input = inputElement.value.trim();
       const player = document.getElementById('player');
       const chat = document.getElementById('chat');
+
+      const sanitizeYoutubeId = (value) => {
+        const raw = String(value || '').trim();
+        if (!raw) return '';
+        return raw.replace(/[^A-Za-z0-9_-]/g, '');
+      };
+
+      const mountPlayerIframe = (src) => {
+        player.innerHTML = '';
+        const iframe = document.createElement('iframe');
+        iframe.src = src;
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+        iframe.setAttribute('allowfullscreen', '');
+        player.appendChild(iframe);
+      };
       
       if (!input) return;
       if (input.includes('youtube.com') || input.includes('youtu.be') || input.includes('@')) {
@@ -297,18 +312,25 @@
         } else if (input.includes('/embed/')) {
           videoId = input.split('/embed/')[1].split('?')[0];
         } else if (input.includes('@')) {
-            videoId = input.split('@').pop().split('/')[0];
-            player.innerHTML = `<iframe src="https://www.youtube.com/embed/live_stream?channel=${videoId}&autoplay=1&origin=${window.location.origin}&enablejsapi=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
-            chat.innerHTML = `<iframe src="https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}&dark_theme=1"></iframe>`;
+            videoId = sanitizeYoutubeId(input.split('@').pop().split('/')[0]);
+            if (!videoId) return;
+            mountPlayerIframe(`https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(videoId)}&autoplay=1&origin=${window.location.origin}&enablejsapi=1`);
+            chat.innerHTML = '';
+            const liveChatIframe = document.createElement('iframe');
+            liveChatIframe.src = `https://www.youtube.com/live_chat?v=${encodeURIComponent(videoId)}&embed_domain=${window.location.hostname}&dark_theme=1`;
+            chat.appendChild(liveChatIframe);
             return;
         } else {
           videoId = input.split('/').pop();
         }
 
-        player.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&origin=${window.location.origin}&enablejsapi=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+        videoId = sanitizeYoutubeId(videoId);
+        if (!videoId) return;
+
+        mountPlayerIframe(`https://www.youtube.com/embed/${encodeURIComponent(videoId)}?autoplay=1&origin=${window.location.origin}&enablejsapi=1`);
 
         const chatIframe = document.createElement('iframe');
-        chatIframe.src = `https://www.youtube.com/live_chat?v=${videoId}&embed_domain=${window.location.hostname}&dark_theme=1`;
+        chatIframe.src = `https://www.youtube.com/live_chat?v=${encodeURIComponent(videoId)}&embed_domain=${window.location.hostname}&dark_theme=1`;
 
         chatIframe.onload = function() {
           try {

@@ -9,7 +9,15 @@
     const WEATHER_APPROX_LOCATION_KEY = 'homeWeatherApproxLocation';
     const NASCAR_CACHE_PREFIX = 'homeNascarSchedule:';
     const NASCAR_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+    const DEBUG_LOGS = false;
+    const REVERSE_GEO_CACHE_PREFIX = 'homeReverseGeoCache:';
+    const REVERSE_GEO_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
     let newsRequestSeq = 0;
+
+    function debugLog(...args) {
+      if (!DEBUG_LOGS) return;
+      console.log(...args);
+    }
 
     function readStorageJson(key, storage = localStorage) {
       try {
@@ -31,6 +39,23 @@
       return Number.isFinite(updatedAt) && Date.now() - updatedAt < ttlMs;
     }
 
+    function reverseGeoCacheKey(latitude, longitude) {
+      return `${REVERSE_GEO_CACHE_PREFIX}${Number(latitude).toFixed(3)},${Number(longitude).toFixed(3)}`;
+    }
+
+    async function getReverseGeocode(latitude, longitude) {
+      const cacheKey = reverseGeoCacheKey(latitude, longitude);
+      const cached = readStorageJson(cacheKey);
+      if (cached && isFreshTimestamp(cached.updatedAt, REVERSE_GEO_CACHE_TTL_MS) && cached.data) {
+        return cached.data;
+      }
+
+      const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+      const geo = await geoRes.json();
+      writeStorageJson(cacheKey, { data: geo, updatedAt: Date.now() });
+      return geo;
+    }
+
     async function getAreaNewsFeedUrl() {
       const fallback = 'https://news.google.com/rss/search?q=' + encodeURIComponent('regional news us') + '&hl=en-US&gl=US&ceid=US:en';
 
@@ -42,8 +67,7 @@
         });
 
         const { latitude, longitude } = position.coords;
-        const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
-        const geo = await geoRes.json();
+        const geo = await getReverseGeocode(latitude, longitude);
 
         // Use broader area only (state/region + country), not pinpoint city/locality.
         const region = geo.principalSubdivision || geo.principalSubdivisionCode || '';
@@ -121,7 +145,7 @@
         const cached = newsCache[cacheKey];
         const now = Date.now();
         if (now - cached.timestamp < CACHE_DURATION) {
-          console.log(`Using cached news for ${cacheKey}`);
+          debugLog(`Using cached news for ${cacheKey}`);
           return cached.data;
         }
       }
@@ -218,7 +242,7 @@
           }
           
           if (data.items && Array.isArray(data.items) && data.items.length > 0) {
-            console.log(`Successfully fetched ${data.items.length} news items`);
+            debugLog(`Successfully fetched ${data.items.length} news items`);
             return data;
           }
           
@@ -1061,8 +1085,7 @@
 
       async function fetchLocationLabel(latitude, longitude) {
         try {
-          const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
-          const geo = await geoRes.json();
+          const geo = await getReverseGeocode(latitude, longitude);
           const city = geo.city || geo.locality || geo.principalSubdivision || '';
           const region = geo.principalSubdivisionCode || geo.principalSubdivision || '';
 
