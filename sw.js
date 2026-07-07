@@ -1,4 +1,4 @@
-const CACHE_NAME = 'command-center-v55';
+const CACHE_NAME = 'command-center-v56';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
@@ -24,8 +24,8 @@ const APP_SHELL_FILES = [
   '/web-games/assets/web-games-inline.js?v=20260706gameplayux15',
   '/web-games/middle-earth-rpg/',
   '/web-games/middle-earth-rpg/index.html',
-  '/web-games/middle-earth-rpg/assets/rpg-inline.css?v=20260702refresh1',
-  '/web-games/middle-earth-rpg/assets/rpg-inline.js?v=20260702refresh1'
+  '/web-games/middle-earth-rpg/assets/rpg-inline.css?v=20260707webp1',
+  '/web-games/middle-earth-rpg/assets/rpg-inline.js?v=20260707webp1'
 ];
 
 function isAppShellAsset(requestUrl) {
