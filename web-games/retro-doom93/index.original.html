@@ -499,8 +499,6 @@ import * as THREE from './assets/vendor/three.module.js';
 
   const ARMOR_NAMES=armorNames;
   const ARMOR_ABSORB=armorAbsorb;
-  const LEADERBOARD_KEY='sector93.leaderboard.v1';
-  const LEADERBOARD_LIMIT=20;
 
   function syncTierTrack(trackEl, tier) {
     if (!trackEl) return;
@@ -2826,9 +2824,8 @@ import * as THREE from './assets/vendor/three.module.js';
   function shoot() {
     if (player.ammo<=0||player.health<=0||gameState!=='playing'||player.shootCd>0) return;
     player.ammo--;
-    const T=Math.max(0,Math.min(player.gunTier,6));
-    const SHOOT_CD=[0.46,0.38,0.38,0.32,0.28,0.24,0.2];
-    player.shootCd=SHOOT_CD[T];
+    const T=player.gunTier;
+    player.shootCd=[0.46,0.38,0.38,0.32,0.28,0.24,0.2][T];
     player.recoil=0.28;
     sfx.shoot();
     // Magical arrow flash only for T3+
@@ -2843,9 +2840,7 @@ import * as THREE from './assets/vendor/three.module.js';
       [{x:-0.07,y:0},{x:0,y:0},{x:0.07,y:0}],
       [{x:-0.07,y:0},{x:0,y:0},{x:0.07,y:0}],
       [{x:-0.10,y:0},{x:-0.05,y:0},{x:0,y:0},{x:0.05,y:0},{x:0.10,y:0},{x:-0.14,y:0},{x:0.14,y:0}],
-      [{x:-0.14,y:0},{x:-0.09,y:0.02},{x:-0.04,y:-0.01},{x:0,y:0},{x:0.04,y:0.01},{x:0.09,y:-0.02},{x:0.14,y:0}],
-      [{x:-0.18,y:0},{x:-0.13,y:0.02},{x:-0.08,y:-0.02},{x:-0.04,y:0.03},{x:0,y:0},{x:0.04,y:-0.03},{x:0.08,y:0.02},{x:0.13,y:-0.02},{x:0.18,y:0}],
-    ][T] || [{x:0,y:0}];
+    ][T];
     const DMG=[1,2,1,2,1,2,3][T];
     const killed=new Set();
     for(const off of RAYS) {
@@ -2937,54 +2932,38 @@ import * as THREE from './assets/vendor/three.module.js';
     populate(startLbList, entries.slice(0,5), 'No scores yet.');
   }
 
-  function normalizeLeaderboardEntry(entry) {
-    return {
-      name: sanitizeLeaderboardName(entry?.name),
-      kills: Math.max(0, Math.floor(entry?.kills||0)),
-      upgrades: Math.max(0, Math.floor(entry?.upgrades||0)),
-      levels: Math.max(1, Math.floor(entry?.levels||1)),
-    };
-  }
-
-  function sortLeaderboardEntries(entries) {
-    return [...entries].sort((a,b)=>
-      (b.kills-a.kills)
-      || (b.levels-a.levels)
-      || (b.upgrades-a.upgrades)
-      || a.name.localeCompare(b.name)
-    );
-  }
-
-  function readLocalLeaderboard() {
+  async function loadLeaderboard() {
     try {
-      const raw=localStorage.getItem(LEADERBOARD_KEY);
-      if (!raw) return [];
-      const parsed=JSON.parse(raw);
-      if (!Array.isArray(parsed)) return [];
-      return parsed.map(normalizeLeaderboardEntry);
-    } catch (_) {
-      return [];
+      const res=await fetch('/api/leaderboard', { cache:'no-store' });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data=await res.json();
+      leaderboardEntries=Array.isArray(data)?data:[];
+      leaderboardLoaded=true;
+      renderLeaderboard(leaderboardEntries);
+      if (!pendingLeaderboardPayload) leaderboardMessage('Top runs loaded.');
+    } catch (error) {
+      leaderboardEntries=[];
+      renderLeaderboard([]);
+      leaderboardMessage('Leaderboard unavailable until the site is served by the built-in server.', true);
+      leaderboardLoaded=false;
     }
   }
 
-  function writeLocalLeaderboard(entries) {
-    const normalized=entries.map(normalizeLeaderboardEntry);
-    const sorted=sortLeaderboardEntries(normalized).slice(0, LEADERBOARD_LIMIT);
-    localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(sorted));
-    return sorted;
-  }
-
-  async function loadLeaderboard() {
-    leaderboardEntries=sortLeaderboardEntries(readLocalLeaderboard()).slice(0, LEADERBOARD_LIMIT);
-    leaderboardLoaded=true;
-    renderLeaderboard(leaderboardEntries);
-    if (!pendingLeaderboardPayload) leaderboardMessage('Top runs loaded.');
-  }
-
   async function submitLeaderboardEntry(payload) {
-    const body=normalizeLeaderboardEntry(payload);
-    const existing=readLocalLeaderboard();
-    leaderboardEntries=writeLocalLeaderboard([...existing, body]);
+    const body={
+      name: sanitizeLeaderboardName(payload.name),
+      kills: Math.max(0, Math.floor(payload.kills||0)),
+      upgrades: Math.max(0, Math.floor(payload.upgrades||0)),
+      levels: Math.max(1, Math.floor(payload.levels||1)),
+    };
+    const res=await fetch('/api/leaderboard', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data=await res.json();
+    leaderboardEntries=Array.isArray(data)?data:[];
     renderLeaderboard(leaderboardEntries);
     leaderboardMessage('Score saved.');
   }
@@ -3074,7 +3053,7 @@ import * as THREE from './assets/vendor/three.module.js';
       await submitLeaderboardEntry(pendingLeaderboardPayload);
       pendingLeaderboardPayload=null;
     } catch (error) {
-      leaderboardMessage('Save failed in this browser session.', true);
+      leaderboardMessage('Save failed. Run the bundled server, then try again.', true);
     }
   });
 
