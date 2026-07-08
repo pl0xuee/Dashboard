@@ -1,8 +1,8 @@
-const CACHE_NAME = 'command-center-v56';
+const CACHE_NAME = 'command-center-v57';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
-  '/assets/css/styles.css?v=20260706headercolor5',
+  '/assets/css/styles.css?v=20260708jellyfinconfig1',
   '/assets/js/script.js',
   '/assets/js/index-inline.js?v=20260706marketcalendar1',
   '/manifest.webmanifest',
@@ -17,7 +17,7 @@ const APP_SHELL_FILES = [
   '/stream/assets/stream-inline.js?v=20260706theaterexit1',
   '/media-portal/',
   '/media-portal/index.html',
-  '/media-portal/assets/media-inline.js?v=20260630b',
+  '/media-portal/assets/media-inline.js?v=20260708jellyfinconfig1',
   '/web-games/',
   '/web-games/index.html',
   '/web-games/assets/web-games-inline.css?v=20260706gameplayux27',

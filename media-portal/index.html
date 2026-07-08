@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' https://unpkg.com; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https: http://192.168.1.212:8096; font-src 'self' data: https:; connect-src 'self' https: http://192.168.1.212:8096; frame-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' https://unpkg.com; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https: http:; font-src 'self' data: https:; connect-src 'self' https: http:; frame-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
   <meta name="theme-color" content="#0b1220" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Media Server - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260706headercolor5" />
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260708jellyfinconfig1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
 </head>
 <body class="home-page media-page modern-v3">
@@ -28,7 +28,7 @@
         <h1 class="media-title">Jellyfin Media Portal</h1>
         <p class="media-subtitle">Access your private media library directly from your home network.</p>
 
-          <a href="http://192.168.1.212:8096" target="_blank" rel="noopener noreferrer" class="home-button media-launch-btn">
+          <a id="jellyfin-launch-btn" href="http://192.168.1.212:8096" target="_blank" rel="noopener noreferrer" class="home-button media-launch-btn">
            Click to Open Jellyfin
         </a>
 
@@ -37,11 +37,20 @@
             <p id="server-status" class="media-status-value">Checking...</p>
         </div>
 
+        <div class="media-config-wrap">
+          <label for="jellyfin-url-input" class="media-config-label">Jellyfin Server URL</label>
+          <div class="media-config-row">
+            <input id="jellyfin-url-input" class="media-config-input" type="url" placeholder="http://192.168.1.212:8096" autocomplete="url" spellcheck="false" />
+            <button id="jellyfin-save-btn" class="home-button media-config-save-btn">Save</button>
+          </div>
+          <p id="jellyfin-save-msg" class="media-config-msg" aria-live="polite"></p>
+        </div>
+
       </div>
     </main>
   </div>
   <script src="../assets/js/script.js"></script>
-  <script src="./assets/media-inline.js?v=20260630b"></script>
+  <script src="./assets/media-inline.js?v=20260708jellyfinconfig1"></script>
 </body>
 </html>
 
