@@ -5,52 +5,60 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sector 93</title>
   <style>
-    :root{--hud-bg:rgba(10,13,20,0.92);--hud-border:rgba(130,155,200,0.22);--text:#d8e8ff}
+    :root{--hud-bg:rgba(8,11,18,0.94);--hud-border:rgba(120,160,240,0.32);--text:#e8f4ff}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html,body{width:100%;height:100%;overflow:hidden;background:#04060b;color:var(--text);font-family:'Trebuchet MS',Verdana,sans-serif}
-    #gc{position:relative;width:100%;height:100%;background:#04060b;border:1px solid rgba(90,115,165,0.2);overflow:hidden}
+    html,body{width:100%;height:100%;overflow:hidden;background:#020305;color:var(--text);font-family:'Trebuchet MS',Verdana,sans-serif}
+    #gc{position:relative;width:100%;height:100%;background:#020305;border:1px solid rgba(100,140,200,0.25);overflow:hidden;box-shadow:inset 0 0 20px rgba(0,0,0,0.6)}
     canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block;image-rendering:pixelated}
     #overlay{position:absolute;inset:0;pointer-events:none}
     #xhair{position:absolute;left:50%;top:50%;width:18px;height:18px;transform:translate(-50%,-50%)}
-    #xhair::before,#xhair::after{content:'';position:absolute;background:rgba(230,242,255,0.88);box-shadow:0 0 4px rgba(100,170,255,0.5)}
-    #xhair::before{left:8px;top:1px;width:2px;height:16px}
-    #xhair::after{left:1px;top:8px;width:16px;height:2px}
-    #hud{position:absolute;left:0;right:0;bottom:0;height:86px;padding:8px 14px;
-      background:linear-gradient(180deg,transparent,var(--hud-bg) 40%),
-        repeating-linear-gradient(90deg,rgba(255,255,255,0.028) 0,rgba(255,255,255,0.028) 1px,transparent 1px,transparent 6px);
-      border-top:1px solid var(--hud-border);
-      display:grid;grid-template-columns:1fr auto 1fr;align-items:end;gap:10px;pointer-events:none}
-    .hb{display:flex;flex-direction:column;gap:3px;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
-    .hb strong{font-size:1.05rem;color:#eef5ff}
+    #xhair::before,#xhair::after{content:'';position:absolute;background:rgba(240,255,255,0.92);box-shadow:0 0 6px rgba(120,200,255,0.7),0 0 12px rgba(80,160,255,0.35)}
+    #xhair::before{left:8px;top:0px;width:2px;height:18px}
+    #xhair::after{left:0px;top:8px;width:18px;height:2px}
+    #hud{position:absolute;left:0;right:0;bottom:0;height:100px;padding:8px 14px;
+      background:linear-gradient(180deg,transparent 0%,rgba(6,10,16,0.88) 30%,rgba(4,7,14,0.96) 100%),
+        repeating-linear-gradient(90deg,rgba(80,160,255,0.08) 0,rgba(80,160,255,0.08) 1px,transparent 1px,transparent 5px);
+      border-top:2px solid var(--hud-border);
+      box-shadow:0 -4px 12px rgba(0,0,0,0.5),inset 0 1px 0 rgba(180,220,255,0.15);
+      display:grid;grid-template-columns:auto 1fr auto 1fr;align-items:end;gap:10px;pointer-events:none}
+    .hb{display:flex;flex-direction:column;gap:4px;font-size:.74rem;font-weight:700;text-transform:uppercase;letter-spacing:.09em}
+    .hb strong{font-size:1.12rem;color:#f5fbff;text-shadow:0 0 8px rgba(100,180,255,0.4)}
     .hb-c{text-align:center;min-width:170px}
-    #statusText{font-size:.64rem;color:#9ab8e8;letter-spacing:.1em;text-transform:uppercase}
-    .meter{height:6px;border-radius:99px;border:1px solid rgba(160,185,230,0.28);background:rgba(8,10,16,0.8);overflow:hidden;min-width:88px}
-    .meter>span{display:block;height:100%;transition:width 110ms linear}
-    #hpBar>span{background:linear-gradient(90deg,#ff7055,#ff4a42)}
-    #amBar>span{background:linear-gradient(90deg,#8ec8ff,#5ea0ff)}
-    .mr{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:7px;font-size:.64rem;margin-top:1px}
-    #keyStatus{display:inline-block;font-size:.7rem;letter-spacing:.06em;padding:1px 6px;border-radius:4px;border:1px solid transparent}
-    #keyStatus.have{background:rgba(240,210,80,0.18);border-color:rgba(240,210,80,0.5);color:#f0d250}
-    #keyStatus.missing{background:rgba(80,80,80,0.18);border-color:rgba(80,80,80,0.35);color:#666}
-    #weapon{position:absolute;left:50%;bottom:78px;width:min(42vw,310px);transform:translateX(-50%);
-      transform-origin:center bottom;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.6));pointer-events:none;image-rendering:pixelated}
-    #sFlash{position:absolute;inset:0;background:rgba(255,245,200,0.68);opacity:0;transition:opacity 70ms linear;pointer-events:none}
-    #hFlash{position:absolute;inset:0;background:radial-gradient(circle at center,rgba(255,60,45,0) 40%,rgba(255,60,45,0.32) 100%);opacity:0;transition:opacity 80ms linear;pointer-events:none}
-    #pkFlash{position:absolute;inset:0;opacity:0;transition:opacity 110ms linear;pointer-events:none}
+    #statusText{font-size:.66rem;color:#a8c8ff;letter-spacing:.11em;text-transform:uppercase;text-shadow:0 0 4px rgba(100,150,255,0.25)}
+    .meter{height:7px;border-radius:99px;border:1px solid rgba(140,200,255,0.38);background:rgba(4,6,12,0.9);overflow:hidden;min-width:92px;box-shadow:inset 0 1px 2px rgba(0,0,0,0.6)}
+    .meter>span{display:block;height:100%;transition:width 120ms ease-out;box-shadow:inset 0 0 3px rgba(255,255,255,0.3)}
+    #hpBar>span{background:linear-gradient(90deg,#ff6040,#ff3030);box-shadow:0 0 8px rgba(255,80,60,0.5),inset 0 0 2px rgba(255,200,100,0.2)}
+    #amBar>span{background:linear-gradient(90deg,#6ab0ff,#4080ff);box-shadow:0 0 8px rgba(100,160,255,0.5),inset 0 0 2px rgba(200,230,255,0.2)}
+    .mr{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:8px;font-size:.66rem;margin-top:2px}
+    #keyStatus{display:inline-block;font-size:.72rem;letter-spacing:.07em;padding:2px 8px;border-radius:5px;border:1px solid;font-weight:600}
+    #keyStatus.have{background:linear-gradient(135deg,rgba(255,200,60,0.22),rgba(200,150,40,0.15));border-color:rgba(255,200,80,0.7);color:#ffe880;text-shadow:0 0 4px rgba(200,150,0,0.4)}
+    #keyStatus.missing{background:rgba(60,60,70,0.2);border-color:rgba(100,100,120,0.4);color:#888}
+    #weapon{display:block;width:58px;height:72px;object-fit:contain;image-rendering:pixelated;margin:0 auto 2px;transition:transform 80ms linear}
+    #wHud{align-items:center;text-align:center;padding-right:8px;border-right:1px solid var(--hud-border)}
+    #weaponName{font-size:.58rem;color:#9bc5ff;letter-spacing:.08em;text-transform:uppercase;text-shadow:0 0 4px rgba(100,180,255,0.3)}
+    #sFlash{position:absolute;inset:0;background:radial-gradient(circle at center,rgba(255,250,200,0.8),rgba(255,220,100,0.3));opacity:0;transition:opacity 60ms linear;pointer-events:none;box-shadow:inset 0 0 30px rgba(255,240,100,0.4)}
+    #hFlash{position:absolute;inset:0;background:radial-gradient(circle at center,rgba(255,80,60,0) 30%,rgba(255,60,40,0.4) 100%);opacity:0;transition:opacity 90ms ease-out;pointer-events:none}
+    #pkFlash{position:absolute;inset:0;opacity:0;transition:opacity 120ms ease-out;pointer-events:none}
     .sov{position:absolute;inset:0;display:grid;place-items:center;
-      background:linear-gradient(180deg,rgba(4,6,12,.4),rgba(4,6,12,.88));
-      text-align:center;padding:22px;pointer-events:auto;z-index:5;transition:opacity 140ms ease}
+      background:linear-gradient(180deg,rgba(2,3,6,.5),rgba(4,6,12,.92)),radial-gradient(circle at 30% 30%,rgba(60,120,200,0.1),transparent 50%);
+      text-align:center;padding:24px;pointer-events:auto;z-index:5;transition:opacity 140ms ease;backdrop-filter:blur(2px)}
     .sov.hidden{opacity:0;pointer-events:none}
-    .card{max-width:500px;border:1px solid rgba(180,205,248,0.26);border-radius:14px;padding:16px 20px;
-      background:linear-gradient(180deg,rgba(22,30,46,0.92),rgba(8,12,22,0.96));box-shadow:0 14px 28px rgba(0,0,0,0.44)}
-    .card h1,.card h2{font-size:clamp(1.1rem,2.3vw,1.55rem);color:#f0e0c0;letter-spacing:.08em;text-transform:uppercase;margin-bottom:9px}
-    .card p{font-size:.86rem;line-height:1.48;color:#c8d8f8}
-    .card pre{font-size:.8rem;line-height:1.52;color:#c8d8f8;white-space:pre-line;font-family:inherit}
-    .card button{margin-top:14px;border:1px solid rgba(175,200,248,0.38);border-radius:10px;padding:9px 18px;
-      background:linear-gradient(180deg,rgba(75,100,145,0.65),rgba(36,52,82,0.85));
-      color:#f0f5ff;font-family:inherit;font-size:.84rem;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}
+    .card{max-width:520px;border:2px solid rgba(150,200,255,0.35);border-radius:16px;padding:20px 24px;
+      background:linear-gradient(135deg,rgba(20,32,60,0.94),rgba(10,16,32,0.96)),radial-gradient(circle at 100% 0,rgba(80,150,255,0.08),transparent);
+      box-shadow:0 0 30px rgba(80,150,255,0.2),0 20px 40px rgba(0,0,0,0.6),inset 0 1px 0 rgba(200,230,255,0.15)}
+    .card h1,.card h2{font-size:clamp(1.1rem,2.3vw,1.65rem);color:#f8ecdc;letter-spacing:.1em;text-transform:uppercase;margin-bottom:11px;text-shadow:0 2px 8px rgba(0,0,0,0.5)}
+    .card p{font-size:.88rem;line-height:1.52;color:#d5e5ff}
+    .card pre{font-size:.82rem;line-height:1.54;color:#d5e5ff;white-space:pre-line;font-family:inherit}
+    .card button{margin-top:16px;border:2px solid rgba(150,200,255,0.5);border-radius:11px;padding:10px 20px;
+      background:linear-gradient(180deg,rgba(80,130,200,0.7),rgba(50,80,140,0.9));
+      color:#f5faff;font-family:inherit;font-size:.86rem;letter-spacing:.07em;text-transform:uppercase;cursor:pointer;font-weight:600;
+      box-shadow:0 4px 12px rgba(100,180,255,0.25),inset 0 1px 0 rgba(200,230,255,0.3);
+      transition:all 140ms ease}
+    .card button:hover{background:linear-gradient(180deg,rgba(100,150,220,0.8),rgba(70,100,160,0.95));box-shadow:0 6px 16px rgba(120,200,255,0.35),inset 0 1px 0 rgba(220,245,255,0.4)}
     #startPrompt{cursor:pointer}
-    @media(max-width:700px){#hud{grid-template-columns:1fr 1fr}.hb-c{order:3;grid-column:1/-1}#weapon{width:min(54vw,260px);bottom:92px}}
+    #minimap{position:absolute;top:6px;right:6px;border:3px solid rgba(120,200,255,0.7);background:rgba(6,10,18,0.92);image-rendering:pixelated;max-width:180px;max-height:180px;box-shadow:0 0 12px rgba(100,180,255,0.3),inset 0 0 8px rgba(0,0,0,0.4)}
+    #hpVal,#amVal{display:inline-block;min-width:45px;text-align:right}
+    @media(max-width:700px){#hud{grid-template-columns:auto 1fr 1fr}#wHud{align-self:center}.hb-c{order:4;grid-column:2/-1}}
   </style>
 </head>
 <body>
@@ -58,11 +66,14 @@
   <div id="overlay">
     <div id="fpsCounter" style="position:absolute;top:4px;left:4px;font-family:monospace;color:#0f0;font-size:10px;font-weight:bold;text-shadow:0 0 2px #000">FPS: 60</div>
     <div id="xhair" aria-hidden="true"></div>
-    <img id="weapon" alt="Weapon" />
     <div id="sFlash" aria-hidden="true"></div>
     <div id="hFlash" aria-hidden="true"></div>
     <div id="pkFlash" aria-hidden="true"></div>
     <div id="hud" role="status" aria-live="polite">
+      <div class="hb" id="wHud">
+        <img id="weapon" alt="Weapon"/>
+        <span id="weaponName">Shortbow</span>
+      </div>
       <div class="hb">
         <span>Health</span><strong id="hpVal">100</strong>
         <div class="mr"><span>HP</span><div id="hpBar" class="meter"><span></span></div></div>
@@ -72,7 +83,7 @@
         <strong id="killVal">Kills 0</strong>
       </div>
       <div class="hb" style="text-align:right;align-items:flex-end">
-        <span>Ammo</span><strong id="amVal">24</strong>
+        <span>Arrows</span><strong id="amVal">24</strong>
         <div class="mr" style="grid-template-columns:1fr auto;width:min(170px,100%)">
           <div id="amBar" class="meter"><span></span></div>
           <span id="keyStatus" class="missing">NO KEY</span>
@@ -152,17 +163,21 @@ import * as THREE from './assets/vendor/three.module.js';
     spectre: { hp:2, spd:1.95, dmg:11, acd:0.7,  ar:1.0,  sx:0.82, sy:0.98, col:0x303850 },
     fiend:   { hp:2, spd:1.6,  dmg:15, acd:0.95, ar:1.15, sx:1.05, sy:0.88, col:0x5a1010 },
     goliath: { hp:8, spd:0.52, dmg:38, acd:1.85, ar:1.3,  sx:1.55, sy:1.65, col:0x0a0a14 },
+    miniboss:{ hp:16,spd:0.68, dmg:52, acd:1.95, ar:1.4,  sx:1.85, sy:1.95, col:0x2a0a2a },
   };
 
   // Difficulty ramps every time the player cycles through all 3 maps
   function getDifficulty(level) {
     const cycle=Math.floor(level/LEVELS.length);
+    const levelProg=level%LEVELS.length;
+    // Smooth difficulty curve: starts gentle, escalates gradually per cycle
+    const baseCurve=Math.pow(levelProg/LEVELS.length, 0.8);
     return {
-      hpMult:  1+cycle*0.55,
-      spdMult: 1+cycle*0.18,
-      dmgMult: 1+cycle*0.32,
-      extra:   Math.min(cycle*2,8),
-      ammoBonus: cycle*5,
+      hpMult:  1 + baseCurve*0.22 + level*0.06 + cycle*0.35,
+      spdMult: 1 + baseCurve*0.08 + level*0.02 + cycle*0.12,
+      dmgMult: 1 + baseCurve*0.15 + level*0.05 + cycle*0.18,
+      extra:   Math.min(Math.floor(baseCurve*8) + level + cycle*3, 18),
+      ammoBonus: Math.ceil(cycle*6 + level*0.5),
     };
   }
 
@@ -319,6 +334,7 @@ import * as THREE from './assets/vendor/three.module.js';
   let currentLevel = 0;
   let currentMap   = [];
   let worldW = 0, worldH = 0;
+  let currentMapKeys = [];
   let advTimer = null;
   let torchAccum = 0;
   let frameTick  = 0;
@@ -344,7 +360,9 @@ import * as THREE from './assets/vendor/three.module.js';
   const fireLights = [];
   const gates      = [];
   const gibs       = [];
+  const arrows     = [];
   let levelExit    = { x:1.5, z:1.5, group:null, glow:null, seed:0 };
+  let _lastGunTier = -1;
 
   // Lights
   const muzzleLight = new THREE.PointLight(0xffe8a0, 0, 2.4, 1.6);
@@ -447,13 +465,18 @@ import * as THREE from './assets/vendor/three.module.js';
       ctx.lineTo(x+p,y+p+rr);ctx.arcTo(x+p,y+p,x+p+rr,y+p,rr);
       ctx.closePath();ctx.fill();
       // Add weathering/wear marks on stone
-      ctx.fillStyle=`rgba(0,0,0,${0.05+Math.random()*0.1})`;
+      ctx.fillStyle=`rgba(0,0,0,${0.08+Math.random()*0.15})`;
       ctx.fillRect(x+1,y+1,Math.random()*bw-2,Math.random()*bh-2);
     }
-    // Add dirt streaks
-    for(let i=0;i<15;i++) {
-      ctx.fillStyle=`rgba(80,60,40,${Math.random()*0.08})`;
+    // Add dirt streaks and moss
+    for(let i=0;i<20;i++) {
+      ctx.fillStyle=`rgba(60,50,30,${Math.random()*0.12})`;
       ctx.fillRect(Math.random()*128, Math.random()*128, Math.random()*20+5, Math.random()*10+2);
+    }
+    // Add fine dust texture
+    for(let i=0;i<200;i++) {
+      ctx.fillStyle=`rgba(0,0,0,${Math.random()*0.05})`;
+      ctx.fillRect(Math.random()*128, Math.random()*128, 1, 1);
     }
     const t=mkTex(c); t.repeat.set(4,4); return t;
   })();
@@ -468,17 +491,22 @@ import * as THREE from './assets/vendor/three.module.js';
       ctx.fillStyle=`hsl(20,14%,${L}%)`; ctx.fillRect(0,y+2,128,bh-4);
       ctx.fillStyle='rgba(0,0,0,0.78)'; ctx.fillRect(0,y,128,2);
     }
-    // Add soot stains
-    for(let i=0;i<12;i++) {
-      ctx.fillStyle=`rgba(0,0,0,${0.15+Math.random()*0.2})`;
+    // Add soot stains and damage
+    for(let i=0;i<18;i++) {
+      ctx.fillStyle=`rgba(0,0,0,${0.2+Math.random()*0.25})`;
       ctx.beginPath();
       ctx.arc(Math.random()*128, Math.random()*128, Math.random()*8+2, 0, Math.PI*2);
       ctx.fill();
     }
+    // Add fine soot particles
+    for(let i=0;i<150;i++) {
+      ctx.fillStyle=`rgba(0,0,0,${Math.random()*0.08})`;
+      ctx.fillRect(Math.random()*128, Math.random()*128, 1.5, 1.5);
+    }
     const t=mkTex(c); t.repeat.set(6,6); return t;
   })();
 
-  const wallMat = new THREE.MeshStandardMaterial({ map:wallTex, roughness:0.96, metalness:0.02 });
+  const wallMat = new THREE.MeshStandardMaterial({ map:wallTex, roughness:0.92, metalness:0.06, side:THREE.DoubleSide });
   const gateMat = new THREE.MeshStandardMaterial({ color:0x3e4355, emissive:0x0c1020, roughness:0.5, metalness:0.7 });
 
   // Enemy texture cache
@@ -620,6 +648,32 @@ import * as THREE from './assets/vendor/three.module.js';
       for(let i=0;i<6;i++){ctx.fillRect(10+i*7,16,5,5);}
       // chest glow
       ctx.fillStyle='rgba(255,80,0,0.18)'; ctx.beginPath(); ctx.ellipse(32,44,12,14,0,0,Math.PI*2); ctx.fill();
+    } else if (type==='miniboss') {
+      // Demonic overlord — pitch black with violet aura, crown of spikes, triple eyes
+      ctx.fillStyle='#0a0514'; ctx.fillRect(0,8,64,76);
+      ctx.fillStyle='#02010a'; ctx.fillRect(0,8,64,12);
+      // aura glow
+      ctx.fillStyle='rgba(120,30,200,0.15)'; ctx.beginPath(); ctx.ellipse(32,40,24,28,0,0,Math.PI*2); ctx.fill();
+      // crown spikes
+      ctx.fillStyle='#3a1a6a';
+      for(let i=0;i<7;i++){ctx.beginPath();ctx.moveTo(4+i*9,8);ctx.lineTo(8+i*9,0);ctx.lineTo(12+i*9,8);ctx.fill();}
+      // massive muscled arms
+      ctx.fillStyle='#050308'; ctx.fillRect(0,12,16,56); ctx.fillRect(48,12,16,56);
+      // shoulder spikes
+      ctx.fillStyle='#4a2a7a';
+      for(let i=0;i<2;i++){ctx.fillRect(0,20+i*16,8,6); ctx.fillRect(56,20+i*16,8,6);}
+      // legs
+      ctx.fillStyle='#050308'; ctx.fillRect(2,68,20,16); ctx.fillRect(42,68,20,16);
+      // massive head
+      ctx.fillStyle='#04020c'; ctx.fillRect(8,2,48,14);
+      // triple glowing eyes
+      ctx.fillStyle='#ff3366'; ctx.fillRect(14,4,8,8); ctx.fillRect(28,3,8,8); ctx.fillRect(42,4,8,8);
+      ctx.fillStyle='#ff6699'; ctx.fillRect(16,5,4,6); ctx.fillRect(30,4,4,6); ctx.fillRect(44,5,4,6);
+      // teeth
+      ctx.fillStyle='#999';
+      for(let i=0;i<8;i++){ctx.fillRect(10+i*6,14,4,6);}
+      // chest aura vortex
+      ctx.fillStyle='rgba(180,60,255,0.22)'; ctx.beginPath(); ctx.ellipse(32,48,10,12,0,0,Math.PI*2); ctx.fill();
     }
     const t=mkTex(c); eTexCache[key]=t; return t;
   }
@@ -650,194 +704,330 @@ import * as THREE from './assets/vendor/three.module.js';
   const sfx={
     shoot(){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.50);
-      const o=AC.createOscillator(); o.type='sine';
-      const og=AC.createGain();
-      o.frequency.setValueAtTime(100,t); o.frequency.exponentialRampToValueAtTime(36,t+0.20);
-      og.gain.setValueAtTime(1,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.22);
-      o.connect(og); og.connect(mg); o.start(t); o.stop(t+0.22);
+      const t=AC.currentTime;
+      // Bowstring twang
+      const ns=AC.createBufferSource(); ns.buffer=_nb();
+      const nf=AC.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=1000; nf.Q.value=2;
+      const ng=AC.createGain(); ng.gain.setValueAtTime(0.5,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.09);
+      ns.connect(nf); nf.connect(ng); ng.connect(AC.destination); ns.start(t); ns.stop(t+0.10);
+      // Arrow whistle — descending
+      const wo=AC.createOscillator(); wo.type='sawtooth';
+      const wf=AC.createBiquadFilter(); wf.type='bandpass'; wf.frequency.value=1800; wf.Q.value=10;
+      const wg=AC.createGain(); wg.gain.setValueAtTime(0.10,t+0.02); wg.gain.exponentialRampToValueAtTime(0.001,t+0.42);
+      wo.frequency.setValueAtTime(1600,t+0.02); wo.frequency.exponentialRampToValueAtTime(500,t+0.42);
+      wo.connect(wf); wf.connect(wg); wg.connect(AC.destination); wo.start(t+0.02); wo.stop(t+0.44);
     },
     hurt(){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.38);
+      const t=AC.currentTime, mg=_o(0.44);
+      // Painful crunch noise
+      const ns=AC.createBufferSource(); ns.buffer=_nb();
+      const nf=AC.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=700;
+      const ng=AC.createGain(); ng.gain.setValueAtTime(0.9,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+      ns.connect(nf); nf.connect(ng); ng.connect(mg); ns.start(t); ns.stop(t+0.24);
+      // Guttural grunt
       const o=AC.createOscillator(); o.type='sawtooth';
-      const og=AC.createGain();
-      o.frequency.setValueAtTime(220,t); o.frequency.exponentialRampToValueAtTime(80,t+0.18);
-      og.gain.setValueAtTime(0.4,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.20);
-      o.connect(og); og.connect(mg); o.start(t); o.stop(t+0.20);
+      const of2=AC.createBiquadFilter(); of2.type='lowpass'; of2.frequency.value=320; of2.Q.value=5;
+      const og=AC.createGain(); og.gain.setValueAtTime(0.5,t+0.02); og.gain.exponentialRampToValueAtTime(0.001,t+0.28);
+      o.frequency.setValueAtTime(160,t+0.02); o.frequency.exponentialRampToValueAtTime(70,t+0.28);
+      o.connect(of2); of2.connect(og); og.connect(mg); o.start(t+0.02); o.stop(t+0.30);
     },
     enemyDie(){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.28);
+      const t=AC.currentTime, mg=_o(0.34);
+      // Death screech
+      const o=AC.createOscillator(); o.type='square';
+      const of2=AC.createBiquadFilter(); of2.type='bandpass'; of2.frequency.value=700; of2.Q.value=2;
+      const og=AC.createGain(); og.gain.setValueAtTime(0.65,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.55);
+      o.frequency.setValueAtTime(380,t); o.frequency.linearRampToValueAtTime(65,t+0.55);
+      o.connect(of2); of2.connect(og); og.connect(mg); o.start(t); o.stop(t+0.57);
+      // Noise burst
       const ns=AC.createBufferSource(); ns.buffer=_nb();
-      const nf=AC.createBiquadFilter(); nf.type='lowpass';
-      nf.frequency.setValueAtTime(900,t); nf.frequency.exponentialRampToValueAtTime(180,t+0.35);
-      const ng=AC.createGain(); ng.gain.setValueAtTime(0.7,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.35);
-      ns.connect(nf); nf.connect(ng); ng.connect(mg); ns.start(t); ns.stop(t+0.35);
+      const nf=AC.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=1400;
+      const ng2=AC.createGain(); ng2.gain.setValueAtTime(0.85,t); ng2.gain.exponentialRampToValueAtTime(0.001,t+0.4);
+      ns.connect(nf); nf.connect(ng2); ng2.connect(mg); ns.start(t); ns.stop(t+0.42);
     },
     pickup(type){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.28);
-      const f=type==='ammo'?[330,415]:[523,660];
-      f.forEach((freq,i)=>{
+      const t=AC.currentTime, mg=_o(0.22);
+      const freqs=type==='ammo'?[220,330]:type==='key'?[440,554,659]:[330,440];
+      freqs.forEach((freq,i)=>{
         const o=AC.createOscillator(); o.type='sine'; o.frequency.value=freq;
-        const g=AC.createGain(); const d=i*0.07;
-        g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(0.38,t+d+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+d+0.28);
-        o.connect(g); g.connect(mg); o.start(t+d); o.stop(t+d+0.28);
+        const g=AC.createGain(); const d=i*0.06;
+        g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(0.28,t+d+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+d+0.32);
+        o.connect(g); g.connect(mg); o.start(t+d); o.stop(t+d+0.34);
       });
     },
     gate(){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.42);
-      const o=AC.createOscillator(); o.type='sawtooth';
-      const og=AC.createGain();
-      o.frequency.setValueAtTime(60,t); o.frequency.exponentialRampToValueAtTime(25,t+0.6);
-      og.gain.setValueAtTime(0.5,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.6);
-      o.connect(og); og.connect(mg); o.start(t); o.stop(t+0.6);
+      const t=AC.currentTime, mg=_o(0.52);
+      // Heavy iron gate creak
+      const ns=AC.createBufferSource(); ns.buffer=_nb();
+      const nf=AC.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=160; nf.Q.value=0.7;
+      const ng=AC.createGain(); ng.gain.setValueAtTime(0,t); ng.gain.linearRampToValueAtTime(0.9,t+0.12); ng.gain.exponentialRampToValueAtTime(0.001,t+1.4);
+      ns.connect(nf); nf.connect(ng); ng.connect(mg); ns.start(t); ns.stop(t+1.5);
+      [65,50,38].forEach((freq,i)=>{
+        const o=AC.createOscillator(); o.type='sawtooth'; o.frequency.value=freq;
+        const g=AC.createGain(); const d=i*0.18;
+        g.gain.setValueAtTime(0.28,t+d); g.gain.exponentialRampToValueAtTime(0.001,t+d+1.0);
+        const f2=AC.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=280;
+        o.connect(f2); f2.connect(g); g.connect(mg); o.start(t+d); o.stop(t+d+1.02);
+      });
     },
     levelClear(){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.32);
-      [330,415,523,659,784].forEach((freq,i)=>{
-        const o=AC.createOscillator(); o.type='square'; o.frequency.value=freq;
-        const g=AC.createGain(); const d=i*0.10;
-        g.gain.setValueAtTime(0.28,t+d); g.gain.exponentialRampToValueAtTime(0.001,t+d+0.35);
-        o.connect(g); g.connect(mg); o.start(t+d); o.stop(t+d+0.35);
+      const t=AC.currentTime, mg=_o(0.28);
+      // Eerie minor chord rise
+      [220,261,311,392].forEach((freq,i)=>{
+        const o=AC.createOscillator(); o.type='triangle'; o.frequency.value=freq;
+        const g=AC.createGain(); const d=i*0.13;
+        g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(0.20,t+d+0.07); g.gain.exponentialRampToValueAtTime(0.001,t+d+1.0);
+        const f2=AC.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=1000;
+        o.connect(f2); f2.connect(g); g.connect(mg); o.start(t+d); o.stop(t+d+1.05);
       });
     },
     gameOver(){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.38);
-      [220,196,175,147].forEach((freq,i)=>{
-        const o=AC.createOscillator(); o.type='sawtooth'; o.frequency.value=freq;
-        const g=AC.createGain(); const d=i*0.20;
-        g.gain.setValueAtTime(0.30,t+d); g.gain.exponentialRampToValueAtTime(0.001,t+d+0.55);
-        o.connect(g); g.connect(mg); o.start(t+d); o.stop(t+d+0.55);
+      const t=AC.currentTime, mg=_o(0.44);
+      // Death toll — deep descending minor
+      [110,98,82,65].forEach((freq,i)=>{
+        const o=AC.createOscillator(); o.type='triangle'; o.frequency.value=freq;
+        const g=AC.createGain(); const d=i*0.30;
+        g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(0.36,t+d+0.05); g.gain.exponentialRampToValueAtTime(0.001,t+d+1.2);
+        const f2=AC.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=600;
+        o.connect(f2); f2.connect(g); g.connect(mg); o.start(t+d); o.stop(t+d+1.25);
       });
+      // Wind noise gust
+      const ns=AC.createBufferSource(); ns.buffer=_nb();
+      const nf=AC.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=350;
+      const ng=AC.createGain(); ng.gain.setValueAtTime(0,t); ng.gain.linearRampToValueAtTime(0.28,t+0.35); ng.gain.exponentialRampToValueAtTime(0.001,t+2.0);
+      ns.connect(nf); nf.connect(ng); ng.connect(mg); ns.start(t); ns.stop(t+2.1);
     },
     footstep(){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.10);
+      const t=AC.currentTime, mg=_o(0.13);
       const ns=AC.createBufferSource(); ns.buffer=_nb();
-      const nf=AC.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=200;
-      const ng=AC.createGain(); ng.gain.setValueAtTime(1,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.06);
-      ns.connect(nf); nf.connect(ng); ng.connect(mg); ns.start(t); ns.stop(t+0.06);
+      const nf=AC.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=160;
+      const ng=AC.createGain(); ng.gain.setValueAtTime(1,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.08);
+      ns.connect(nf); nf.connect(ng); ng.connect(mg); ns.start(t); ns.stop(t+0.08);
+      const o=AC.createOscillator(); o.type='sine'; o.frequency.value=55;
+      const og=AC.createGain(); og.gain.setValueAtTime(0.3,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.07);
+      o.connect(og); og.connect(mg); o.start(t); o.stop(t+0.08);
+    },
+    mobAlert(type){
+      if(!AC) return;
+      const t=AC.currentTime;
+      if(type==='grunt'||type==='soldier'){
+        const o=AC.createOscillator(); o.type='sawtooth';
+        const f2=AC.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=300; f2.Q.value=6;
+        const g=AC.createGain(); g.gain.setValueAtTime(0.20,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.48);
+        o.frequency.setValueAtTime(type==='grunt'?85:120,t); o.frequency.exponentialRampToValueAtTime(type==='grunt'?38:62,t+0.48);
+        o.connect(f2); f2.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+0.50);
+      } else if(type==='brute'||type==='goliath'){
+        const dur=type==='goliath'?0.9:0.6;
+        const o=AC.createOscillator(); o.type='sawtooth';
+        const f2=AC.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=140; f2.Q.value=10;
+        const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.38,t+0.07); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+        o.frequency.setValueAtTime(type==='goliath'?22:42,t);
+        o.connect(f2); f2.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+dur+0.02);
+      } else if(type==='spectre'){
+        const o=AC.createOscillator(); o.type='sine';
+        const lfo=AC.createOscillator(); lfo.type='sine'; lfo.frequency.value=6+Math.random()*3;
+        const lfoG=AC.createGain(); lfoG.gain.value=14; lfo.connect(lfoG); lfoG.connect(o.frequency);
+        const f2=AC.createBiquadFilter(); f2.type='bandpass'; f2.frequency.value=620; f2.Q.value=1.5;
+        const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.16,t+0.14); g.gain.exponentialRampToValueAtTime(0.001,t+1.0);
+        o.frequency.setValueAtTime(560,t); o.frequency.exponentialRampToValueAtTime(240,t+1.0);
+        o.connect(f2); f2.connect(g); g.connect(AC.destination);
+        o.start(t); o.stop(t+1.02); lfo.start(t); lfo.stop(t+1.02);
+      } else if(type==='fiend'){
+        const o=AC.createOscillator(); o.type='square';
+        const f2=AC.createBiquadFilter(); f2.type='bandpass'; f2.frequency.value=1100; f2.Q.value=3;
+        const g=AC.createGain(); g.gain.setValueAtTime(0.16,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.38);
+        o.frequency.setValueAtTime(800,t); o.frequency.exponentialRampToValueAtTime(1500,t+0.12); o.frequency.exponentialRampToValueAtTime(340,t+0.38);
+        o.connect(f2); f2.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+0.40);
+      }
+    },
+    mobIdle(type){
+      if(!AC||Math.random()>0.35) return;
+      const t=AC.currentTime;
+      const ns=AC.createBufferSource(); ns.buffer=_nb();
+      const f2=AC.createBiquadFilter(); f2.type='lowpass';
+      f2.frequency.value=type==='spectre'?450:type==='fiend'?750:140;
+      const g=AC.createGain(); g.gain.setValueAtTime(0.07,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.30);
+      ns.connect(f2); f2.connect(g); g.connect(AC.destination); ns.start(t); ns.stop(t+0.32);
     },
   };
 
   function _startMusic(){
     if(!AC||_musicActive) return;
     _musicActive=true;
-    _musicGain=AC.createGain(); _musicGain.gain.value=0.06; _musicGain.connect(AC.destination);
-    [55,55.4].forEach(f=>{
+    _musicGain=AC.createGain(); _musicGain.gain.value=0.05; _musicGain.connect(AC.destination);
+    // Deep sub-bass drones — two slightly detuned for unsettling beating
+    [40,40.7].forEach(f=>{
       const o=AC.createOscillator(); o.type='sawtooth'; o.frequency.value=f;
-      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=160; filt.Q.value=2.5;
-      const g=AC.createGain(); g.gain.value=0.35;
+      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=200; filt.Q.value=4;
+      const g=AC.createGain(); g.gain.value=0.42;
       o.connect(filt); filt.connect(g); g.connect(_musicGain); o.start();
     });
-    _scheduleMelody(AC.currentTime+0.5);
+    // Filtered noise layer — cave rumble
+    const ns=AC.createBufferSource(); ns.buffer=_nb(); ns.loop=true;
+    const nf=AC.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=120; nf.Q.value=0.4;
+    const ng=AC.createGain(); ng.gain.value=0.05;
+    ns.connect(nf); nf.connect(ng); ng.connect(_musicGain); ns.start();
+    _scheduleMelody(AC.currentTime+1.2);
+    _scheduleAmbient();
   }
 
   function _scheduleMelody(start){
     if(!_musicActive||!AC) return;
-    const scale=[55,65.4,73.4,82.4,98,110];
-    const pat=[0,null,null,2,null,4,null,null,1,null,null,3,null,5,null,null];
-    const bl=0.50;
+    // Pentatonic minor — slow, sparse, ominous
+    const scale=[55,65.4,73.4,77.8,98,110]; // A1 C2 D2 Eb2 G2 A2
+    const pat=[0,null,null,null,2,null,null,null,4,null,null,null,1,null,null,null,null,null,3,null,null,null,null,null];
+    const bl=1.35; // slow tempo
     pat.forEach((n,i)=>{
       if(n===null) return;
       const t=start+i*bl;
       if(t<AC.currentTime+0.05) return;
-      const o=AC.createOscillator(); o.type='triangle'; o.frequency.value=scale[n]*4;
+      const o=AC.createOscillator(); o.type='triangle'; o.frequency.value=scale[n]*2;
       const g=AC.createGain();
-      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.16,t+0.04); g.gain.exponentialRampToValueAtTime(0.001,t+bl*0.75);
-      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=1400;
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.12,t+0.09); g.gain.exponentialRampToValueAtTime(0.001,t+bl*1.3);
+      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=700;
       o.connect(filt); filt.connect(g); g.connect(_musicGain);
-      o.start(t); o.stop(t+bl);
+      o.start(t); o.stop(t+bl*1.4);
     });
     const total=pat.length*bl;
-    _melodyTimer=setTimeout(()=>_scheduleMelody(start+total),(start+total-AC.currentTime)*1000-80);
+    _melodyTimer=setTimeout(()=>_scheduleMelody(start+total),(start+total-AC.currentTime)*1000-100);
+  }
+
+  function _scheduleAmbient(){
+    if(!AC||!_musicActive) return;
+    // Stone drip
+    const drip=()=>{
+      if(!AC||!_musicActive) return;
+      const t=AC.currentTime, freq=900+Math.random()*700;
+      const o=AC.createOscillator(); o.type='sine'; o.frequency.value=freq;
+      const f2=AC.createBiquadFilter(); f2.type='bandpass'; f2.frequency.value=freq*1.1; f2.Q.value=14;
+      const g=AC.createGain(); g.gain.setValueAtTime(0.07,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.24);
+      o.connect(f2); f2.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+0.26);
+      setTimeout(drip,4000+Math.random()*11000);
+    };
+    // Distant moan
+    const moan=()=>{
+      if(!AC||!_musicActive) return;
+      const t=AC.currentTime, dur=2.0+Math.random()*1.8, base=100+Math.random()*90;
+      const o=AC.createOscillator(); o.type='sine';
+      const lfo=AC.createOscillator(); lfo.type='sine'; lfo.frequency.value=4+Math.random()*3;
+      const lfoG=AC.createGain(); lfoG.gain.value=10; lfo.connect(lfoG); lfoG.connect(o.frequency);
+      const f2=AC.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=480;
+      const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.052,t+0.7); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+      o.frequency.setValueAtTime(base,t); o.frequency.exponentialRampToValueAtTime(base*0.80,t+dur);
+      o.connect(f2); f2.connect(g); g.connect(AC.destination); o.start(t); o.stop(t+dur+0.05); lfo.start(t); lfo.stop(t+dur+0.05);
+      setTimeout(moan,14000+Math.random()*22000);
+    };
+    // Wind gust
+    const wind=()=>{
+      if(!AC||!_musicActive) return;
+      const t=AC.currentTime, dur=1.6+Math.random()*1.4;
+      const ns=AC.createBufferSource(); ns.buffer=_nb();
+      const f2=AC.createBiquadFilter(); f2.type='bandpass'; f2.frequency.value=280+Math.random()*180; f2.Q.value=0.5;
+      const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.055,t+0.5); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+      ns.connect(f2); f2.connect(g); g.connect(AC.destination); ns.start(t); ns.stop(t+dur+0.1);
+      setTimeout(wind,18000+Math.random()*28000);
+    };
+    setTimeout(drip,3000+Math.random()*7000);
+    setTimeout(moan,9000+Math.random()*14000);
+    setTimeout(wind,13000+Math.random()*18000);
   }
 
   let _stepAccum=0;
 
-  function mkWeapon() {
+  function mkWeapon(){
     const c=document.createElement('canvas'); c.width=240; c.height=300;
     const ctx=c.getContext('2d'); ctx.clearRect(0,0,240,300);
-
-    const fill=(col,x,y,w,h)=>{ctx.fillStyle=col;ctx.fillRect(x,y,w,h);};
-
-    // FPS-style shotgun in lower right with player arm
-    ctx.save();
-    
-    // Player arm holding gun (flesh tone)
-    fill('#d4a574', 80, 200, 35, 90);   // forearm
-    fill('#c99060', 95, 190, 20, 25);   // hand/wrist
-    fill('#e8b89c', 95, 185, 18, 8);    // hand palm
-    fill('#e8b89c', 95, 190, 6, 15);    // thumb
-    
-    ctx.translate(120, 220);
-    ctx.rotate(-0.25); // Straight on - minimal tilt
-
-    // Barrel (pointing toward upper-left where enemies are)
-    fill('#2c303e', -7, -165, 14, 165);
-    fill('#3a3f52', -5, -165, 10, 8);
-    // Barrel rib
-    fill('#484c60', -7, -167, 14, 3);
-    fill('#23263a', -6, -166, 12, 1);
-    // Barrel bands
-    fill('#8a8c9a', -5, -100, 10, 4);  fill('#666', -4, -99, 8, 2);
-    fill('#8a8c9a', -5, -50, 10, 4);   fill('#666', -4, -49, 8, 2);
-    // Muzzle
-    fill('#1c1e2a', -9, -173, 18, 12);
-    fill('#0d0e16', -7, -171, 14, 9);
-    fill('#050608', -4, -169, 8, 5);
-    ctx.strokeStyle='#555'; ctx.lineWidth=1;
-    ctx.strokeRect(-9, -173, 18, 12);
-    // Front bead sight
-    ctx.fillStyle='#f0c020'; ctx.beginPath();ctx.arc(0, -177, 1.5, 0, Math.PI*2);ctx.fill();
-
-    // Pump fore-end (wood)
-    fill('#6b3a12', -11, -110, 22, 65);
-    fill('#7e4418', -9, -110, 18, 14);
-    fill('#4e2a0a', -9, -55, 18, 12);
-    ctx.strokeStyle='rgba(20,8,0,0.3)'; ctx.lineWidth=0.5;
-    for(let i=0; i<5; i++){
-      ctx.beginPath(); ctx.moveTo(-7+i*4, -110); ctx.lineTo(-7+i*4, -45); ctx.stroke();
+    const T=Math.min(player.gunTier,4);
+    _lastGunTier=T;
+    // Tilt entire drawing ~23° CW so arrow points upper-left toward crosshair
+    // Pivot at draw-hand position (162, 155)
+    // (removed — bow is now a HUD icon, straight-on silhouette looks cleaner)
+    // Per-tier palettes: limb, limb-dark, string, arrow-shaft, arrowhead, fletching, hand
+    const PAL=[
+      {lc:'#8b5e1a',ld:'#5a3a08',sc:'#d8c870',ac:'#a07828',hc:'#909090',fc:'#cc6030',hnd:'#c8905a'}, // T0 wood
+      {lc:'#3c1c06',ld:'#201004',sc:'#b89040',ac:'#6a3810',hc:'#686868',fc:'#7a2818',hnd:'#c8905a'}, // T1 dark wood
+      {lc:'#d8ceaa',ld:'#b8ae88',sc:'#ede8cc',ac:'#c0b880',hc:'#a8a070',fc:'#d0ccc0',hnd:'#c0985a'}, // T2 bone
+      {lc:'#1e0636',ld:'#14022a',sc:'#8833dd',ac:'#160228',hc:'#aa44ff',fc:'#6622aa',hnd:'#886040'}, // T3 shadow
+      {lc:'#380802',ld:'#240401',sc:'#ff3000',ac:'#1c0402',hc:'#ff6600',fc:'#cc0e00',hnd:'#7a3818'}, // T4 hellfire
+    ];
+    const p=PAL[T];
+    // ── Bow limbs ────────────────────────────────────────────────────────
+    const gx=58,gy=155;
+    const utx=80,uty=54,ltx=80,lty=256;
+    const lw=T===2?10:T>=3?8:7;
+    ctx.lineCap='round';
+    // Outer limb
+    ctx.strokeStyle=p.lc; ctx.lineWidth=lw;
+    ctx.beginPath(); ctx.moveTo(gx,gy); ctx.quadraticCurveTo(gx-30,gy-76,utx,uty); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(gx,gy); ctx.quadraticCurveTo(gx-30,gy+76,ltx,lty); ctx.stroke();
+    // Inner highlight
+    ctx.strokeStyle=p.ld; ctx.lineWidth=Math.max(1,lw-4); ctx.globalAlpha=0.55;
+    ctx.beginPath(); ctx.moveTo(gx,gy); ctx.quadraticCurveTo(gx-28,gy-74,utx,uty); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(gx,gy); ctx.quadraticCurveTo(gx-28,gy+74,ltx,lty); ctx.stroke();
+    ctx.globalAlpha=1.0;
+    // T2 bone: segment notches
+    if(T===2){
+      ctx.strokeStyle='#a09870'; ctx.lineWidth=2; ctx.lineCap='butt';
+      [[gx-8,gy-28,gx+3,gy-33],[gx-14,gy-58,gx-2,gy-63],[gx-8,gy+24,gx+3,gy+29],[gx-14,gy+54,gx-2,gy+59]]
+        .forEach(([x1,y1,x2,y2])=>{ ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); });
     }
-
-    // Receiver
-    fill('#1c1e2a', -12, -20, 24, 35);
-    fill('#242638', -10, -18, 20, 14);
-    fill('#0a0b12', -3, -12, 6, 10);
-    fill('#080910', -1, -11, 2, 8);
-
-    // Pistol grip
-    fill('#1c1e2a', -9, 12, 18, 32);
-    fill('#252838', -7, 14, 14, 28);
-    ctx.strokeStyle='rgba(0,0,0,0.25)'; ctx.lineWidth=0.4;
-    for(let i=0; i<3; i++){
-      ctx.beginPath(); ctx.moveTo(-7, 16+i*8); ctx.lineTo(7, 16+i*8); ctx.stroke();
+    // T3 shadow: rune marks
+    if(T===3){
+      ctx.strokeStyle='#9922ee'; ctx.lineWidth=1.5; ctx.lineCap='round';
+      ctx.shadowColor='#6600cc'; ctx.shadowBlur=6;
+      [[gx-10,gy-30],[gx-16,gy-62],[gx-10,gy+26],[gx-16,gy+58]].forEach(([rx,ry])=>{
+        ctx.beginPath(); ctx.moveTo(rx-5,ry); ctx.lineTo(rx+4,ry); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(rx,ry-4); ctx.lineTo(rx,ry+4); ctx.stroke();
+      });
+      ctx.shadowBlur=0;
     }
-
-    // Trigger guard
-    fill('#141520', -7, 10, 14, 5);
-    fill('#888', -1, 8, 2, 6);
-
-    // Stock (extends toward lower-right, away from enemies)
-    fill('#6b3a12', -10, 42, 20, 58);
-    fill('#7e4418', -8, 42, 16, 12);
-    fill('#222', 8, 40, 5, 62);
-    ctx.strokeStyle='rgba(20,8,0,0.25)'; ctx.lineWidth=0.4;
-    for(let i=0; i<4; i++){
-      ctx.beginPath(); ctx.moveTo(-8+i*6, 44); ctx.lineTo(-8+i*6, 95); ctx.stroke();
+    // T4 infernal: fire tips on limb ends
+    if(T===4){
+      ctx.shadowColor='#ff2200'; ctx.shadowBlur=14;
+      ctx.fillStyle='#ff4400';
+      [[utx,uty,1],[ltx,lty,-1]].forEach(([tx,ty,dir])=>{
+        for(let f=0;f<4;f++){
+          ctx.beginPath(); ctx.moveTo(tx-2,ty); ctx.lineTo(tx+4+f*3,ty+dir*(-10+f*3)); ctx.lineTo(tx+3,ty+dir*2); ctx.fill();
+        }
+      });
+      ctx.shadowBlur=0;
     }
-
-    // Rear sight
-    fill('#444', -8, -28, 8, 4);
-    fill('#222', -6, -27, 4, 2);
-
-    ctx.restore();
-
+    // ── Grip / riser ─────────────────────────────────────────────────────
+    const gripCol=[['#7a3c10','#5a2e08'],['#2c1002','#180a02'],['#bcae5e','#a09840'],['#380e5e','#260848'],['#340600','#200400']][T];
+    ctx.fillStyle=gripCol[0]; ctx.fillRect(gx-9,gy-22,18,44);
+    ctx.strokeStyle=gripCol[1]; ctx.lineWidth=1.5; ctx.lineCap='butt';
+    for(let i=-18;i<=18;i+=7){ ctx.beginPath(); ctx.moveTo(gx-9,gy+i); ctx.lineTo(gx+9,gy+i); ctx.stroke(); }
+    // ── Bowstring ─────────────────────────────────────────────────────────
+    const dpx=162,dpy=155;
+    ctx.strokeStyle=p.sc; ctx.lineWidth=1.5; ctx.lineCap='round';
+    if(T>=3){ ctx.shadowColor=p.sc; ctx.shadowBlur=5; }
+    ctx.beginPath(); ctx.moveTo(utx,uty); ctx.lineTo(dpx,dpy); ctx.lineTo(ltx,lty); ctx.stroke();
+    ctx.shadowBlur=0;
+    // ── Arrow shaft ───────────────────────────────────────────────────────
+    ctx.strokeStyle=p.ac; ctx.lineWidth=3; ctx.lineCap='round';
+    if(T>=3){ ctx.shadowColor=p.hc; ctx.shadowBlur=6; }
+    ctx.beginPath(); ctx.moveTo(16,150); ctx.lineTo(dpx-2,150); ctx.stroke();
+    // Arrowhead (pointing left — toward enemies)
+    ctx.fillStyle=p.hc;
+    if(T>=3){ ctx.shadowColor=p.hc; ctx.shadowBlur=10; }
+    ctx.beginPath(); ctx.moveTo(16,150); ctx.lineTo(28,143); ctx.lineTo(28,157); ctx.fill();
+    ctx.fillStyle=p.ac;
+    ctx.beginPath(); ctx.moveTo(22,150); ctx.lineTo(28,144); ctx.lineTo(28,146); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(22,150); ctx.lineTo(28,156); ctx.lineTo(28,154); ctx.fill();
+    ctx.shadowBlur=0;
+    // Fletching (3 feathers)
+    ctx.strokeStyle=p.fc; ctx.lineWidth=2; ctx.lineCap='round';
+    for(let i=0;i<3;i++){
+      const dy=i-1;
+      ctx.beginPath(); ctx.moveTo(dpx-14,150); ctx.quadraticCurveTo(dpx-10,150+dy*5,dpx-4,150); ctx.stroke();
+    }
     weaponEl.src=c.toDataURL('image/png');
   }
 
@@ -873,7 +1063,8 @@ import * as THREE from './assets/vendor/three.module.js';
       if (n.material) [].concat(n.material).forEach(m=>{ if(m.map&&m.map!==wallTex&&m.map!==floorTex&&m.map!==ceilTex) m.map.dispose(); m.dispose(); });
     });
     while (levelRoot.children.length) levelRoot.remove(levelRoot.children[0]);
-    enemies.length=pickups.length=torches.length=fireLights.length=gates.length=gibs.length=0;
+    for(const a of arrows){if(a.mesh&&a.mesh.parent)a.mesh.parent.remove(a.mesh);}
+    enemies.length=pickups.length=torches.length=fireLights.length=gates.length=gibs.length=arrows.length=0;
     levelExit={x:1.5,z:1.5,group:null,glow:null,seed:Math.random()*Math.PI*2};
     if (advTimer) { clearTimeout(advTimer); advTimer=null; }
   }
@@ -897,8 +1088,61 @@ import * as THREE from './assets/vendor/three.module.js';
     }
   }
 
+  // ── Arrows ───────────────────────────────────────────────────────────────────
+  function spawnArrow(off){
+    const T=Math.min(player.gunTier,4);
+    const shaftCols=[0xa07828,0x6a3810,0xc0b880,0x160228,0x1c0402];
+    const headCols =[0x909090,0x686868,0xa8a070,0xaa44ff,0xff6600];
+    const shaftMat=new THREE.MeshStandardMaterial({color:shaftCols[T],roughness:0.82});
+    const headMat =new THREE.MeshStandardMaterial({color:headCols[T],roughness:0.28,metalness:0.65,
+      ...(T===3?{emissive:0x5500bb,emissiveIntensity:1.0}:T===4?{emissive:0xff2200,emissiveIntensity:1.4}:{})
+    });
+    const ag=new THREE.Group();
+    // Shaft
+    const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.013,0.013,0.65,5),shaftMat);
+    shaft.rotation.z=Math.PI/2; ag.add(shaft);
+    // Arrowhead
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(0.032,0.13,4),headMat);
+    tip.rotation.z=-Math.PI/2; tip.position.x=0.40; ag.add(tip);
+    // Fletching
+    [0,Math.PI*2/3,Math.PI*4/3].forEach(ang=>{
+      const f=new THREE.Mesh(new THREE.PlaneGeometry(0.16,0.055),
+        new THREE.MeshBasicMaterial({color:T>=3?headCols[T]:0x993322,side:THREE.DoubleSide}));
+      f.position.x=-0.25; f.rotation.x=ang; ag.add(f);
+    });
+    if(T===3){ const gl=new THREE.PointLight(0x8833cc,0.7,2.2,2); gl.position.x=0.40; ag.add(gl); }
+    if(T===4){ const gl=new THREE.PointLight(0xff3300,0.9,2.2,2); gl.position.x=0.40; ag.add(gl); }
+    // Direction
+    const camDir=new THREE.Vector3(); camera.getWorldDirection(camDir);
+    const camRight=new THREE.Vector3(0,1,0).cross(camDir).normalize();
+    const camUp=new THREE.Vector3().crossVectors(camDir,camRight).normalize();
+    const fwd=camDir.clone().addScaledVector(camRight,off.x*0.15).addScaledVector(camUp,off.y*0.15).normalize();
+    // Orient arrow along flight
+    const xAxis=new THREE.Vector3(1,0,0);
+    const q=new THREE.Quaternion().setFromUnitVectors(xAxis.dot(fwd)>0.9999?new THREE.Vector3(0,1,0):xAxis,fwd);
+    if(Math.abs(xAxis.dot(fwd))<0.9999) ag.quaternion.setFromUnitVectors(xAxis,fwd);
+    ag.position.copy(camera.position).addScaledVector(fwd,0.45);
+    ag.position.y-=0.07;
+    scene.add(ag);
+    arrows.push({mesh:ag,vel:fwd.clone().multiplyScalar(22),life:2.2,hitLife:1.8,hit:false});
+  }
+
+  function updateArrows(dt){
+    for(let i=arrows.length-1;i>=0;i--){
+      const a=arrows[i];
+      if(a.hit){
+        a.hitLife-=dt;
+        if(a.hitLife<=0){ scene.remove(a.mesh); a.mesh.traverse(n=>{if(n.geometry)n.geometry.dispose();}); arrows.splice(i,1); }
+        continue;
+      }
+      a.mesh.position.addScaledVector(a.vel,dt);
+      a.life-=dt;
+      if(isWallAt(a.mesh.position.x,a.mesh.position.z)||a.life<=0){ a.hit=true; a.vel.set(0,0,0); }
+    }
+  }
+
   // ── Torches ──────────────────────────────────────────────────────────────────
-  function addTorches() {
+  function addTorches(keyChamberCells) {
     const dirs=[{dx:1,dz:0},{dx:-1,dz:0},{dx:0,dz:1},{dx:0,dz:-1}];
 
     // Collect every valid wall-face anchor across the whole map
@@ -910,6 +1154,8 @@ import * as THREE from './assets/vendor/three.module.js';
         const nx=x+d.dx,nz=z+d.dz;
         if (nx<0||nz<0||nx>=worldW||nz>=worldH) continue;
         if (isSolid(currentMap[nz][nx])) continue;
+        // Skip if adjacent to key chamber
+        if (keyChamberCells&&keyChamberCells.has(`${nx},${nz}`)) continue;
         const fk=`${x},${z},${d.dx},${d.dz}`;
         if (usedFace.has(fk)) continue; usedFace.add(fk);
         candidates.push({ wx:(x+0.5)+d.dx*0.52, wz:(z+0.5)+d.dz*0.52 });
@@ -931,42 +1177,44 @@ import * as THREE from './assets/vendor/three.module.js';
     }
 
     // Build each torch
-    const mountMat=new THREE.MeshStandardMaterial({color:0x3a2a1a,roughness:0.8,metalness:0.4});
+    const mountMat=new THREE.MeshStandardMaterial({color:0x4a3a2a,roughness:0.85,metalness:0.5});
     chosen.forEach((c,i)=>{
-      const mt=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.32,0.06),mountMat);
-      mt.position.set(c.wx,0.82,c.wz); levelRoot.add(mt);
+      const mt=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.36,0.06),mountMat);
+      mt.position.set(c.wx,0.8,c.wz); levelRoot.add(mt);
       const fl=new THREE.Mesh(
-        new THREE.SphereGeometry(0.09,6,5),
-        new THREE.MeshBasicMaterial({color:0xff8822,transparent:true,opacity:0.9})
+        new THREE.SphereGeometry(0.11,8,6),
+        new THREE.MeshBasicMaterial({color:0xff9933,transparent:true,opacity:0.92})
       );
-      fl.position.set(c.wx,1.1,c.wz); levelRoot.add(fl);
+      fl.position.set(c.wx,1.12,c.wz); levelRoot.add(fl);
       let light=null;
       if (i%2===0) {
-        light=new THREE.PointLight(0xff7722,0.6,5.0,1.6);
-        light.position.set(c.wx,1.12,c.wz); levelRoot.add(light);
+        light=new THREE.PointLight(0xff8844,0.75,5.5,1.8);
+        light.position.set(c.wx,1.14,c.wz); levelRoot.add(light);
       }
       const embers=[];
-      for (let j=0;j<4;j++) {
+      for (let j=0;j<5;j++) {
         const em=new THREE.Mesh(
-          new THREE.SphereGeometry(0.025,4,3),
-          new THREE.MeshBasicMaterial({color:0xff5500,transparent:true,opacity:0.8})
+          new THREE.SphereGeometry(0.028,5,4),
+          new THREE.MeshBasicMaterial({color:0xff6611,transparent:true,opacity:0.85})
         );
-        em.position.set(c.wx,1.1,c.wz); levelRoot.add(em);
-        embers.push({m:em,bx:c.wx,by:1.1,bz:c.wz,age:Math.random(),life:0.6+Math.random()*0.5,ph:Math.random()*Math.PI*2,lat:0.04+Math.random()*0.04,rise:0.22+Math.random()*0.2});
+        em.position.set(c.wx,1.12,c.wz); levelRoot.add(em);
+        embers.push({m:em,bx:c.wx,by:1.12,bz:c.wz,age:Math.random(),life:0.7+Math.random()*0.6,ph:Math.random()*Math.PI*2,lat:0.05+Math.random()*0.045,rise:0.26+Math.random()*0.24});
       }
-      torches.push({light,flame:fl,embers,ph:Math.random()*Math.PI*2,pulse:0.14+Math.random()*0.1,bi:0.6});
+      torches.push({light,flame:fl,embers,ph:Math.random()*Math.PI*2,pulse:0.18+Math.random()*0.12,bi:0.65});
     });
   }
 
   function addFireplaces(fps) {
     fps.forEach(f=>{
-      const base=new THREE.Mesh(new THREE.BoxGeometry(0.5,0.16,0.5),new THREE.MeshStandardMaterial({color:0x222222,roughness:0.9}));
-      base.position.set(f.x,0.08,f.z); levelRoot.add(base);
-      const fl=new THREE.Mesh(new THREE.SphereGeometry(0.18,8,6),new THREE.MeshBasicMaterial({color:0xff6600,transparent:true,opacity:0.88}));
-      fl.position.set(f.x,0.36,f.z); levelRoot.add(fl);
-      const light=new THREE.PointLight(0xff5500,1.1,7,1.8);
-      light.position.set(f.x,0.42,f.z); levelRoot.add(light);
-      fireLights.push({light,flame:fl,ph:Math.random()*Math.PI*2,pulse:0.22,bi:1.1});
+      const base=new THREE.Mesh(new THREE.BoxGeometry(0.58,0.18,0.58),new THREE.MeshStandardMaterial({color:0x1a1a1a,roughness:0.92,metalness:0.2}));
+      base.position.set(f.x,0.09,f.z); levelRoot.add(base);
+      const rim=new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.28,0.08,6),new THREE.MeshStandardMaterial({color:0x2a2020,roughness:0.85,metalness:0.4}));
+      rim.position.set(f.x,0.2,f.z); levelRoot.add(rim);
+      const fl=new THREE.Mesh(new THREE.SphereGeometry(0.22,10,8),new THREE.MeshBasicMaterial({color:0xff7722,transparent:true,opacity:0.9}));
+      fl.position.set(f.x,0.42,f.z); levelRoot.add(fl);
+      const light=new THREE.PointLight(0xff6633,1.4,8.5,2.2);
+      light.position.set(f.x,0.48,f.z); levelRoot.add(light);
+      fireLights.push({light,flame:fl,ph:Math.random()*Math.PI*2,pulse:0.28,bi:1.2});
     });
   }
 
@@ -1005,10 +1253,10 @@ import * as THREE from './assets/vendor/three.module.js';
     }
     sShuf(decorCells, currentLevel*37+9);
     
-    const decorCount=Math.min(Math.floor(decorCells.length*0.12), 25);
+    const decorCount=Math.min(Math.floor(decorCells.length*0.35), 80);
     for(let d=0;d<decorCount;d++) {
       const pos=decorCells[d];
-      const type=Math.floor(rng(d+501)*6);
+      const type=Math.floor(rng(d+501)*10);
       const angle=rng(d+701)*Math.PI*2;
       
       if(type===0) {
@@ -1047,12 +1295,76 @@ import * as THREE from './assets/vendor/three.module.js';
           const tip=new THREE.Mesh(new THREE.ConeGeometry(0.05,0.18,6),new THREE.MeshStandardMaterial({color:0x888888,roughness:0.5,metalness:0.9}));
           tip.position.set(pos.x-0.15+sp*0.15,1.05,pos.z); levelRoot.add(tip);
         }
+      } else if(type===6) {
+        // Blood pool on floor
+        const poolGeo=new THREE.CircleGeometry(0.18+rng(d+801)*0.14,8);
+        const pool=new THREE.Mesh(poolGeo,new THREE.MeshBasicMaterial({color:0x4a0808,transparent:true,opacity:0.82}));
+        pool.rotation.x=-Math.PI/2; pool.position.set(pos.x,0.005,pos.z); levelRoot.add(pool);
+        if(rng(d+802)<0.5) {
+          const trail=new THREE.Mesh(new THREE.PlaneGeometry(0.05,0.18+rng(d+803)*0.1),new THREE.MeshBasicMaterial({color:0x3a0606,transparent:true,opacity:0.65}));
+          trail.rotation.x=-Math.PI/2; trail.rotation.z=rng(d+804)*Math.PI;
+          trail.position.set(pos.x+0.1,0.005,pos.z+0.1); levelRoot.add(trail);
+        }
+      } else if(type===7) {
+        // Skull and bone pile
+        const skullGeo=new THREE.SphereGeometry(0.07,5,4);
+        const boneMat2=new THREE.MeshStandardMaterial({color:0xd4c89a,roughness:0.85,metalness:0});
+        for(let s=0;s<2+Math.floor(rng(d+901)*3);s++){
+          const skull=new THREE.Mesh(skullGeo,boneMat2);
+          skull.position.set(pos.x+(rng(d+902+s)-0.5)*0.28,0.07+rng(d+903+s)*0.04,pos.z+(rng(d+904+s)-0.5)*0.28);
+          skull.rotation.set(rng(d+905+s)*Math.PI,rng(d+906+s)*Math.PI*2,0);
+          skull.scale.set(1,0.85+rng(d+907+s)*0.3,0.9); levelRoot.add(skull);
+        }
+        for(let b=0;b<4;b++){
+          const shard=new THREE.Mesh(new THREE.BoxGeometry(0.04+rng(d+910+b)*0.06,0.03,0.015),boneMat2);
+          shard.position.set(pos.x+(rng(d+911+b)-0.5)*0.4,0.015,pos.z+(rng(d+912+b)-0.5)*0.4);
+          shard.rotation.y=rng(d+913+b)*Math.PI*2; levelRoot.add(shard);
+        }
+      } else if(type===8) {
+        // Rubble/stone pile
+        const rubMat=new THREE.MeshStandardMaterial({color:0x4a4a52,roughness:0.95,metalness:0.02});
+        for(let rb=0;rb<3+Math.floor(rng(d+1001)*4);rb++){
+          const sz=0.06+rng(d+1002+rb)*0.12;
+          const chunk=new THREE.Mesh(new THREE.BoxGeometry(sz,sz*0.6,sz*0.85),rubMat);
+          chunk.position.set(pos.x+(rng(d+1003+rb)-0.5)*0.35,sz*0.3,pos.z+(rng(d+1004+rb)-0.5)*0.35);
+          chunk.rotation.set(0,rng(d+1005+rb)*Math.PI*2,rng(d+1006+rb)*0.4-0.2); levelRoot.add(chunk);
+        }
       } else {
-        // Stone torch mount with sconce
-        const mount=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.3,0.12),new THREE.MeshStandardMaterial({color:0x555555,roughness:0.85}));
-        mount.position.set(pos.x,0.6,pos.z); levelRoot.add(mount);
-        const sconce=new THREE.Mesh(new THREE.SphereGeometry(0.15,6,6),new THREE.MeshStandardMaterial({color:0x6b5328,roughness:0.75,emissive:0x221100,emissiveIntensity:0.2}));
-        sconce.position.set(pos.x,1.0,pos.z); levelRoot.add(sconce);
+        // Hanging iron chains
+        const chainMat=new THREE.MeshStandardMaterial({color:0x3a3a3a,roughness:0.75,metalness:0.7});
+        const links=4+Math.floor(rng(d+1101)*4);
+        for(let l=0;l<links;l++){
+          const link=new THREE.Mesh(new THREE.TorusGeometry(0.028,0.008,4,8),chainMat);
+          link.position.set(pos.x+(rng(d+1102+l)-0.5)*0.04,1.6-l*0.12,pos.z+(rng(d+1103+l)-0.5)*0.04);
+          link.rotation.set(l%2===0?0:Math.PI/2,0,0); levelRoot.add(link);
+        }
+        const shackle=new THREE.Mesh(new THREE.TorusGeometry(0.055,0.015,5,10),chainMat);
+        shackle.position.set(pos.x,1.6-links*0.12,pos.z); levelRoot.add(shackle);
+      }
+    }
+
+    // ── Scattered floor debris — blood, bones, stone chips across all walkable cells ──
+    const debrisCells=[];
+    for(let dz=1;dz<worldH-1;dz++) for(let dx=1;dx<worldW-1;dx++) {
+      if(!isSolid(currentMap[dz][dx])&&currentMap[dz][dx]!==2&&currentMap[dz][dx]!==3&&currentMap[dz][dx]!==6)
+        debrisCells.push({x:dx+0.5,z:dz+0.5});
+    }
+    sShuf(debrisCells, currentLevel*53+7);
+    const debrisCount=Math.min(Math.floor(debrisCells.length*0.18),110);
+    const bFragMat=new THREE.MeshStandardMaterial({color:0xd4c89a,roughness:0.85,metalness:0});
+    for(let d=0;d<debrisCount;d++){
+      const pos=debrisCells[d];
+      const t=rng(d+2000);
+      if(t<0.35){
+        const splash=new THREE.Mesh(new THREE.CircleGeometry(0.06+rng(d+2001)*0.08,6),new THREE.MeshBasicMaterial({color:0x3a0606,transparent:true,opacity:0.55+rng(d+2002)*0.3}));
+        splash.rotation.x=-Math.PI/2; splash.position.set(pos.x,0.003,pos.z); levelRoot.add(splash);
+      } else if(t<0.65){
+        const bone=new THREE.Mesh(new THREE.BoxGeometry(0.05+rng(d+2003)*0.04,0.02,0.018),bFragMat);
+        bone.position.set(pos.x,0.01,pos.z); bone.rotation.y=rng(d+2004)*Math.PI*2; levelRoot.add(bone);
+      } else {
+        const sz=0.04+rng(d+2005)*0.06;
+        const chip=new THREE.Mesh(new THREE.BoxGeometry(sz,sz*0.4,sz*0.7),new THREE.MeshStandardMaterial({color:0x3c3c44,roughness:0.96}));
+        chip.position.set(pos.x,sz*0.2,pos.z); chip.rotation.y=rng(d+2006)*Math.PI*2; levelRoot.add(chip);
       }
     }
   }
@@ -1080,26 +1392,123 @@ import * as THREE from './assets/vendor/three.module.js';
   }
 
   // ── Portal ───────────────────────────────────────────────────────────────────
-  function buildPortal(ex,ez) {
+  function buildPortal(ex,ez,levelNum=2) {
     const g=new THREE.Group();
-    const pm=new THREE.MeshStandardMaterial({map:wallTex,roughness:0.95,metalness:0.02});
-    const lp=new THREE.Mesh(new THREE.BoxGeometry(0.26,1.62,0.26),pm); lp.position.set(-0.32,0.81,0);
-    const rp=lp.clone(); rp.position.x=0.32;
-    const ln=new THREE.Mesh(new THREE.BoxGeometry(0.94,0.22,0.26),pm); ln.position.set(0,1.54,0);
-    const ring=new THREE.Mesh(new THREE.TorusGeometry(0.27,0.07,10,18),new THREE.MeshStandardMaterial({color:0xcc2828,emissive:0x661010,emissiveIntensity:1.1,roughness:0.5,metalness:0.2}));
-    ring.position.set(0,0.9,0); ring.rotation.x=Math.PI/2;
-    const glow=new THREE.Mesh(new THREE.CircleGeometry(0.18,18),new THREE.MeshBasicMaterial({color:0xff4030,transparent:true,opacity:0.78,side:THREE.DoubleSide}));
-    glow.position.set(0,0.9,0.02);
-    const pl=new THREE.PointLight(0xff5040,0.65,6.4,1.8); pl.position.set(0,1,0);
-    g.add(lp,rp,ln,ring,glow,pl); g.position.set(ex,0,ez); levelRoot.add(g);
-    levelExit.x=ex; levelExit.z=ez; levelExit.group=g; levelExit.glow=glow; levelExit.seed=Math.random()*Math.PI*2;
+    const iMat=new THREE.MeshStandardMaterial({color:0x0a0a0e,emissive:0x0a0004,emissiveIntensity:0.5,roughness:0.86,metalness:0.92});
+    const boneMat=new THREE.MeshStandardMaterial({color:0xd0c48c,roughness:0.80,metalness:0});
+
+    // Massive gate posts — floor to ceiling
+    const postGeo=new THREE.BoxGeometry(0.2,WALL_H,0.2);
+    [-0.62,0.62].forEach(ox=>{
+      const post=new THREE.Mesh(postGeo,iMat); post.position.set(ox,WALL_H/2,0); g.add(post);
+      // Post cap
+      const cap=new THREE.Mesh(new THREE.BoxGeometry(0.28,0.14,0.28),iMat); cap.position.set(ox,WALL_H+0.07,0); g.add(cap);
+    });
+
+    // Top crossbar
+    const topBar=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.14,0.18),iMat); topBar.position.set(0,WALL_H-0.07,0); g.add(topBar);
+    // Mid rail
+    const midRail=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.07,0.12),iMat); midRail.position.set(0,WALL_H*0.52,0); g.add(midRail);
+    // Bottom rail
+    const botRail=new THREE.Mesh(new THREE.BoxGeometry(1.5,0.07,0.12),iMat); botRail.position.set(0,0.12,0); g.add(botRail);
+
+    // Seven vertical spear-tipped bars
+    [-0.48,-0.32,-0.16,0,0.16,0.32,0.48].forEach((bx,bi)=>{
+      const bar=new THREE.Mesh(new THREE.BoxGeometry(0.07,WALL_H-0.16,0.07),iMat);
+      bar.position.set(bx,(WALL_H-0.16)/2+0.08,0); g.add(bar);
+      // Spear tip
+      const tip=new THREE.Mesh(new THREE.ConeGeometry(0.068,0.28,4),iMat);
+      tip.position.set(bx,WALL_H+0.14,0); tip.rotation.y=Math.PI/4; g.add(tip);
+    });
+
+    // Three skulls mounted on top crossbar
+    [-0.42,0,0.42].forEach(ox=>{
+      const skull=new THREE.Mesh(new THREE.SphereGeometry(0.11,6,5),boneMat);
+      skull.position.set(ox,WALL_H+0.32,0); skull.scale.set(1,0.88,0.82); g.add(skull);
+      const jaw=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.065,0.1),boneMat);
+      jaw.position.set(ox,WALL_H+0.17,0); g.add(jaw);
+      // Eye sockets with red glow
+      [-0.04,0.04].forEach(ex2=>{
+        const socket=new THREE.Mesh(new THREE.SphereGeometry(0.026,4,4),new THREE.MeshBasicMaterial({color:0x000000}));
+        socket.position.set(ox+ex2,WALL_H+0.32,-0.1); g.add(socket);
+        const eyeGlow=new THREE.Mesh(new THREE.SphereGeometry(0.016,4,4),new THREE.MeshBasicMaterial({color:0xff2200,transparent:true,opacity:0.95}));
+        eyeGlow.position.set(ox+ex2,WALL_H+0.32,-0.09); g.add(eyeGlow);
+      });
+    });
+
+    // Impaled skull at ground level centre
+    const gSkull=new THREE.Mesh(new THREE.SphereGeometry(0.13,6,5),boneMat);
+    gSkull.position.set(0,0.26,0.05); gSkull.scale.set(1,0.84,0.8); g.add(gSkull);
+    const gJaw=new THREE.Mesh(new THREE.BoxGeometry(0.19,0.068,0.1),boneMat); gJaw.position.set(0,0.11,0.05); g.add(gJaw);
+    // Spike under ground skull
+    const spike=new THREE.Mesh(new THREE.ConeGeometry(0.04,0.22,4),iMat); spike.position.set(0,0.0,0); g.add(spike);
+
+    // Hanging chains on posts
+    [-0.62,0.62].forEach(ox=>{
+      for(let ci=0;ci<4;ci++){
+        const link=new THREE.Mesh(new THREE.TorusGeometry(0.036,0.011,4,8),iMat);
+        link.position.set(ox,WALL_H-0.5-ci*0.17,0.12); link.rotation.set(ci%2===0?0:Math.PI/2,0,0); g.add(link);
+      }
+    });
+
+    // Hellfire glow fill (the visual trigger zone)
+    const glow=new THREE.Mesh(new THREE.PlaneGeometry(1.2,WALL_H-0.2),
+      new THREE.MeshBasicMaterial({color:0xff2200,transparent:true,opacity:0.45,side:THREE.DoubleSide}));
+    glow.position.set(0,WALL_H/2,0.01); g.add(glow);
+
+    // Hellfire point light
+    const pl=new THREE.PointLight(0xff3300,1.1,8,1.8); pl.position.set(0,1.1,0.5); g.add(pl);
+    // Secondary skull-eye glow lights
+    const el=new THREE.PointLight(0xff1100,0.4,3,2); el.position.set(0,WALL_H+0.3,0); g.add(el);
+
+    // ── Rune sign — glowing inscription above the gate ────────────────────────────
+    const sc=document.createElement('canvas'); sc.width=256; sc.height=72;
+    const sctx=sc.getContext('2d');
+    // Dark stone base
+    sctx.fillStyle='#0e0606'; sctx.fillRect(0,0,256,72);
+    for(let i=0;i<14;i++){
+      sctx.fillStyle=`rgba(60,20,5,${(0.03+Math.random()*0.07).toFixed(3)})`;
+      sctx.fillRect(Math.random()*256,Math.random()*72,Math.random()*70+15,Math.random()*8+2);
+    }
+    // Glowing border
+    const bGrad=sctx.createLinearGradient(0,0,256,0);
+    bGrad.addColorStop(0,'rgba(160,50,8,0.35)'); bGrad.addColorStop(0.5,'rgba(220,88,18,0.75)'); bGrad.addColorStop(1,'rgba(160,50,8,0.35)');
+    sctx.strokeStyle=bGrad; sctx.lineWidth=2; sctx.strokeRect(2,2,252,68);
+    sctx.strokeStyle='rgba(90,25,4,0.55)'; sctx.lineWidth=1; sctx.strokeRect(6,6,244,60);
+    // Corner rune marks
+    sctx.shadowColor='#ff4400'; sctx.shadowBlur=8;
+    sctx.font='bold 14px serif'; sctx.fillStyle='#cc3a10';
+    sctx.textAlign='left';  sctx.fillText('ᚱᚢ',  8, 26);
+    sctx.textAlign='right'; sctx.fillText('ᚾᛖ', 248, 26);
+    sctx.textAlign='left';  sctx.fillText('ᚠᚺ',  8, 64);
+    sctx.textAlign='right'; sctx.fillText('ᚹᚾ', 248, 64);
+    // Main glowing heading
+    sctx.shadowColor='#ff5500'; sctx.shadowBlur=20;
+    sctx.font='bold 23px serif'; sctx.textAlign='center'; sctx.fillStyle='#ff8844';
+    sctx.fillText(`✶ SECTOR ${levelNum} ✶`, 128, 33);
+    // Rune row
+    sctx.shadowBlur=10; sctx.font='12px serif'; sctx.fillStyle='#bb3c12';
+    sctx.fillText('ᚱᚢᚾ ◆ ᛖᚠᚺ ◆ ᚹᚾᛇ ◆ ᛖᚱᚢ', 128, 56);
+    sctx.shadowBlur=0;
+    const sTex=new THREE.CanvasTexture(sc); sTex.colorSpace=THREE.SRGBColorSpace;
+    const sign=new THREE.Mesh(
+      new THREE.PlaneGeometry(1.45,0.40),
+      new THREE.MeshBasicMaterial({map:sTex,transparent:true,side:THREE.DoubleSide})
+    );
+    sign.position.set(0, WALL_H-0.21, -0.18); g.add(sign);
+    const sL=new THREE.PointLight(0xff4400,0.55,4,2); sL.position.set(0,WALL_H-0.2,-0.30); g.add(sL);
+
+    g.rotation.y=Math.PI/2; // orient to face down hallway
+    // Push gate flush against the end wall (+1.3 toward wall)
+    g.position.set(ex+1.3,0,ez); levelRoot.add(g);
+    levelExit.x=ex+1.3; levelExit.z=ez; levelExit.group=g; levelExit.glow=glow; levelExit.seed=Math.random()*Math.PI*2;
   }
 
   // ── Gates ────────────────────────────────────────────────────────────────────
   function unlockGates() {
     gates.forEach(g=>{ if(g.opened)return; g.opened=true; currentMap[g.z][g.x]=0; if(g.m.parent)g.m.parent.remove(g.m); });
     sfx.gate();
-    statusEl.textContent='Gate unlocked — find the exit portal.';
+    statusEl.textContent='Gate unlocked — reach the iron gate at the end of the hallway.';
   }
 
   // ── Procedural level generator ───────────────────────────────────────────────
@@ -1108,10 +1517,10 @@ import * as THREE from './assets/vendor/three.module.js';
     const rng = n => { const x=Math.sin(idx*127.1+n*311.7+1.5)*43758.5453; return x-Math.floor(x); };
     const rndInt = (n,lo,hi) => lo + Math.floor(rng(n)*(hi-lo+1));
 
-    // Map size grows every cycle
+    // Map size grows with every level
     const cycle = Math.floor(idx/LEVELS.length);
-    const W = Math.min(22 + cycle*2, 34);
-    const H = Math.min(16 + cycle*2, 28);
+    const W = Math.min(30 + Math.floor(idx/2) + cycle*2, 50);
+    const H = Math.min(22 + Math.floor(idx/2) + cycle*2, 40);
 
     // Start all-wall
     const map = Array.from({length:H}, ()=>new Array(W).fill(1));
@@ -1131,7 +1540,7 @@ import * as THREE from './assets/vendor/three.module.js';
     const maxRH = Math.min(4+Math.floor(idx/2.5), 8);
     const minRW = Math.max(3, Math.min(3, 2+Math.floor(idx/8)));
     const minRH = Math.max(3, Math.min(3, 2+Math.floor(idx/8)));
-    const targetRooms = Math.min(4+Math.floor(idx*0.65), 12);
+    const targetRooms = Math.min(6+Math.floor(idx*0.8), 16);
     const rooms = [];
     for(let att=0; att<500&&rooms.length<targetRooms; att++) {
       const rw=rndInt(att*3+1, minRW, maxRW);
@@ -1164,7 +1573,7 @@ import * as THREE from './assets/vendor/three.module.js';
     }
     
     // ── Add maze-like dead ends at higher levels ─────────────────────
-    const mazeComplexity = Math.min(Math.floor(idx/4), 8);
+    const mazeComplexity = Math.min(3 + Math.floor(idx/3), 14);
     for(let m=0;m<mazeComplexity;m++){
       const roomIdx = rndInt(1200+m*17, 1, rooms.length-1);
       const r = rooms[roomIdx];
@@ -1182,59 +1591,164 @@ import * as THREE from './assets/vendor/three.module.js';
       }
     }
 
+    // ── Secret passages — punch surprise shortcuts through walls ──────
+    const secretCount = 2 + Math.floor(idx/2);
+    let _spa = 0, _spm = 0;
+    while(_spm < secretCount && _spa < 300) {
+      _spa++;
+      const spx = rndInt(2000+_spa*3, 2, W-3);
+      const spz = rndInt(2001+_spa*3, 2, H-3);
+      if(!isSolid(map[spz][spx])) continue;
+      const fL=spx>0&&!isSolid(map[spz][spx-1]), fR=spx<W-1&&!isSolid(map[spz][spx+1]);
+      const fU=spz>0&&!isSolid(map[spz-1][spx]), fD=spz<H-1&&!isSolid(map[spz+1][spx]);
+      if((fL&&fR)||(fU&&fD)){ map[spz][spx]=0; _spm++; }
+    }
+
     // ── Gate corridor through barrier ────────────────────────────────
     const connector = rooms.reduce((best,r)=>r.cx>best.cx?r:best, rooms[0]);
     carveV(connector.cx, connector.cz, gateZ);
     carveH(gateZ, connector.cx, barrierX+2);
     map[gateZ][barrierX] = 7; // gate
 
-    // ── Exit zone (right of barrier) ─────────────────────────────────
-    const ezX1=barrierX+2, ezZ1=1, ezX2=W-2, ezZ2=H-2;
-    carveRect(ezX1,ezZ1,ezX2,ezZ2);
-    // Scatter decorative pillars - more at higher levels
-    const pillarDensity = Math.min(0.2 + idx*0.05, 0.6);
-    for(let z=ezZ1+2;z<ezZ2-1;z+=3) for(let x=ezX1+2;x<ezX2-1;x+=4)
-      if(rng(z*71+x)<pillarDensity) map[z][x]=1;
+    // ── Exit zone — long narrow hallway of dread ──────────────────────
+    const ezX1=barrierX+2, ezX2=W-2;
+    const hallZc = Math.floor(H/2);
+    const hallZ1 = Math.max(1, hallZc-1);
+    const hallZ2 = Math.min(H-2, hallZc+1);
+    carveRect(ezX1, hallZ1, ezX2, hallZ2);
+    // Connect gate row to hallway entry
+    if(gateZ<hallZ1) carveV(ezX1, gateZ, hallZ1);
+    else if(gateZ>hallZ2) carveV(ezX1, hallZ2, gateZ);
+    // Dead-end alcoves off hallway sides for cover and atmosphere
+    const alcoveCount = 2 + Math.floor(idx/2);
+    for(let al=0; al<alcoveCount; al++) {
+      const ax = ezX1+2+Math.floor(rng(3100+al*13)*Math.max(1,ezX2-ezX1-4));
+      const side = rng(3101+al*13)<0.5 ? -1 : 1;
+      const adepth = 1+Math.floor(rng(3102+al*13)*2);
+      for(let d=1;d<=adepth;d++){
+        const az=hallZc+side*(2+d-1);
+        if(az>0&&az<H-1) map[az][ax]=0;
+      }
+    }
+    const ezZ1=hallZ1, ezZ2=hallZ2; // hallway row range
 
     // ── Place special tiles ───────────────────────────────────────────
     map[rooms[0].cz][rooms[0].cx] = 2; // spawn in first room
 
-    // Exit: towards the far end of the exit zone
-    const exitX = ezX1+Math.floor((ezX2-ezX1)*0.7);
-    const exitZ = ezZ1+Math.floor((ezZ2-ezZ1)*0.65);
+    // Exit: moved one cell back into hallway to prevent clipping into wall
+    const exitX = ezX2 - 1;
+    const exitZ = hallZc;
     map[exitZ][exitX] = 3;
 
-    // Key: corner of the room FURTHEST from spawn
+    // ── Key placement: guarantee it goes somewhere ──────────────────────────
     const sp=rooms[0];
-    const keyRoom=rooms.reduce((best,r)=>r!==sp&&Math.hypot(r.cx-sp.cx,r.cz-sp.cz)>Math.hypot(best.cx-sp.cx,best.cz-sp.cz)?r:best, rooms[1]);
-    const kx=keyRoom.x1+1, kz=keyRoom.z1+1;
-    map[map[kz][kx]===0?kz:keyRoom.cz][map[kz][kx]===0?kx:keyRoom.cx] = 6;
-
-    // ── Enemies ───────────────────────────────────────────────────────
-    const typePool = cycle>=3?['grunt','soldier','brute','spectre','fiend','goliath']:
-                     cycle>=2?['grunt','soldier','brute','spectre','fiend']:
-                     cycle>=1?['grunt','soldier','brute','spectre']:['grunt','soldier'];
-    const hardPool = typePool.filter(t=>t!=='grunt');
-    const enemies = [];
-    const spawnPX = rooms[0].cx+0.5, spawnPZ = rooms[0].cz+0.5;
-    const MIN_SAFE = 5.5; // enemies must be at least this far from spawn
-    // Rooms: skip spawn room, scale enemies with level and room index
-    for(let ri=1;ri<rooms.length;ri++) {
-      const r=rooms[ri];
-      const count=Math.min(1+Math.floor(idx*0.22)+Math.floor(ri*0.4), 4);
-      for(let e=0;e<count;e++) {
-        const ex=r.x1+1+Math.floor(rng(ri*91+e*17+600)*Math.max(1,r.x2-r.x1-1));
-        const ez=r.z1+1+Math.floor(rng(ri*91+e*17+700)*Math.max(1,r.z2-r.z1-1));
-        if(ex>0&&ez>0&&ex<W-1&&ez<H-1&&!isSolid(map[ez][ex])
-           &&Math.hypot(ex+0.5-spawnPX, ez+0.5-spawnPZ)>=MIN_SAFE)
-          enemies.push({x:ex+0.5, z:ez+0.5, type:typePool[Math.floor(rng(ri*91+e*17+800)*typePool.length)]});
+    const sorted=rooms.filter(r=>r!==sp).sort((a,b)=>Math.hypot(b.cx-sp.cx,b.cz-sp.cz)-Math.hypot(a.cx-sp.cx,a.cz-sp.cz));
+    const keyChamberCells=new Set();
+    let keyPlaced=false;
+    
+    // Helper: check if a position is wall-adjacent (prefer against walls for atmosphere)
+    const isWallAdjacent=(x,z)=>{
+      const dirs=[[0,1],[0,-1],[1,0],[-1,0],[1,1],[1,-1],[-1,1],[-1,-1]];
+      return dirs.some(([dx,dz])=>isSolid(map[z+dz]?.[x+dx]));
+    };
+    
+    // Priority 1: Place in a far room on the left side (against a wall)
+    const leftRooms = sorted.filter(r=>r.x2<barrierX);
+    if(leftRooms.length>0) {
+      const keyRoom = leftRooms[0];
+      // Search for wall-adjacent floor cells first
+      for(let z=keyRoom.z1+1;z<=keyRoom.z2-1&&!keyPlaced;z++) {
+        for(let x=keyRoom.x1+1;x<=keyRoom.x2-1&&!keyPlaced;x++) {
+          if(!isSolid(map[z][x])&&isWallAdjacent(x,z)) { map[z][x]=6; keyPlaced=true; }
+        }
+      }
+      // If no wall-adjacent, take any floor
+      if(!keyPlaced) {
+        for(let z=keyRoom.z1+1;z<=keyRoom.z2-1&&!keyPlaced;z++) {
+          for(let x=keyRoom.x1+1;x<=keyRoom.x2-1&&!keyPlaced;x++) {
+            if(!isSolid(map[z][x])) { map[z][x]=6; keyPlaced=true; }
+          }
+        }
       }
     }
-    // Exit zone guardians
-    const guardCount = Math.min(1+Math.floor(idx*0.2), 4);
+    
+    // Priority 2: Check any non-spawn room before the barrier
+    if(!keyPlaced) {
+      for(let ri=1;ri<sorted.length&&!keyPlaced;ri++) {
+        const r = sorted[ri];
+        if(r.cx>=barrierX) continue; // Only left side
+        for(let z=r.z1+1;z<=r.z2-1&&!keyPlaced;z++) {
+          for(let x=r.x1+1;x<=r.x2-1&&!keyPlaced;x++) {
+            if(!isSolid(map[z][x])&&isWallAdjacent(x,z)) { map[z][x]=6; keyPlaced=true; }
+          }
+        }
+      }
+    }
+    
+    // Priority 3: Check all rooms
+    if(!keyPlaced) {
+      for(let ri=1;ri<rooms.length&&!keyPlaced;ri++) {
+        const r = rooms[ri];
+        for(let z=r.z1+1;z<=r.z2-1&&!keyPlaced;z++) {
+          for(let x=r.x1+1;x<=r.x2-1&&!keyPlaced;x++) {
+            if(!isSolid(map[z][x])&&isWallAdjacent(x,z)) { map[z][x]=6; keyPlaced=true; }
+          }
+        }
+      }
+    }
+    
+    // Final safety: place in spawn room floor if all else fails
+    if(!keyPlaced) {
+      for(let z=sp.z1+1;z<=sp.z2-1&&!keyPlaced;z++) {
+        for(let x=sp.x1+1;x<=sp.x2-1&&!keyPlaced;x++) {
+          if(!isSolid(map[z][x])&&!(z===sp.cz&&x===sp.cx)) { 
+            map[z][x]=6; 
+            keyPlaced=true; 
+          }
+        }
+      }
+    }
+
+    // ── Enemies: randomized spawn locations ─────────────────────────────────
+    const typePool = idx>=8 ?['grunt','soldier','brute','spectre','fiend','goliath']:
+                     idx>=5 ?['grunt','soldier','brute','spectre','fiend']:
+                     idx>=2 ?['grunt','soldier','brute','spectre']:
+                     idx>=1 ?['grunt','soldier','brute']:['grunt','soldier'];
+    const hardPool = typePool.filter(t=>t!=='grunt');
+    const spawnPX = rooms[0].cx+0.5, spawnPZ = rooms[0].cz+0.5;
+    const MIN_SAFE = 7.5; // enemies must be at least this far from spawn
+    
+    // Collect all valid floor cells from all non-spawn rooms
+    const floorCells=[];
+    for(let ri=1;ri<rooms.length;ri++) {
+      const r=rooms[ri];
+      for(let z=r.z1+1;z<=r.z2-1;z++) {
+        for(let x=r.x1+1;x<=r.x2-1;x++) {
+          if(!isSolid(map[z][x])&&Math.hypot(x+0.5-spawnPX, z+0.5-spawnPZ)>=MIN_SAFE)
+            floorCells.push({x,z});
+        }
+      }
+    }
+    // Shuffle deterministically
+    sShuf(floorCells, currentLevel*87+45);
+    
+    // Spawn enemies at randomized positions
+    const enemies = [];
+    
+    // Calculate total enemy count
+    const levelScale=Math.pow(idx/6+1, 0.65)-1;
+    let totalEnemies=Math.min(3+Math.floor(levelScale*3)+rooms.length, Math.floor(floorCells.length*0.4));
+    let cellIdx=0;
+    for(let e=0;e<totalEnemies&&cellIdx<floorCells.length;e++) {
+      const cell=floorCells[cellIdx++];
+      enemies.push({x:cell.x+0.5, z:cell.z+0.5, type:typePool[Math.floor(rng(e+1337)*typePool.length)]});
+    }
+    
+    // Hallway guardians — block the path to the iron gate
+    const guardCount = Math.min(2+Math.floor(idx*0.35), 7);
     for(let g=0;g<guardCount;g++) {
-      const ex=ezX1+2+Math.floor(rng(g+900)*Math.max(1,ezX2-ezX1-3));
-      const ez=ezZ1+1+Math.floor(rng(g+950)*Math.max(1,ezZ2-ezZ1-1));
+      const ex=ezX1+1+Math.floor(rng(g+900)*Math.max(1,ezX2-ezX1-3));
+      const ez=hallZ1+Math.floor(rng(g+950)*Math.max(1,hallZ2-hallZ1+1));
       if(ex>0&&ez>0&&ex<W-1&&ez<H-1&&!isSolid(map[ez][ex]))
         enemies.push({x:ex+0.5, z:ez+0.5, type:hardPool.length?hardPool[Math.floor(rng(g+999)*hardPool.length)]:'soldier'});
     }
@@ -1250,7 +1764,7 @@ import * as THREE from './assets/vendor/three.module.js';
       pickups.push({x:barrierX-2+0.5, z:gateZ+0.5, type:'ammo'});
     // Gun upgrade every 2 levels — placed in the room second-farthest from spawn
     if(idx%2===1) {
-      const upCandidates=rooms.filter(r=>r!==rooms[0]&&r!==keyRoom)
+      const upCandidates=rooms.filter(r=>r!==rooms[0])
         .sort((a,b)=>Math.hypot(b.cx-rooms[0].cx,b.cz-rooms[0].cz)-Math.hypot(a.cx-rooms[0].cx,a.cz-rooms[0].cz));
       const upRoom=upCandidates[0]||rooms[Math.min(1,rooms.length-1)];
       pickups.push({x:upRoom.cx+0.5, z:upRoom.cz+0.5, type:'upgrade'});
@@ -1264,10 +1778,10 @@ import * as THREE from './assets/vendor/three.module.js';
     return {
       name:`Sector ${idx+1}`,
       fogColor: [0x050810,0x020508,0x080408][atm],
-      fogDensity: Math.max(0.13, 0.20-Math.floor(idx/5)*0.01),
+      fogDensity: Math.min(0.26, 0.17 + Math.floor(idx/6)*0.01),
       ambCol: [0x3a4560,0x2a3050,0x3a2040][atm],
-      ambInt: 0.26,
-      fireplaces, map, enemies, pickups,
+      ambInt: 0.28,
+      fireplaces, map, enemies, pickups, keyChamberCells,
     };
   }
 
@@ -1298,11 +1812,12 @@ import * as THREE from './assets/vendor/three.module.js';
       if (v===7) {
         // Build a wrought-iron gate from individual bars
         const gGrp=new THREE.Group();
-        const iMat=new THREE.MeshStandardMaterial({color:0x0c0e14,emissive:0x1e0a04,emissiveIntensity:0.28,roughness:0.92,metalness:0.82});
-        const bar=(bw,bh,bd,bx,by)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(bw,bh,bd),iMat);m.position.set(bx,by,0);gGrp.add(m);};
-        // Outer frame
-        bar(0.06,1.68,0.06,-0.41, 0);   // left post
-        bar(0.06,1.68,0.06, 0.41, 0);   // right post
+        const iMat=new THREE.MeshStandardMaterial({color:0x1a1620,emissive:0x2a1a08,emissiveIntensity:0.35,roughness:0.85,metalness:0.88});
+        const iMatGlow=new THREE.MeshStandardMaterial({color:0x0a0810,emissive:0x3a2a10,emissiveIntensity:0.5,roughness:0.8,metalness:0.9});
+        const bar=(bw,bh,bd,bx,by,mat)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(bw,bh,bd),mat||iMat);m.position.set(bx,by,0);gGrp.add(m);};
+        // Outer frame (glowing)
+        bar(0.06,1.68,0.06,-0.41, 0, iMatGlow);   // left post
+        bar(0.06,1.68,0.06, 0.41, 0, iMatGlow);   // right post
         bar(0.88,0.06,0.06, 0, 0.81);   // top rail
         bar(0.88,0.06,0.06, 0,-0.81);   // bottom rail
         // Two horizontal cross-rails
@@ -1321,6 +1836,9 @@ import * as THREE from './assets/vendor/three.module.js';
         const mkDiag=(angle,ox,oy)=>{const d=new THREE.Mesh(new THREE.BoxGeometry(0.13,0.032,0.032),iMat);d.position.set(ox,oy,0);d.rotation.z=angle;gGrp.add(d);};
         mkDiag( 0.75, 0.07, 0.59); mkDiag(-0.75,-0.07, 0.59);
         mkDiag(-0.75, 0.07, 0.45); mkDiag( 0.75,-0.07, 0.45);
+        // Gate glow aura
+        const gateGlow=new THREE.PointLight(0x4a2a1a,0.4,2.0,1.2);
+        gGrp.add(gateGlow);
         gGrp.position.set(px,0.84,pz);
         gGrp.rotation.y=Math.PI/2;
         levelRoot.add(gGrp);
@@ -1330,6 +1848,7 @@ import * as THREE from './assets/vendor/three.module.js';
       if (v===3) { exitX=px; exitZ=pz; }
       if (v===6) { mapKeys.push({x:px,z:pz,type:'key'}); }
     }
+    currentMapKeys = mapKeys; // Store globally for minimap debugging
     if (solids.length) {
       const iw=new THREE.InstancedMesh(wallGeo,wallMat,solids.length);
       const m4=new THREE.Matrix4();
@@ -1337,10 +1856,10 @@ import * as THREE from './assets/vendor/three.module.js';
       iw.instanceMatrix.needsUpdate=true; levelRoot.add(iw);
     }
 
-    addTorches();
+    addTorches(lvl.keyChamberCells);
     addCastleDecorations();
     addFireplaces(lvl.fireplaces||[]);
-    buildPortal(exitX,exitZ);
+    buildPortal(exitX,exitZ,idx+2);
     // Difficulty scaling — grows every full cycle through the 3 maps
     const diff=getDifficulty(idx);
     const cycle=Math.floor(idx/LEVELS.length);
@@ -1348,19 +1867,21 @@ import * as THREE from './assets/vendor/three.module.js';
     // Build enemy list: base template + extra difficulty enemies
     const allEnemies=[...(lvl.enemies||[])];
     if (diff.extra>0) {
-      // Collect walkable open cells for extra spawns
+      // Collect walkable open cells for extra spawns — use larger spacing to avoid clustering
       const openCells=[];
-      for(let ez=3;ez<worldH-3;ez+=2) for(let ex=3;ex<worldW-3;ex+=2)
+      for(let ez=4;ez<worldH-4;ez+=3) for(let ex=4;ex<worldW-4;ex+=3)
         if (!isSolid(currentMap[ez][ex])) openCells.push({x:ex+0.5,z:ez+0.5});
       sShuf(openCells, idx*31+7);
-      // Unlock harder types as cycles progress
-      const pool=cycle>=3?['spectre','fiend','goliath','brute','soldier']:
-                 cycle>=2?['spectre','fiend','brute','soldier']:
-                 cycle>=1?['spectre','soldier','brute']:['grunt','soldier'];
+      // Spawn regular enemies throughout level
+      const pool= idx>=8?['spectre','fiend','goliath','brute','soldier']:
+                  idx>=5?['spectre','fiend','brute','soldier']:
+                  idx>=2?['spectre','soldier','brute']:['grunt','soldier'];
       for(let i=0;i<Math.min(diff.extra,openCells.length);i++) {
         const t=pool[Math.floor(Math.abs(Math.sin(idx*17+i*13))*pool.length)%pool.length];
         allEnemies.push({x:openCells[i].x,z:openCells[i].z,type:t});
       }
+      // Add miniboss as final boss near the exit door
+      allEnemies.push({x:exitX,z:exitZ,type:'miniboss'});
     }
     spawnEnemies(allEnemies, diff, spawnX, spawnZ);
 
@@ -1369,7 +1890,11 @@ import * as THREE from './assets/vendor/three.module.js';
     if (cycle>0) {
       const bonusCells=[];
       for(let ez=2;ez<worldH-2;ez+=3) for(let ex=2;ex<worldW-2;ex+=3)
-        if(!isSolid(currentMap[ez][ex])) bonusCells.push({x:ex+0.5,z:ez+0.5});
+        if(!isSolid(currentMap[ez][ex])) {
+          // Exclude cells near key pedestal (1.5 unit radius to prevent overlap and crowding)
+          const tooCloseToKey=mapKeys.some(k=>Math.hypot(ex+0.5-k.x,ez+0.5-k.z)<1.5);
+          if(!tooCloseToKey) bonusCells.push({x:ex+0.5,z:ez+0.5});
+        }
       sShuf(bonusCells, idx*53+11);
       const bonusCount=Math.min(cycle*2, bonusCells.length);
       for(let i=0;i<bonusCount;i++)
@@ -1424,6 +1949,7 @@ import * as THREE from './assets/vendor/three.module.js';
         stuckT:0, lunge:0, wA:Math.random()*Math.PI*2, wT:0,
         bs:Math.random()*Math.PI*2,
         state:'patrol', alertT:0, id:i, origColor:null,
+        walkPhase:Math.random()*Math.PI*2, attackFlash:0,
         baseY, isFlying:isFiend,
       };
       enemies.push(mesh); levelRoot.add(mesh); occupied.push({x:sp.x,z:sp.z});
@@ -1431,10 +1957,10 @@ import * as THREE from './assets/vendor/three.module.js';
   }
 
   function safeSpawn(x,z,occ,spawnX,spawnZ) {
-    if (canMoveTo(x,z,0.26)&&occ.every(o=>Math.hypot(o.x-x,o.z-z)>0.7)&&Math.hypot(x-spawnX,z-spawnZ)>=4) return {x,z};
-    for (let r=0.1;r<=3;r+=0.1) for (let a=0;a<Math.PI*2;a+=Math.PI/18) {
+    if (canMoveTo(x,z,0.26)&&occ.every(o=>Math.hypot(o.x-x,o.z-z)>0.7)&&Math.hypot(x-spawnX,z-spawnZ)>=7) return {x,z};
+    for (let r=0.1;r<=6;r+=0.15) for (let a=0;a<Math.PI*2;a+=Math.PI/18) {
       const nx=x+Math.cos(a)*r,nz=z+Math.sin(a)*r;
-      if (canMoveTo(nx,nz,0.26)&&occ.every(o=>Math.hypot(o.x-nx,o.z-nz)>0.7)&&Math.hypot(nx-spawnX,nz-spawnZ)>=4) return{x:nx,z:nz};
+      if (canMoveTo(nx,nz,0.26)&&occ.every(o=>Math.hypot(o.x-nx,o.z-nz)>0.7)&&Math.hypot(nx-spawnX,nz-spawnZ)>=7) return{x:nx,z:nz};
     }
     return{x,z};
   }
@@ -1471,16 +1997,59 @@ import * as THREE from './assets/vendor/three.module.js';
       d.px=e.position.x; d.pz=e.position.z;
       if (dist<1.8) d.lunge=Math.min(1,d.lunge+dt*3); else d.lunge=Math.max(0,d.lunge-dt*2);
       // Flying enemies oscillate; goliath bobs heavily; others stay low
-      if (d.isFlying) {
-        e.position.y=d.baseY+Math.sin(t*4.5+d.bs)*0.32+(d.lunge*-0.3); // dive when lunging
-      } else if (d.type==='goliath') {
-        e.position.y=d.baseY+Math.sin(t*1.8)*0.06;
+      // ── Per-type walk cycle & animation ────────────────────────────────
+      const isWalking=Math.hypot(e.position.x-d.px,e.position.z-d.pz)>0.002;
+      const wRate=d.isFlying?6.2:d.type==='goliath'?2.6:d.type==='brute'?3.5:5.2;
+      if(isWalking) d.walkPhase+=dt*wRate;
+      const wc=Math.sin(d.walkPhase); // walk cycle -1..1
+      if(d.attackFlash>0) d.attackFlash=Math.max(0,d.attackFlash-dt*4.5);
+
+      if(d.isFlying){
+        // Fiend — wing-flap scale + hover dive
+        e.position.y=d.baseY+Math.sin(t*4.5+d.bs)*0.32+d.lunge*-0.3;
+        e.scale.set(d.bsx*(1+Math.abs(wc)*0.20+d.lunge*0.08+(d.attackFlash>0?0.10:0)),
+                    d.bsy*(1-Math.abs(wc)*0.08),1);
+      } else if(d.type==='goliath'){
+        // Goliath — heavy stomp
+        const stomp=isWalking?Math.abs(wc)*0.10:0;
+        e.position.y=d.baseY+Math.sin(t*1.8)*0.06+stomp;
+        e.scale.set(d.bsx*(1+d.lunge*0.08+(d.attackFlash>0?0.16:0)),
+                    d.bsy*(1+d.lunge*0.12-stomp*0.6+(d.attackFlash>0?0.12:0)),1);
+      } else if(d.type==='spectre'){
+        // Spectre — opacity flicker + glide sway
+        e.position.y=d.baseY+Math.sin(t*2.8+d.bs)*0.15;
+        e.material.opacity=Math.max(0.15,0.30+Math.abs(Math.sin(t*6.5+d.bs))*0.32+(d.attackFlash>0?0.28:0));
+        e.scale.set(d.bsx*(1+wc*0.06),d.bsy,1);
+      } else if(d.type==='brute'){
+        // Brute — heavy stomp squash
+        const stomp=isWalking?Math.abs(wc)*0.07:0;
+        e.position.y=d.baseY+Math.sin(t*3)*0.03+stomp;
+        e.scale.set(d.bsx*(1+d.lunge*0.07+wc*0.04+(d.attackFlash>0?0.13:0)),
+                    d.bsy*(1+d.lunge*0.10-stomp*0.65+(d.attackFlash>0?0.09:0)),1);
       } else {
-        e.position.y=d.baseY+Math.sin(t*3)*0.03;
+        // Grunt / soldier — walk squash-stretch bounce
+        const bounce=isWalking?Math.abs(wc)*0.05:0;
+        e.position.y=d.baseY+bounce*0.6+Math.sin(t*3)*0.02;
+        e.scale.set(d.bsx*(1+d.lunge*0.06-wc*0.03+(d.attackFlash>0?0.10:0)),
+                    d.bsy*(1+d.lunge*0.09+bounce*0.5+(d.attackFlash>0?0.08:0)),1);
       }
-      e.scale.set(d.bsx*(1+d.lunge*0.06),d.bsy*(1+d.lunge*0.09),1);
+      // Attack orange flash
+      if(d.attackFlash>0.06){
+        e.material.color.setRGB(1, 0.5+d.attackFlash*0.4, 0.12);
+      } else if(d.attackFlash>0){
+        if(d.origColor) e.material.color.copy(d.origColor); else e.material.color.setHex(0xffffff);
+        d.attackFlash=0;
+      }
+      // Mob sound timer
+      d.soundT=(d.soundT==null?1.5+Math.random()*3:d.soundT)-dt;
+      if(d.soundT<=0){
+        d.soundT=2.2+Math.random()*4.5;
+        if(sees&&d.state==='chase'&&Math.random()<0.5) sfx.mobAlert(d.type);
+        else if(Math.random()<0.12) sfx.mobIdle(d.type);
+      }
       d.acd=Math.max(0,d.acd-dt);
       if (dist<d.ar&&d.acd<=0&&player.health>0) {
+        d.attackFlash=0.24;
         player.health=Math.max(0,player.health-(d.dmg+Math.floor(Math.random()*4)-1));
         player.dmgTimer=0.28; d.acd=ETYPES[d.type].acd*0.7+Math.random()*ETYPES[d.type].acd*0.5;
         sfx.hurt(); setTimeout(()=>{hFlash.style.opacity='0';},95);
@@ -1519,10 +2088,54 @@ import * as THREE from './assets/vendor/three.module.js';
         pickups.push({type:'upgrade',mesh:g,baseY:0.5,ph:Math.random()*Math.PI*2,taken:false});
         return; // skip the default push below
       } else if (p.type==='key') {
-        const ring=new THREE.Mesh(new THREE.TorusGeometry(0.09,0.028,8,14),kMat); ring.rotation.y=Math.PI/2; g.add(ring);
-        const st=new THREE.Mesh(new THREE.BoxGeometry(0.14,0.03,0.03),kMat); st.position.x=0.11; g.add(st);
-        const t1=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.055,0.03),kMat); t1.position.set(0.18,-0.025,0); g.add(t1);
-        const t2=new THREE.Mesh(new THREE.BoxGeometry(0.03,0.04,0.03),kMat); t2.position.set(0.22,-0.01,0); g.add(t2);
+        // Pedestal: ceremonial stone altar with atmospheric effects
+        const baseMat=new THREE.MeshStandardMaterial({color:0x4a4a5a,roughness:0.85,metalness:0.05});
+        const accentMat=new THREE.MeshStandardMaterial({color:0x7a6a4a,roughness:0.7,metalness:0.25});
+        const trimMat=new THREE.MeshStandardMaterial({color:0x9aaa6a,roughness:0.6,metalness:0.4});
+        
+        // Main pedestal base
+        const pedestal=new THREE.Mesh(new THREE.CylinderGeometry(0.4,0.45,0.22,8),baseMat);
+        pedestal.position.y=-0.19; g.add(pedestal);
+        
+        // Top plate with ornament
+        const pedestalTop=new THREE.Mesh(new THREE.CylinderGeometry(0.38,0.38,0.06,8),accentMat);
+        pedestalTop.position.y=0.06; g.add(pedestalTop);
+        
+        // Decorative base rim (golden)
+        const baseRim=new THREE.Mesh(new THREE.CylinderGeometry(0.48,0.48,0.03,8),trimMat);
+        baseRim.position.y=-0.27; g.add(baseRim);
+        
+        // Ornamental pillars on sides (4 corner columns)
+        const pillarGeo=new THREE.CylinderGeometry(0.045,0.05,0.5,6);
+        const positions=[[0.25,0.25],[0.25,-0.25],[-0.25,0.25],[-0.25,-0.25]];
+        positions.forEach(([px,pz])=>{
+          const pillar=new THREE.Mesh(pillarGeo,accentMat);
+          pillar.position.set(px,0.05,pz);
+          g.add(pillar);
+        });
+        
+        // Glowing orbs (mystical aura)
+        const orbMat=new THREE.MeshStandardMaterial({color:0xffdd44,emissive:0xffaa00,emissiveIntensity:0.8,roughness:0.3,metalness:0.7});
+        const orbGlow=new THREE.PointLight(0xffaa00,0.6,2.5,2);
+        const orb1=new THREE.Mesh(new THREE.SphereGeometry(0.06,8,8),orbMat);
+        orb1.position.set(0.28,0.25,0.28); g.add(orb1);
+        const orb2=new THREE.Mesh(new THREE.SphereGeometry(0.06,8,8),orbMat);
+        orb2.position.set(-0.28,0.25,-0.28); g.add(orb2);
+        g.add(orbGlow.clone());
+        orbGlow.position.set(0,0.3,0);
+        g.add(orbGlow);
+        
+        // Top accent ring (golden)
+        const topRing=new THREE.Mesh(new THREE.TorusGeometry(0.42,0.025,6,16),trimMat);
+        topRing.position.y=0.12; topRing.rotation.x=Math.PI/2.2;
+        g.add(topRing);
+        
+        // Key — golden and mystical
+        const dimKeyMat=new THREE.MeshStandardMaterial({color:0xffd700,emissive:0xffaa00,roughness:0.4,metalness:0.65});
+        const ring=new THREE.Mesh(new THREE.TorusGeometry(0.055,0.016,8,14),dimKeyMat); ring.rotation.y=Math.PI/2; ring.position.y=0.18; g.add(ring);
+        const st=new THREE.Mesh(new THREE.BoxGeometry(0.09,0.02,0.02),dimKeyMat); st.position.set(0.068,0.18,0); g.add(st);
+        const t1=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.035,0.02),dimKeyMat); t1.position.set(0.11,-0.015+0.18,0); g.add(t1);
+        const t2=new THREE.Mesh(new THREE.BoxGeometry(0.02,0.025,0.02),dimKeyMat); t2.position.set(0.135,-0.006+0.18,0); g.add(t2);
       }
       g.position.set(p.x,0.3,p.z); levelRoot.add(g);
       pickups.push({type:p.type,mesh:g,baseY:0.3,ph:Math.random()*Math.PI*2,taken:false});
@@ -1532,8 +2145,14 @@ import * as THREE from './assets/vendor/three.module.js';
   function updatePickups(dt,elapsed) {
     pickups.forEach(p=>{
       if (p.taken) return;
-      p.mesh.rotation.y+=dt*1.7;
-      p.mesh.position.y=p.baseY+Math.sin(elapsed*2.7+p.ph)*0.055;
+      // Key pedestal stays stationary, only slight vertical bob
+      if (p.type==='key') {
+        p.mesh.position.y=p.baseY+Math.sin(elapsed*1.5+p.ph)*0.025;
+      } else {
+        // Other pickups spin and bob normally
+        p.mesh.rotation.y+=dt*1.7;
+        p.mesh.position.y=p.baseY+Math.sin(elapsed*2.7+p.ph)*0.055;
+      }
       if (Math.hypot(p.mesh.position.x-player.x,p.mesh.position.z-player.z)>0.44) return;
       p.taken=true; if(p.mesh.parent) p.mesh.parent.remove(p.mesh);
       if (p.type==='medkit') {
@@ -1544,9 +2163,11 @@ import * as THREE from './assets/vendor/three.module.js';
         pkFlash.style.background='rgba(100,175,255,0.22)'; statusEl.textContent='Ammo — +20 rounds';
       } else if (p.type==='upgrade') {
         player.gunTier=Math.min(player.gunTier+1,4);
-        pkFlash.style.background='rgba(0,130,255,0.32)';
-        const desc=['single shot','power shot','3-round spread','heavy spread','5-round burst'][player.gunTier];
-        statusEl.textContent=`Gun upgrade! Tier ${player.gunTier} — ${desc}`;
+        const wFlash=['rgba(120,90,20,0.30)','rgba(50,30,8,0.30)','rgba(180,160,90,0.25)','rgba(80,0,160,0.32)','rgba(160,0,0,0.34)'];
+        pkFlash.style.background=wFlash[Math.min(player.gunTier,4)];
+        const bowNames=['Shortbow','Longbow','Bone Bow','Shadow Bow','Hellfire Bow'];
+        const bowShots=['single shot','heavier draw','triple shot','cursed volley','hellfire burst'];
+        statusEl.textContent=`Found: ${bowNames[player.gunTier]}! — ${bowShots[player.gunTier]}`;
       } else {
         player.hasKey=true; pkFlash.style.background='rgba(240,210,80,0.25)';
         statusEl.textContent='Key found — the gate is open!'; unlockGates();
@@ -1560,13 +2181,12 @@ import * as THREE from './assets/vendor/three.module.js';
   // ── Exit ─────────────────────────────────────────────────────────────────────
   function updateExit(elapsed) {
     if (!levelExit.group) return;
-    const pulse=0.66+Math.sin(elapsed*3+levelExit.seed)*0.2;
-    levelExit.group.rotation.y+=0.006;
-    levelExit.glow.scale.setScalar(0.86+pulse*0.24);
-    levelExit.glow.material.opacity=Math.max(0.42,pulse);
+    const pulse=0.55+Math.sin(elapsed*2.4+levelExit.seed)*0.28;
+    // Gate doesn't spin — pulse the hellfire glow
+    levelExit.glow.material.opacity=Math.max(0.28,pulse*0.85);
     const dist=Math.hypot(levelExit.x-player.x,levelExit.z-player.z);
-    if (dist<0.58&&player.health>0) {
-      if (!player.hasKey) statusEl.textContent='Portal sealed — you need the key.';
+    if (dist<1.1&&player.health>0) {
+      if (!player.hasKey) statusEl.textContent='The iron gate is sealed — find the key.';
       else onLevelComplete();
     }
   }
@@ -1606,12 +2226,14 @@ import * as THREE from './assets/vendor/three.module.js';
     if (player.ammo<=0||player.health<=0||gameState!=='playing'||player.shootCd>0) return;
     player.ammo--;
     const T=player.gunTier;
-    player.shootCd=[0.18,0.14,0.14,0.12,0.10][T];
+    player.shootCd=[0.46,0.38,0.38,0.32,0.28][T];
     player.recoil=0.28;
     sfx.shoot();
-    muzzleLight.intensity=2.2+T*0.6;
-    sFlash.style.opacity='0.66'; setTimeout(()=>{sFlash.style.opacity='0';},55);
-    shake.sT=0.12; shake.sS=0.06;
+    // Magical arrow flash only for T3+
+    if(T>=3){ muzzleLight.color.setHex(T===4?0xff2200:0x8833cc); muzzleLight.intensity=T===4?1.0:0.7; }
+    else { muzzleLight.intensity=0; }
+    if(T>=3){ sFlash.style.opacity='0.10'; setTimeout(()=>{sFlash.style.opacity='0';},35); }
+    shake.sT=0.10; shake.sS=0.05;
     // Ray spread offsets and damage per ray per tier
     const RAYS=[
       [{x:0,y:0}],
@@ -1623,6 +2245,7 @@ import * as THREE from './assets/vendor/three.module.js';
     const DMG=[1,2,1,2,1][T];
     const killed=new Set();
     for(const off of RAYS) {
+      spawnArrow(off);
       const ray=new THREE.Raycaster();
       ray.setFromCamera(off,camera);
       const hits=ray.intersectObjects(enemies.filter(e=>e.userData.alive&&!killed.has(e)),false);
@@ -1652,11 +2275,14 @@ import * as THREE from './assets/vendor/three.module.js';
     updateHud();
   }
 
-  // ── Weapon ───────────────────────────────────────────────────────────────────
+  // ── Weapon (HUD icon) ──────────────────────────────────────────────────────────
   function updateWeapon(dt) {
-    if (player.recoil>0) player.recoil=Math.max(0,player.recoil-dt*4.5);
-    const bob=player.moving?Math.sin(player.bobPhase)*0.008:0;
-    weaponEl.style.transform=`translateX(8%) translateY(${20+(bob+player.recoil)*100}px) scale(1.3) rotate(${player.recoil*3}deg)`;
+    if(player.recoil>0) player.recoil=Math.max(0,player.recoil-dt*5);
+    // Subtle pull-back on fire, gentle bob when walking
+    const bob=player.moving?Math.sin(player.bobPhase)*1.5:0;
+    weaponEl.style.transform=player.recoil>0.02
+      ?`scale(${1-player.recoil*0.07}) translateY(${player.recoil*5}px)`
+      :`translateY(${bob}px)`;
   }
 
   // ── HUD ──────────────────────────────────────────────────────────────────────
@@ -1668,10 +2294,15 @@ import * as THREE from './assets/vendor/three.module.js';
     killValEl.textContent=`Level ${currentLevel+1} \u2014 Kills ${player.levelKills}`;
     if (player.hasKey){keyStatus.textContent='KEY \u2713';keyStatus.className='have';}
     else{keyStatus.textContent='NO KEY';keyStatus.className='missing';}
-    // Weapon glow scales with gun tier
-    const tierGlow=['','drop-shadow(0 0 5px #44aaff)','drop-shadow(0 0 8px #22aaff)','drop-shadow(0 0 10px #00ccff) drop-shadow(0 0 16px #0044ff)','drop-shadow(0 0 12px #00ffff) drop-shadow(0 0 20px #0055ff)'][Math.min(player.gunTier,4)];
-    weaponEl.style.filter=`drop-shadow(0 8px 18px rgba(0,0,0,0.6)) ${tierGlow}`;
-    amValEl.textContent=player.gunTier>0?`${player.ammo} [T${player.gunTier}]`:player.ammo;
+    // Redraw bow icon and update name when tier changes
+    if(player.gunTier!==_lastGunTier){
+      mkWeapon();
+      const wn=document.getElementById('weaponName');
+      if(wn) wn.textContent=['Shortbow','Longbow','Bone Bow','Shadow Bow','Hellfire Bow'][Math.min(player.gunTier,4)];
+    }
+    const tg=player.gunTier===4?'drop-shadow(0 0 5px #ff2200)':player.gunTier===3?'drop-shadow(0 0 4px #8833cc)':'';
+    weaponEl.style.filter='drop-shadow(0 2px 5px rgba(0,0,0,0.9))'+(tg?' '+tg:'');
+    amValEl.textContent=player.ammo;
   }
 
   // ── Doom face ────────────────────────────────────────────────────────────────
@@ -1810,13 +2441,15 @@ import * as THREE from './assets/vendor/three.module.js';
       if(player.moving){_stepAccum+=dt;if(_stepAccum>0.38){_stepAccum=0;sfx.footstep();}}
       else _stepAccum=0.2;
     }
-    updateGibs(dt); updateCamera(); updateWeapon(dt); updateHud();
+    updateGibs(dt); updateArrows(dt); updateCamera(); updateWeapon(dt); updateHud();
     torchAccum+=dt;
     if (torchAccum>=TORCH_DT) { updateTorches(elapsed,torchAccum); torchAccum=0; }
     frameTick=(frameTick+1)%20; if(frameTick===0) onResize(false);
     renderer.render(scene,camera);
     requestAnimationFrame(animate);
   }
+
+
 
   // ── Boot ─────────────────────────────────────────────────────────────────────
   mkWeapon();
