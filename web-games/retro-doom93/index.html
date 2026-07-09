@@ -499,6 +499,8 @@ import * as THREE from './assets/vendor/three.module.js';
   const pickups    = [];
   const torches    = [];
   const fireLights = [];
+  const ceilingDrips = [];
+  const mossStrands = [];
   const gates      = [];
   const gibs       = [];
   const arrows     = [];
@@ -531,6 +533,9 @@ import * as THREE from './assets/vendor/three.module.js';
   }
 
   // Lights
+  const GLOBAL_LIGHT_BOOST = 1.2;
+  const LIGHT_SOURCE_BOOST = 1.6;
+  const FLICKER_LIGHT_BOOST = 1.45;
   const muzzleLight = new THREE.PointLight(0xffe8a0, 0, 2.4, 1.6);
   muzzleLight.position.set(0, -0.05, -0.5);
   camera.add(muzzleLight);
@@ -562,9 +567,9 @@ import * as THREE from './assets/vendor/three.module.js';
   rightArm.rotation.z = -0.3;
   playerBody.add(rightArm);
   
-  const ambient = new THREE.AmbientLight(0x3a4560, 0.26);
+  const ambient = new THREE.AmbientLight(0x3a4560, 0.26 * GLOBAL_LIGHT_BOOST);
   scene.add(ambient);
-  const keyDir  = new THREE.DirectionalLight(0x9ab6e0, 0.32);
+  const keyDir  = new THREE.DirectionalLight(0x9ab6e0, 0.32 * GLOBAL_LIGHT_BOOST);
   keyDir.position.set(3, 5, 2);
   scene.add(keyDir);
 
@@ -1199,7 +1204,7 @@ import * as THREE from './assets/vendor/three.module.js';
     while (levelRoot.children.length) levelRoot.remove(levelRoot.children[0]);
     for(const a of arrows){if(a.mesh&&a.mesh.parent)a.mesh.parent.remove(a.mesh);}
     for(const s of enemySpells){if(s.mesh&&s.mesh.parent)s.mesh.parent.remove(s.mesh);}
-    enemies.length=pickups.length=torches.length=fireLights.length=gates.length=gibs.length=arrows.length=enemySpells.length=decorColliders.length=0;
+    enemies.length=pickups.length=torches.length=fireLights.length=ceilingDrips.length=mossStrands.length=gates.length=gibs.length=arrows.length=enemySpells.length=decorColliders.length=0;
     currentMapKeys = [];
     bossExitRoom = null;
     levelExit={x:1.5,z:1.5,group:null,glow:null,seed:Math.random()*Math.PI*2};
@@ -1279,7 +1284,7 @@ import * as THREE from './assets/vendor/three.module.js';
       new THREE.SphereGeometry(0.2,8,7),
       new THREE.MeshBasicMaterial({color:0xffaa33,transparent:true,opacity:0.2,side:THREE.BackSide})
     );
-    const glow=new THREE.PointLight(0xff5511,0.75,2.8,2);
+    const glow=new THREE.PointLight(0xff5511,0.75 * LIGHT_SOURCE_BOOST,2.8,2);
     g.add(core,shell,glow);
     g.position.copy(origin);
     scene.add(g);
@@ -1333,8 +1338,8 @@ import * as THREE from './assets/vendor/three.module.js';
       [0,Math.PI*2/3,Math.PI*4/3].forEach(ang=>{
         const f=new THREE.Mesh(fletchGeo,fletchMat); f.position.x=-0.25; f.rotation.x=ang; group.add(f);
       });
-      if(T===3){ const gl=new THREE.PointLight(0x8833cc,0.7,2.2,2); gl.position.x=0.40; group.add(gl); }
-      if(T===4){ const gl=new THREE.PointLight(0xff3300,0.9,2.2,2); gl.position.x=0.40; group.add(gl); }
+      if(T===3){ const gl=new THREE.PointLight(0x8833cc,0.7 * LIGHT_SOURCE_BOOST,2.2,2); gl.position.x=0.40; group.add(gl); }
+      if(T===4){ const gl=new THREE.PointLight(0xff3300,0.9 * LIGHT_SOURCE_BOOST,2.2,2); gl.position.x=0.40; group.add(gl); }
       arrowVisualCache[T]={group,shaftGeo,tipGeo,fletchGeo,shaftMat,headMat,fletchMat};
     }
     const ag=arrowVisualCache[T].group.clone(true);
@@ -1441,7 +1446,7 @@ import * as THREE from './assets/vendor/three.module.js';
       fl.position.set(c.wx,1.12,c.wz); levelRoot.add(fl);
       let light=null;
       if (i%2===0) {
-        light=new THREE.PointLight(0xff8844,0.75,5.5,1.8);
+        light=new THREE.PointLight(0xff8844,0.75 * LIGHT_SOURCE_BOOST,5.5,1.8);
         light.position.set(c.wx,1.14,c.wz); levelRoot.add(light);
       }
       const embers=[];
@@ -1465,10 +1470,96 @@ import * as THREE from './assets/vendor/three.module.js';
       rim.position.set(f.x,0.2,f.z); levelRoot.add(rim);
       const fl=new THREE.Mesh(new THREE.SphereGeometry(0.22,10,8),new THREE.MeshBasicMaterial({color:0xff7722,transparent:true,opacity:0.9}));
       fl.position.set(f.x,0.42,f.z); levelRoot.add(fl);
-      const light=new THREE.PointLight(0xff6633,1.4,8.5,2.2);
+      const light=new THREE.PointLight(0xff6633,1.4 * LIGHT_SOURCE_BOOST,8.5,2.2);
       light.position.set(f.x,0.48,f.z); levelRoot.add(light);
       fireLights.push({light,flame:fl,ph:Math.random()*Math.PI*2,pulse:0.28,bi:1.2});
     });
+  }
+
+  function addDampAtmosphere() {
+    const rng=n=>{const x=Math.sin(currentLevel*181.3+n*97.7+2.9)*43758.5453;return x-Math.floor(x);};
+    let spawnX=1.5, spawnZ=1.5, exitX=levelExit.x, exitZ=levelExit.z;
+    for(let z=0;z<worldH;z++) for(let x=0;x<worldW;x++) {
+      if(currentMap[z][x]===2) { spawnX=x+0.5; spawnZ=z+0.5; }
+      if(currentMap[z][x]===3) { exitX=x+0.5; exitZ=z+0.5; }
+    }
+
+    const dripGeo=new THREE.SphereGeometry(0.022,6,5);
+    const splashGeo=new THREE.RingGeometry(0.014,0.05,8);
+    const dripMat=new THREE.MeshBasicMaterial({color:0x88b8d8,transparent:true,opacity:0.84});
+    const splashMat=new THREE.MeshBasicMaterial({color:0x6ea4c8,transparent:true,opacity:0,side:THREE.DoubleSide});
+    const floorCells=[];
+    for(let z=2;z<worldH-2;z++) for(let x=2;x<worldW-2;x++) {
+      if (isSolid(currentMap[z][x])||currentMap[z][x]===2||currentMap[z][x]===3||currentMap[z][x]===6) continue;
+      const px=x+0.5, pz=z+0.5;
+      if (Math.hypot(px-spawnX,pz-spawnZ)<3.2||Math.hypot(px-exitX,pz-exitZ)<2.4) continue;
+      if (rng(x*71+z*53+900)<0.88) continue;
+      floorCells.push({x:px+(rng(x*19+z*11)-0.5)*0.32,z:pz+(rng(x*23+z*13)-0.5)*0.32});
+    }
+    sShuf(floorCells,currentLevel*59+17);
+    const dripCount=Math.min(52, floorCells.length);
+    for(let i=0;i<dripCount;i++) {
+      const c=floorCells[i];
+      const topY=WALL_H-0.08-rng(i*37+1200)*0.18;
+      const drip=new THREE.Mesh(dripGeo,dripMat.clone());
+      drip.position.set(c.x,topY,c.z);
+      levelRoot.add(drip);
+      const splash=new THREE.Mesh(splashGeo,splashMat.clone());
+      splash.rotation.x=-Math.PI/2;
+      splash.position.set(c.x,0.012,c.z);
+      splash.scale.setScalar(0.5);
+      levelRoot.add(splash);
+      ceilingDrips.push({
+        mesh:drip,
+        splash,
+        topY,
+        y:topY,
+        speed:2.0+rng(i*41+1300)*1.5,
+        wait:rng(i*17+1400)*1.1,
+        splashT:0,
+      });
+    }
+
+    const mossFaces=[];
+    const dirs=[{dx:-1,dz:0},{dx:1,dz:0},{dx:0,dz:-1},{dx:0,dz:1}];
+    for(let z=1;z<worldH-1;z++) for(let x=1;x<worldW-1;x++) {
+      if(!isSolid(currentMap[z][x])) continue;
+      for (const d of dirs) {
+        const nx=x+d.dx,nz=z+d.dz;
+        if (isSolid(currentMap[nz][nx])) continue;
+        const px=nx+0.5,pz=nz+0.5;
+        if (Math.hypot(px-spawnX,pz-spawnZ)<2.8||Math.hypot(px-exitX,pz-exitZ)<2.0) continue;
+        if (rng(x*131+z*97+d.dx*17+d.dz*31+1700)<0.79) continue;
+        mossFaces.push({x,z,dx:d.dx,dz:d.dz});
+      }
+    }
+    sShuf(mossFaces,currentLevel*67+27);
+    const mossCount=Math.min(120,mossFaces.length);
+    for(let i=0;i<mossCount;i++) {
+      const m=mossFaces[i];
+      const len=0.4+rng(i*13+1900)*1.1;
+      const wid=0.08+rng(i*23+2000)*0.14;
+      const mat=new THREE.MeshStandardMaterial({
+        color:0x355b2d,
+        emissive:0x10220d,
+        emissiveIntensity:0.22,
+        roughness:0.96,
+        metalness:0,
+        transparent:true,
+        opacity:0.64+rng(i*29+2100)*0.2,
+        side:THREE.DoubleSide,
+      });
+      const mesh=new THREE.Mesh(new THREE.PlaneGeometry(wid,len),mat);
+      const wx=(m.x+0.5)+m.dx*0.487;
+      const wz=(m.z+0.5)+m.dz*0.487;
+      const baseY=WALL_H-0.08-len*0.5-rng(i*31+2200)*0.12;
+      const rot=m.dz===1?0:m.dz===-1?Math.PI:m.dx===1?-Math.PI/2:Math.PI/2;
+      mesh.position.set(wx,baseY,wz);
+      mesh.rotation.y=rot;
+      mesh.rotation.z=(rng(i*7+2300)-0.5)*0.18;
+      levelRoot.add(mesh);
+      mossStrands.push({mesh,baseRz:mesh.rotation.z,phase:rng(i*11+2400)*Math.PI*2,amp:0.02+rng(i*5+2500)*0.03,baseOpacity:mat.opacity});
+    }
   }
 
   // ── Castle decorations ───────────────────────────────────────────────────────
@@ -1650,6 +1741,14 @@ import * as THREE from './assets/vendor/three.module.js';
     sShuf(interiorCells, currentLevel*61+17);
     const reservedInterior=[];
     const canUseInterior=(px,pz,r)=>reservedInterior.every(v=>Math.hypot(v.x-px,v.z-pz)>=r);
+    const isHallwayLike=(px,pz)=>{
+      const cx=Math.floor(px), cz=Math.floor(pz);
+      if (cx<1||cz<1||cx>=worldW-1||cz>=worldH-1) return true;
+      if (isSolid(currentMap[cz]?.[cx])) return true;
+      const spanX=measureOpen(cx,cz,-1,0)+measureOpen(cx,cz,1,0)+1;
+      const spanZ=measureOpen(cx,cz,0,-1)+measureOpen(cx,cz,0,1)+1;
+      return spanX<=3 || spanZ<=3;
+    };
     const roomRot=cell=>cell.spanX>=cell.spanZ?0:Math.PI/2;
     const wallRot=cell=>{
       const wallOptions=[
@@ -1719,7 +1818,8 @@ import * as THREE from './assets/vendor/three.module.js';
         book.position.set(-0.18+(i%3)*0.18,0.2+Math.floor(i/3)*0.24,0.02); g.add(book);
       }
       g.position.set(px,0,pz); g.rotation.y=rot; levelRoot.add(g);
-      addBoxCollider(px,pz,0.58,0.16,rot,0.03,1.0,0);
+      // Low, walkable collider so shelves can be jumped over without hard-blocking lanes.
+      addBoxCollider(px,pz,0.5,0.12,rot,0.0,0.44,0.44);
     }
 
     function addBanner(px,pz,rot,warm=false) {
@@ -1760,7 +1860,7 @@ import * as THREE from './assets/vendor/three.module.js';
         flame.position.set(Math.cos(a)*0.33*scale,-chainLen-0.22*scale,Math.sin(a)*0.33*scale);
         g.add(flame);
       }
-      const centerGlow=new THREE.PointLight(0xffb15a,0.8*scale,5.2*scale,1.8);
+      const centerGlow=new THREE.PointLight(0xffb15a,0.8*scale * LIGHT_SOURCE_BOOST,5.2*scale,1.8);
       centerGlow.position.set(0,-chainLen-0.14*scale,0); g.add(centerGlow);
       g.position.set(px,WALL_H-0.28,pz);
       levelRoot.add(g);
@@ -1828,7 +1928,7 @@ import * as THREE from './assets/vendor/three.module.js';
       cup.position.set(rot===Math.PI/2?0.19:rot===-Math.PI/2?-0.19:0,0.05,rot===0?-0.19:rot===Math.PI?0.19:0); cup.rotation.z=Math.PI; g.add(cup);
       const flame=new THREE.Mesh(new THREE.SphereGeometry(0.026,5,4),new THREE.MeshBasicMaterial({color:theme===2?0xffcc66:0xffb24c,transparent:true,opacity:0.9}));
       flame.position.set(rot===Math.PI/2?0.19:rot===-Math.PI/2?-0.19:0,0.11,rot===0?-0.19:rot===Math.PI?0.19:0); g.add(flame);
-      const light=new THREE.PointLight(theme===2?0xffdd88:0xffb15a,0.42,3.0,1.8); light.position.set(0,0.12,0); g.add(light);
+      const light=new THREE.PointLight(theme===2?0xffdd88:0xffb15a,0.42 * LIGHT_SOURCE_BOOST,3.0,1.8); light.position.set(0,0.12,0); g.add(light);
       g.position.set(px,WALL_H*0.52,pz);
       g.rotation.y=rot;
       levelRoot.add(g);
@@ -1892,7 +1992,8 @@ import * as THREE from './assets/vendor/three.module.js';
         addRug(pos.x,pos.z,1.9,1.35,rot,false);
         {
           const shelfPos=sideOffset(wall.rot,-0.52);
-          addShelf(pos.x+shelfPos.x,pos.z+shelfPos.z,wall.rot+Math.PI);
+          const shelfX=pos.x+shelfPos.x, shelfZ=pos.z+shelfPos.z;
+          if(!isHallwayLike(shelfX,shelfZ)) addShelf(shelfX,shelfZ,wall.rot+Math.PI);
           const stoolPos=sideOffset(wall.rot,0.7);
           addChair(pos.x+stoolPos.x,pos.z+stoolPos.z,wall.rot+Math.PI,true);
         }
@@ -2030,7 +2131,7 @@ import * as THREE from './assets/vendor/three.module.js';
   function updateTorches(t,dt) {
     torches.forEach(tr=>{
       const fl=Math.sin(t*7.4+tr.ph)*tr.pulse+Math.sin(t*15.1+tr.ph*1.8)*(tr.pulse*0.44);
-      const in2=Math.max(0.18,tr.bi+fl);
+      const in2=Math.max(0.18,(tr.bi+fl) * FLICKER_LIGHT_BOOST);
       if (tr.light) tr.light.intensity=in2;
       const sc=0.8+in2*0.38; tr.flame.scale.set(sc,sc+0.1,sc);
       tr.embers.forEach(em=>{
@@ -2043,9 +2144,39 @@ import * as THREE from './assets/vendor/three.module.js';
     });
     fireLights.forEach(fl2=>{
       const f=Math.sin(t*8.6+fl2.ph)*fl2.pulse+Math.sin(t*18+fl2.ph*1.7)*(fl2.pulse*0.4);
-      const in2=Math.max(0.5,fl2.bi+f); fl2.light.intensity=in2;
+      const in2=Math.max(0.5,(fl2.bi+f) * FLICKER_LIGHT_BOOST); fl2.light.intensity=in2;
       const fs=0.84+in2*0.17; fl2.flame.scale.set(fs*0.9,fs*1.1,fs*0.9);
       fl2.flame.material.opacity=Math.min(0.96,0.7+in2*0.16);
+    });
+  }
+
+  function updateDampAtmosphere(t,dt) {
+    ceilingDrips.forEach(d=>{
+      if (d.wait>0) {
+        d.wait-=dt;
+        d.mesh.visible=false;
+      } else {
+        d.mesh.visible=true;
+        d.y-=d.speed*dt;
+        if (d.y<=0.03) {
+          d.wait=0.2+Math.random()*1.0;
+          d.y=d.topY;
+          d.splashT=0.16;
+          d.splash.scale.setScalar(0.55);
+          d.splash.material.opacity=0.4;
+        }
+        d.mesh.position.y=d.y;
+      }
+      if (d.splashT>0) {
+        d.splashT=Math.max(0,d.splashT-dt);
+        const p=1-(d.splashT/0.16);
+        d.splash.scale.setScalar(0.55+p*1.35);
+        d.splash.material.opacity=Math.max(0,0.34*(1-p));
+      }
+    });
+    mossStrands.forEach(m=>{
+      m.mesh.rotation.z=m.baseRz+Math.sin(t*0.7+m.phase)*m.amp;
+      m.mesh.material.opacity=Math.max(0.45,Math.min(0.92,m.baseOpacity+Math.sin(t*0.55+m.phase)*0.06));
     });
   }
 
@@ -2115,9 +2246,9 @@ import * as THREE from './assets/vendor/three.module.js';
     glow.position.set(0,WALL_H/2,0.01); g.add(glow);
 
     // Hellfire point light
-    const pl=new THREE.PointLight(0xff3300,1.1,8,1.8); pl.position.set(0,1.1,0.5); g.add(pl);
+    const pl=new THREE.PointLight(0xff3300,1.1 * LIGHT_SOURCE_BOOST,8,1.8); pl.position.set(0,1.1,0.5); g.add(pl);
     // Secondary skull-eye glow lights
-    const el=new THREE.PointLight(0xff1100,0.4,3,2); el.position.set(0,WALL_H+0.3,0); g.add(el);
+    const el=new THREE.PointLight(0xff1100,0.4 * LIGHT_SOURCE_BOOST,3,2); el.position.set(0,WALL_H+0.3,0); g.add(el);
 
     // ── Rune sign — glowing inscription above the gate ────────────────────────────
     const sc=document.createElement('canvas'); sc.width=256; sc.height=72;
@@ -2161,7 +2292,7 @@ import * as THREE from './assets/vendor/three.module.js';
       new THREE.MeshBasicMaterial({map:sTex,transparent:true,side:THREE.DoubleSide})
     );
     sign.position.set(0, WALL_H-0.21, -0.18); g.add(sign);
-    const sL=new THREE.PointLight(0xff4400,0.55,4,2); sL.position.set(0,WALL_H-0.2,-0.30); g.add(sL);
+    const sL=new THREE.PointLight(0xff4400,0.55 * LIGHT_SOURCE_BOOST,4,2); sL.position.set(0,WALL_H-0.2,-0.30); g.add(sL);
 
     g.rotation.y=Math.PI/2; // orient to face down hallway
     // Push gate flush against the end wall (+1.3 toward wall)
@@ -2488,7 +2619,7 @@ import * as THREE from './assets/vendor/three.module.js';
     const diff=getDifficulty(idx);
     const fc=new THREE.Color(lvl.fogColor);
     scene.fog.color.copy(fc); scene.fog.density=lvl.fogDensity; scene.background.copy(fc);
-    ambient.color.setHex(lvl.ambCol); ambient.intensity=lvl.ambInt;
+    ambient.color.setHex(lvl.ambCol); ambient.intensity=lvl.ambInt * GLOBAL_LIGHT_BOOST;
     currentMap=lvl.map.map(r=>[...r]); sealBorders(currentMap);
     bossExitRoom=lvl.bossExitRoom||null;
     worldW=currentMap[0].length; worldH=currentMap.length;
@@ -2557,6 +2688,7 @@ import * as THREE from './assets/vendor/three.module.js';
     addTorches(lvl.keyChamberCells);
     addCastleDecorations();
     addFireplaces(lvl.fireplaces||[]);
+    addDampAtmosphere();
     buildPortal(exitX,exitZ,idx+2);
     const enemySpan=(x,z,dx,dz)=>{
       let steps=0, cx=x, cz=z;
@@ -3417,6 +3549,7 @@ import * as THREE from './assets/vendor/three.module.js';
       else _stepAccum=0.2;
     }
     updateGibs(dt); updateArrows(dt); updateCamera(); updateHud();
+    updateDampAtmosphere(elapsed,dt);
     torchAccum+=dt;
     if (torchAccum>=TORCH_DT) { updateTorches(elapsed,torchAccum); torchAccum=0; }
     frameTick=(frameTick+1)%20; if(frameTick===0) onResize(false);
