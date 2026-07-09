@@ -224,6 +224,7 @@ import * as THREE from './assets/vendor/three.module.js';
   const JUMP_GRAVITY = 9.5;
   const JUMP_VELOCITY = 4.15;
   const JUMP_MAX_Y = 1.6;
+  const ENEMY_STEP_HEIGHT = 0.5;
 
   // Enemy type definitions: hp, speed, damage, attackCooldown, attackRange, scaleX/Y, colour
   const ETYPES = {
@@ -1181,6 +1182,13 @@ import * as THREE from './assets/vendor/three.module.js';
       && !isWallAt(x,z-r)  &&!isWallAt(x,z+r)   &&!isWallAt(x-r,z) &&!isWallAt(x+r,z)
       && (jumpY>=decorBlock-0.02 || (walkTop>0 && jumpY+0.16>=walkTop));
   }
+  function enemyCanMoveTo(x,z,r,stepHeight=ENEMY_STEP_HEIGHT) {
+    const decorBlock=decorHeightAt(x,z,r);
+    const walkTop=walkSurfaceAt(x,z,r);
+    return !isWallAt(x-r,z-r)&&!isWallAt(x+r,z-r)&&!isWallAt(x-r,z+r)&&!isWallAt(x+r,z+r)
+      && !isWallAt(x,z-r)  &&!isWallAt(x,z+r)   &&!isWallAt(x-r,z) &&!isWallAt(x+r,z)
+      && (decorBlock<=stepHeight || walkTop<=stepHeight+0.06);
+  }
   function hasLOS(ax,az,bx,bz) {
     const dx=bx-ax, dz=bz-az, dist=Math.hypot(dx,dz);
     if (dist<0.001) return true;
@@ -1991,9 +1999,6 @@ import * as THREE from './assets/vendor/three.module.js';
       } else {
         addRug(pos.x,pos.z,1.9,1.35,rot,false);
         {
-          const shelfPos=sideOffset(wall.rot,-0.52);
-          const shelfX=pos.x+shelfPos.x, shelfZ=pos.z+shelfPos.z;
-          if(!isHallwayLike(shelfX,shelfZ)) addShelf(shelfX,shelfZ,wall.rot+Math.PI);
           const stoolPos=sideOffset(wall.rot,0.7);
           addChair(pos.x+stoolPos.x,pos.z+stoolPos.z,wall.rot+Math.PI,true);
         }
@@ -2844,18 +2849,19 @@ import * as THREE from './assets/vendor/three.module.js';
     return{x,z};
   }
 
-  function findChaseMove(x,z,targetX,targetZ,step,r,turnBias=1) {
+  function findChaseMove(x,z,targetX,targetZ,step,r,turnBias=1,moveCheck=canMoveTo) {
     const dx=targetX-x, dz=targetZ-z;
     const dist=Math.hypot(dx,dz);
     if (dist<0.001) return null;
     const base=Math.atan2(dz,dx);
-    const offsets=[0,turnBias*0.45,turnBias*0.9,-turnBias*0.45,-turnBias*0.9,turnBias*1.35,-turnBias*1.35,Math.PI];
+    const offsets=[0,0.35,-0.35,0.7,-0.7,1.05,-1.05,1.4,-1.4,1.75,-1.75,Math.PI];
     let best=null, bestScore=-Infinity;
     for (const off of offsets) {
       const ang=base+off;
       const nx=x+Math.cos(ang)*step, nz=z+Math.sin(ang)*step;
-      if (!canMoveTo(nx,nz,r)) continue;
-      const score=-Math.hypot(targetX-nx,targetZ-nz)-Math.abs(off)*0.18;
+      if (!moveCheck(nx,nz,r)) continue;
+      const sidePref=Math.sign(off||turnBias)===Math.sign(turnBias)?0.04:0;
+      const score=-Math.hypot(targetX-nx,targetZ-nz)-Math.abs(off)*0.14+sidePref;
       if (score>bestScore) {
         bestScore=score;
         best={x:nx,z:nz,usedOffset:off};
@@ -2881,26 +2887,33 @@ import * as THREE from './assets/vendor/three.module.js';
       if (d.state==='chase') {
         if (dist>0.02) {
           const targetX=sees?player.x:d.hx, targetZ=sees?player.z:d.hz;
-          const move=findChaseMove(e.position.x,e.position.z,targetX,targetZ,d.spd*dt,er,d.turnBias);
+          const move=findChaseMove(e.position.x,e.position.z,targetX,targetZ,d.spd*dt,er,d.turnBias,enemyCanMoveTo);
           if (move) {
             e.position.x=move.x; e.position.z=move.z;
             if (Math.abs(move.usedOffset)>0.4) d.turnBias=move.usedOffset>0?1:-1;
           } else {
-            d.turnBias*=-1;
+            const baseAng=Math.atan2(targetZ-e.position.z,targetX-e.position.x)+(Math.PI/2)*d.turnBias;
+            const sideMove=findChaseMove(
+              e.position.x,e.position.z,
+              e.position.x+Math.cos(baseAng),e.position.z+Math.sin(baseAng),
+              d.spd*dt*1.05,er,d.turnBias,enemyCanMoveTo
+            );
+            if (sideMove) { e.position.x=sideMove.x; e.position.z=sideMove.z; }
+            else d.turnBias*=-1;
           }
         }
         const mv=Math.hypot(e.position.x-d.px,e.position.z-d.pz);
         if (dist>0.9&&mv<0.003) d.stuckT+=dt; else d.stuckT=Math.max(0,d.stuckT-dt*1.2);
         if (d.stuckT>0.85) {
           d.turnBias*=-1;
-          const nudge=findChaseMove(e.position.x,e.position.z,d.hx,d.hz,d.spd*dt*1.25,er,d.turnBias);
+          const nudge=findChaseMove(e.position.x,e.position.z,d.hx,d.hz,d.spd*dt*1.25,er,d.turnBias,enemyCanMoveTo);
           if (nudge) { e.position.x=nudge.x; e.position.z=nudge.z; d.stuckT=0.35; }
         }
         if (d.stuckT>1.8) { const ns=safeSpawn(e.position.x,e.position.z,[],player.x,player.z,d.type==='miniboss'); e.position.x=ns.x; e.position.z=ns.z; d.stuckT=0; }
       } else {
         d.wT-=dt; if(d.wT<=0){d.wA+=(Math.random()-0.5)*1.4;d.wT=1+Math.random()*2;}
         const wx=e.position.x+Math.cos(d.wA)*d.spd*0.4*dt, wz=e.position.z+Math.sin(d.wA)*d.spd*0.4*dt;
-        if (Math.hypot(wx-d.hx,wz-d.hz)<4&&canMoveTo(wx,wz,er)){e.position.x=wx;e.position.z=wz;}
+        if (Math.hypot(wx-d.hx,wz-d.hz)<4&&enemyCanMoveTo(wx,wz,er)){e.position.x=wx;e.position.z=wz;}
         else {d.wA+=Math.PI;d.wT=0;}
       }
       d.px=e.position.x; d.pz=e.position.z;
