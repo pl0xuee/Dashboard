@@ -217,10 +217,13 @@ import * as THREE from './assets/vendor/three.module.js';
   gc.prepend(renderer.domElement);
 
   // ── Constants ────────────────────────────────────────────────────────────────
-  const WALL_H    = 1.9;
+  const WALL_H    = 3.3;
   const CAM_Y     = 1.05;
   const MAX_PITCH = 1.22;
   const TORCH_DT  = 1 / 45;
+  const JUMP_GRAVITY = 9.5;
+  const JUMP_VELOCITY = 4.15;
+  const JUMP_MAX_Y = 1.6;
 
   // Enemy type definitions: hp, speed, damage, attackCooldown, attackRange, scaleX/Y, colour
   const ETYPES = {
@@ -233,9 +236,21 @@ import * as THREE from './assets/vendor/three.module.js';
     miniboss:{ hp:16,spd:0.68, dmg:52, acd:1.95, ar:1.4,  sx:1.08, sy:1.1,  col:0x2a0a2a },
   };
 
-  const LEVEL_PACE = 15;
-  const LEVEL_GUN_TIER_LEVELS = [0, 1, 3, 5, 8, 11, 14];
-  const LEVEL_ARMOR_TIER_LEVELS = [0, 2, 4, 6, 9, 12, 14];
+  const LEVEL_PACE = 20;
+  const UPGRADE_MILESTONES = [
+    { level: 4, gunTier: 1, armorTier: 0 },
+    { level: 5, gunTier: 1, armorTier: 1 },
+    { level: 7, gunTier: 2, armorTier: 1 },
+    { level: 8, gunTier: 2, armorTier: 2 },
+    { level: 10, gunTier: 3, armorTier: 2 },
+    { level: 11, gunTier: 3, armorTier: 3 },
+    { level: 13, gunTier: 4, armorTier: 3 },
+    { level: 14, gunTier: 4, armorTier: 4 },
+    { level: 16, gunTier: 5, armorTier: 4 },
+    { level: 17, gunTier: 5, armorTier: 5 },
+    { level: 19, gunTier: 6, armorTier: 5 },
+    { level: 20, gunTier: 6, armorTier: 6 },
+  ];
 
   function tierForLevel(level, thresholds) {
     let tier = 0;
@@ -245,28 +260,32 @@ import * as THREE from './assets/vendor/three.module.js';
     return tier;
   }
 
-  // Difficulty ramps through the first 15 levels, then flattens into a hard but stable loop.
+  // Difficulty ramps through the first 20 levels, then keeps climbing at a slower clip.
   function getDifficulty(level) {
     const softCap=LEVEL_PACE;
     const pressure=Math.min(level,softCap)/softCap;
     const lateRamp=Math.max(0,level-softCap);
-    const earlyEase=level<5 ? 0.56 + level*0.1 : 1;
-    const endgame=Math.max(0, level-10) / 5;
     const cycle=Math.floor(level/LEVELS.length);
     return {
-      hpMult:  1 + earlyEase*(Math.pow(pressure,1.4)*1.0) + Math.min(cycle*0.05,0.22) + lateRamp*0.05,
-      spdMult: 1 + earlyEase*(Math.pow(pressure,1.15)*0.28) + Math.min(cycle*0.02,0.09) + lateRamp*0.014,
-      dmgMult: 1 + earlyEase*(Math.pow(pressure,1.28)*0.68) + Math.min(cycle*0.035,0.16) + lateRamp*0.038,
-      extra:   Math.min(level<5 ? 1 + level : 2 + Math.floor(pressure*5.5) + Math.floor(endgame*1.25), 15),
-      ammoBonus: Math.max(1, Math.floor(3 + pressure*3.25 + cycle*0.5 - lateRamp*0.08)),
+      hpMult:  1 + Math.pow(pressure,1.18)*1.18 + Math.min(cycle*0.06,0.24) + lateRamp*0.06,
+      spdMult: 1 + Math.pow(pressure,1.08)*0.34 + Math.min(cycle*0.025,0.1) + lateRamp*0.018,
+      dmgMult: 1 + Math.pow(pressure,1.24)*0.78 + Math.min(cycle*0.04,0.18) + lateRamp*0.04,
+      extra:   Math.min(level<4 ? 2 + level : 3 + Math.floor(pressure*7.5) + Math.floor(cycle*1.1) + Math.floor(lateRamp*0.5), 18),
+      ammoBonus: Math.max(1, Math.floor(2 + pressure*2.2 + cycle*0.35 - lateRamp*0.1)),
     };
   }
 
   function getProgressionTargets(level) {
-    return {
-      gunTier: tierForLevel(level, LEVEL_GUN_TIER_LEVELS),
-      armorTier: tierForLevel(level, LEVEL_ARMOR_TIER_LEVELS),
-    };
+    const visibleLevel = level + 1;
+    let gunTier = 0;
+    let armorTier = 0;
+    for (const milestone of UPGRADE_MILESTONES) {
+      if (visibleLevel >= milestone.level) {
+        gunTier = milestone.gunTier;
+        armorTier = milestone.armorTier;
+      }
+    }
+    return { gunTier, armorTier };
   }
 
   const MOB_MAP_CAPS = [0, 2, 4];
@@ -467,6 +486,7 @@ import * as THREE from './assets/vendor/three.module.js';
     hasKey:false, levelKills:0, campaignKills:0,
     recoil:0, bobPhase:0, shootCd:0, dmgTimer:0, moving:false, gunTier:0,
     armorTier:0, upgrades:0,
+    y:0, vy:0, grounded:true,
   };
   const shake = { sT:0, sS:0, hT:0, hS:0 };
   const move  = { fwd:false, bck:false, lft:false, rgt:false };
@@ -1127,9 +1147,34 @@ import * as THREE from './assets/vendor/three.module.js';
       return dx < c.hw + r && dz < c.hd + r;
     });
   }
-  function canMoveTo(x,z,r) {
+  function decorHeightAt(x,z,r=0) {
+    let height=0;
+    for (const c of decorColliders) {
+      const overlap = c.type==='circle'
+        ? Math.hypot(c.x-x,c.z-z) < c.r + r
+        : Math.abs(c.x-x) < c.hw + r && Math.abs(c.z-z) < c.hd + r;
+      if (!overlap) continue;
+      height=Math.max(height,c.h||1.8);
+    }
+    return height;
+  }
+  function walkSurfaceAt(x,z,r=0) {
+    let top=0;
+    for (const c of decorColliders) {
+      if (!c.walkTop) continue;
+      const overlap = c.type==='circle'
+        ? Math.hypot(c.x-x,c.z-z) < c.r + r
+        : Math.abs(c.x-x) < c.hw + r && Math.abs(c.z-z) < c.hd + r;
+      if (overlap) top=Math.max(top,c.walkTop);
+    }
+    return top;
+  }
+  function canMoveTo(x,z,r,jumpY=0) {
+    const decorBlock=decorHeightAt(x,z,r);
+    const walkTop=walkSurfaceAt(x,z,r);
     return !isWallAt(x-r,z-r)&&!isWallAt(x+r,z-r)&&!isWallAt(x-r,z+r)&&!isWallAt(x+r,z+r)
-      && !isWallAt(x,z-r)  &&!isWallAt(x,z+r)   &&!isWallAt(x-r,z) &&!isWallAt(x+r,z);
+      && !isWallAt(x,z-r)  &&!isWallAt(x,z+r)   &&!isWallAt(x-r,z) &&!isWallAt(x+r,z)
+      && (jumpY>=decorBlock-0.02 || (walkTop>0 && jumpY+0.16>=walkTop));
   }
   function hasLOS(ax,az,bx,bz) {
     const dx=bx-ax, dz=bz-az, dist=Math.hypot(dx,dz);
@@ -1199,16 +1244,16 @@ import * as THREE from './assets/vendor/three.module.js';
     }
   }
 
-  function addCircleCollider(x,z,r) {
-    decorColliders.push({type:'circle',x,z,r});
+  function addCircleCollider(x,z,r,h=1.8,walkTop=h) {
+    decorColliders.push({type:'circle',x,z,r,h,walkTop});
   }
 
-  function addBoxCollider(x,z,w,d,rot=0,pad=0) {
+  function addBoxCollider(x,z,w,d,rot=0,pad=0,h=1.8,walkTop=h) {
     const quarter=Math.round(rot/(Math.PI/2));
     const swap=Math.abs(quarter)%2===1;
     const hw=(swap?d:w)/2 + pad;
     const hd=(swap?w:d)/2 + pad;
-    decorColliders.push({type:'box',x,z,hw,hd});
+    decorColliders.push({type:'box',x,z,hw,hd,h,walkTop});
   }
 
   function applyPlayerDamage(rawDamage) {
@@ -1630,7 +1675,7 @@ import * as THREE from './assets/vendor/three.module.js';
         back.position.set(0,0.58,-0.12); g.add(back);
       }
       g.position.set(px,0,pz); g.rotation.y=rot; levelRoot.add(g);
-      addBoxCollider(px,pz,stool?0.24:0.3,stool?0.24:0.28,rot,0.03);
+      addBoxCollider(px,pz,stool?0.24:0.3,stool?0.24:0.28,rot,0.03,stool?0.5:0.58);
     }
 
     function addTable(px,pz,longTable=false,rot=0) {
@@ -1651,7 +1696,7 @@ import * as THREE from './assets/vendor/three.module.js';
         flame.position.set(off*(longTable?0.95:0.85),0.73,0); g.add(flame);
       }
       g.position.set(px,0,pz); g.rotation.y=rot; levelRoot.add(g);
-      addBoxCollider(px,pz,w,d,rot,0.04);
+      addBoxCollider(px,pz,w,d,rot,0.04,0.58,0.58);
     }
 
     function addRug(px,pz,w,h,rot,alt=false) {
@@ -1674,7 +1719,7 @@ import * as THREE from './assets/vendor/three.module.js';
         book.position.set(-0.18+(i%3)*0.18,0.2+Math.floor(i/3)*0.24,0.02); g.add(book);
       }
       g.position.set(px,0,pz); g.rotation.y=rot; levelRoot.add(g);
-      addBoxCollider(px,pz,0.58,0.16,rot,0.03);
+      addBoxCollider(px,pz,0.58,0.16,rot,0.03,1.0,0);
     }
 
     function addBanner(px,pz,rot,warm=false) {
@@ -1687,6 +1732,106 @@ import * as THREE from './assets/vendor/three.module.js';
       cloth.position.set(px,0.98,pz); cloth.rotation.y=rot; levelRoot.add(cloth);
       const sigil=new THREE.Mesh(new THREE.PlaneGeometry(0.24,0.32),new THREE.MeshBasicMaterial({color:0xd5b268,transparent:true,opacity:0.88,side:THREE.DoubleSide}));
       sigil.position.set(px+nx*0.012,1.0,pz+nz*0.012); sigil.rotation.y=rot; levelRoot.add(sigil);
+    }
+
+    function addChandelier(px,pz,scale=1) {
+      const g=new THREE.Group();
+      const chainLen=0.72*scale;
+      const chain=new THREE.Mesh(new THREE.CylinderGeometry(0.02,0.02,chainLen,6),brassMat);
+      chain.position.y=-chainLen*0.5; g.add(chain);
+      const hook=new THREE.Mesh(new THREE.TorusGeometry(0.05*scale,0.014,6,10),brassMat);
+      hook.rotation.x=Math.PI/2; hook.position.y=-chainLen; g.add(hook);
+      const ring=new THREE.Mesh(new THREE.TorusGeometry(0.18*scale,0.022,8,14),new THREE.MeshStandardMaterial({color:0xb88a44,roughness:0.42,metalness:0.82}));
+      ring.rotation.x=Math.PI/2; ring.position.y=-chainLen-0.06*scale; g.add(ring);
+      const armMat=new THREE.MeshStandardMaterial({color:0xa57632,roughness:0.4,metalness:0.88});
+      const flameMat=new THREE.MeshBasicMaterial({color:0xffb24c,transparent:true,opacity:0.92});
+      const armCount=4;
+      for(let i=0;i<armCount;i++){
+        const a=i/armCount*Math.PI*2;
+        const arm=new THREE.Mesh(new THREE.BoxGeometry(0.28*scale,0.03*scale,0.03*scale),armMat);
+        arm.position.set(Math.cos(a)*0.18*scale,-chainLen-0.1*scale,Math.sin(a)*0.18*scale);
+        arm.rotation.y=a;
+        g.add(arm);
+        const cup=new THREE.Mesh(new THREE.ConeGeometry(0.05*scale,0.12*scale,6),armMat);
+        cup.position.set(Math.cos(a)*0.33*scale,-chainLen-0.15*scale,Math.sin(a)*0.33*scale);
+        cup.rotation.z=Math.PI;
+        g.add(cup);
+        const flame=new THREE.Mesh(new THREE.SphereGeometry(0.03*scale,6,5),flameMat);
+        flame.position.set(Math.cos(a)*0.33*scale,-chainLen-0.22*scale,Math.sin(a)*0.33*scale);
+        g.add(flame);
+      }
+      const centerGlow=new THREE.PointLight(0xffb15a,0.8*scale,5.2*scale,1.8);
+      centerGlow.position.set(0,-chainLen-0.14*scale,0); g.add(centerGlow);
+      g.position.set(px,WALL_H-0.28,pz);
+      levelRoot.add(g);
+    }
+
+    function addPainting(px,pz,rot,wide=false,theme=0) {
+      const g=new THREE.Group();
+      const frameMat=new THREE.MeshStandardMaterial({color:[0x7b542c,0x4d3c2a,0x75512b,0x5a4a3a][theme%4],roughness:0.58,metalness:0.08});
+      const frame=new THREE.Mesh(new THREE.BoxGeometry(wide?0.46:0.36,wide?0.34:0.46,0.03),frameMat);
+      g.add(frame);
+      const artCol=theme===0?(wide?0x203f66:0x4b2338):theme===1?(wide?0x5c3d19:0x7b2c2c):theme===2?(wide?0x264d3b:0x533a6b):0x2d2d42;
+      const artMat=new THREE.MeshStandardMaterial({color:artCol,roughness:0.96,metalness:0.0});
+      const art=new THREE.Mesh(new THREE.BoxGeometry(wide?0.38:0.28,wide?0.26:0.36,0.012),artMat);
+      art.position.z=0.018; g.add(art);
+      const shine=new THREE.Mesh(new THREE.BoxGeometry(wide?0.18:0.12,wide?0.12:0.16,0.006),new THREE.MeshBasicMaterial({color:theme===1?0xffe3aa:0xd9c18e,transparent:true,opacity:0.2}));
+      shine.position.set(wide?-0.06:-0.04,wide?0.03:0.06,0.02); g.add(shine);
+      const topBar=new THREE.Mesh(new THREE.BoxGeometry(wide?0.42:0.32,0.02,0.02),new THREE.MeshBasicMaterial({color:theme===2?0xb7e0d0:0xf1d9a6,transparent:true,opacity:0.38}));
+      topBar.position.set(0,wide?0.07:0.11,0.022); g.add(topBar);
+      if(theme===3){
+        const sig=new THREE.Mesh(new THREE.SphereGeometry(0.05,6,5),new THREE.MeshBasicMaterial({color:0xc8b36a,transparent:true,opacity:0.6}));
+        sig.position.set(0,-0.03,0.02); g.add(sig);
+      }
+      g.position.set(px,WALL_H*0.52,pz);
+      g.rotation.y=rot;
+      levelRoot.add(g);
+    }
+
+    function addTrinketCluster(px,pz,kind=0,theme=0) {
+      const g=new THREE.Group();
+      const baseMat=[0x6f4a22,0x34506f,0x6d2929,0x4c4c57][(kind+theme)%4];
+      const base=new THREE.Mesh(new THREE.CylinderGeometry(0.06,0.08,0.08,6),new THREE.MeshStandardMaterial({color:baseMat,roughness:0.78,metalness:0.12}));
+      base.position.y=0.04; g.add(base);
+      const topperKind=(kind+theme)%5;
+      if(topperKind===0){
+        const vase=new THREE.Mesh(new THREE.CylinderGeometry(0.04,0.06,0.18,6),new THREE.MeshStandardMaterial({color:0x9a8d75,roughness:0.88,metalness:0.02}));
+        vase.position.y=0.14; g.add(vase);
+      } else if(topperKind===1){
+        const book=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.03,0.16),new THREE.MeshStandardMaterial({color:0x7c1f2a,roughness:0.84,metalness:0.02}));
+        book.position.y=0.06; g.add(book);
+      } else if(topperKind===2){
+        const goblet=new THREE.Mesh(new THREE.CylinderGeometry(0.025,0.05,0.12,6),new THREE.MeshStandardMaterial({color:0xc4a15c,roughness:0.38,metalness:0.82}));
+        goblet.position.y=0.12; g.add(goblet);
+      } else if(topperKind===3){
+        const skull=new THREE.Mesh(new THREE.SphereGeometry(0.055,6,5),new THREE.MeshStandardMaterial({color:0xd7c8a0,roughness:0.9,metalness:0}));
+        skull.position.y=0.11; g.add(skull);
+      } else {
+        const rolledRug=new THREE.Mesh(new THREE.CylinderGeometry(0.035,0.045,0.22,8),new THREE.MeshStandardMaterial({color:0x8a5f34,roughness:0.88,metalness:0.02}));
+        rolledRug.rotation.z=Math.PI/2; rolledRug.position.y=0.065; g.add(rolledRug);
+        const tie=new THREE.Mesh(new THREE.TorusGeometry(0.02,0.005,4,8),new THREE.MeshBasicMaterial({color:0xc3a26a}));
+        tie.rotation.y=Math.PI/2; tie.position.set(0.06,0.065,0); g.add(tie);
+      }
+      g.position.set(px,0,pz);
+      g.rotation.y=(kind%4)*Math.PI/2 + (kind%2?0.25:-0.2);
+      levelRoot.add(g);
+    }
+
+    function addWallSconce(px,pz,rot,theme=0) {
+      const g=new THREE.Group();
+      const mount=new THREE.Mesh(new THREE.BoxGeometry(0.08,0.18,0.04),new THREE.MeshStandardMaterial({color:0x8b6b35,roughness:0.5,metalness:0.78}));
+      mount.position.y=0; g.add(mount);
+      const arm=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.03,0.03),new THREE.MeshStandardMaterial({color:0xa57a3c,roughness:0.42,metalness:0.8}));
+      arm.position.set(rot===Math.PI/2?0.11:rot===-Math.PI/2?-0.11:0,0.02,rot===0?-0.11:rot===Math.PI?0.11:0);
+      arm.rotation.y=rot; g.add(arm);
+      const cup=new THREE.Mesh(new THREE.ConeGeometry(0.04,0.1,6),new THREE.MeshStandardMaterial({color:[0xa57a3c,0x8e5d24,0x75513a][theme%3],roughness:0.42,metalness:0.8}));
+      cup.position.set(rot===Math.PI/2?0.19:rot===-Math.PI/2?-0.19:0,0.05,rot===0?-0.19:rot===Math.PI?0.19:0); cup.rotation.z=Math.PI; g.add(cup);
+      const flame=new THREE.Mesh(new THREE.SphereGeometry(0.026,5,4),new THREE.MeshBasicMaterial({color:theme===2?0xffcc66:0xffb24c,transparent:true,opacity:0.9}));
+      flame.position.set(rot===Math.PI/2?0.19:rot===-Math.PI/2?-0.19:0,0.11,rot===0?-0.19:rot===Math.PI?0.19:0); g.add(flame);
+      const light=new THREE.PointLight(theme===2?0xffdd88:0xffb15a,0.42,3.0,1.8); light.position.set(0,0.12,0); g.add(light);
+      g.position.set(px,WALL_H*0.52,pz);
+      g.rotation.y=rot;
+      levelRoot.add(g);
     }
 
     const setpieceCount=Math.min(Math.floor(interiorCells.length*0.1), 14);
@@ -1735,8 +1880,8 @@ import * as THREE from './assets/vendor/three.module.js';
         benchA.position.set(pos.x,0.33,pos.z-0.28); benchA.rotation.y=rot; levelRoot.add(benchA);
         const benchB=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.1,0.22),woodMat);
         benchB.position.set(pos.x,0.33,pos.z+0.28); benchB.rotation.y=rot; levelRoot.add(benchB);
-        addBoxCollider(pos.x,pos.z-0.28,0.9,0.22,rot,0.03);
-        addBoxCollider(pos.x,pos.z+0.28,0.9,0.22,rot,0.03);
+        addBoxCollider(pos.x,pos.z-0.28,0.9,0.22,rot,0.03,0.48,0.48);
+        addBoxCollider(pos.x,pos.z+0.28,0.9,0.22,rot,0.03,0.48,0.48);
         const legs=[[-0.34,-0.08],[0.34,-0.08],[-0.34,0.08],[0.34,0.08]];
         legs.forEach(([lx,lz],li)=>{
           const leg=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.32,0.06),darkWoodMat);
@@ -1773,6 +1918,87 @@ import * as THREE from './assets/vendor/three.module.js';
       const b=bannerCells[i];
       if(Math.hypot(b.x-spawnX,b.z-spawnZ)<3.5||nearDoorFeature(b.x,b.z,2.5)) continue;
       addBanner(b.x,b.z,b.rot,rng(i+3400)<0.5);
+    }
+
+    const wallDecorSlots=[];
+    const chandelierCells=[];
+    const sconceCells=[];
+    const fixtureClear=(fx,fy,fz,minGap)=>
+      Math.hypot(fx-spawnX,fz-spawnZ)>=3.5
+      && !nearDoorFeature(fx,fz,2.0)
+      && !torchAt(fx,fz,0.9)
+      && wallDecorSlots.every(d=>Math.hypot(d.x-fx,d.z-fz)>=minGap)
+      && bannerCells.every(b=>Math.hypot(b.x-fx,b.z-fz)>=minGap*0.92)
+      && chandelierCells.every(c=>Math.hypot(c.x-fx,c.z-fz)>=1.4);
+    for(let z=2;z<worldH-2;z++) for(let x=2;x<worldW-2;x++) {
+      if(isSolid(currentMap[z][x])||currentMap[z][x]===2||currentMap[z][x]===3||currentMap[z][x]===6) continue;
+      const px=x+0.5,pz=z+0.5;
+      const faces=[];
+      if(currentMap[z][x-1]===1) faces.push({x:px-0.46,z:pz,rot:Math.PI/2});
+      if(currentMap[z][x+1]===1) faces.push({x:px+0.46,z:pz,rot:-Math.PI/2});
+      if(currentMap[z-1]?.[x]===1) faces.push({x:px,z:pz-0.46,rot:0});
+      if(currentMap[z+1]?.[x]===1) faces.push({x:px,z:pz+0.46,rot:Math.PI});
+      if(faces.length===1) {
+        const face=faces[0];
+        if (fixtureClear(face.x,face.y||0,face.z,1.0)) sconceCells.push(face);
+      }
+    }
+    sShuf(sconceCells,currentLevel*57+5);
+    const sconceCount=Math.min(Math.max(4,Math.floor(sconceCells.length*0.1)),18);
+    for(let i=0;i<sconceCount;i++) {
+      const s=sconceCells[i];
+      addWallSconce(s.x,s.z,s.rot,i%3);
+      wallDecorSlots.push(s);
+    }
+
+    const paintingCells=[];
+    for(let z=2;z<worldH-2;z++) for(let x=2;x<worldW-2;x++) {
+      if(isSolid(currentMap[z][x])||currentMap[z][x]===2||currentMap[z][x]===3||currentMap[z][x]===6) continue;
+      const px=x+0.5,pz=z+0.5;
+      const walls=[];
+      if(currentMap[z][x-1]===1) walls.push({x:px-0.46,z:pz,rot:Math.PI/2});
+      if(currentMap[z][x+1]===1) walls.push({x:px+0.46,z:pz,rot:-Math.PI/2});
+      if(currentMap[z-1]?.[x]===1) walls.push({x:px,z:pz-0.46,rot:0});
+      if(currentMap[z+1]?.[x]===1) walls.push({x:px,z:pz+0.46,rot:Math.PI});
+      if(walls.length===1) {
+        const face=walls[0];
+        if (fixtureClear(face.x,face.y||0,face.z,1.1)) paintingCells.push(face);
+      }
+    }
+    sShuf(paintingCells,currentLevel*103+31);
+    const paintingCount=Math.min(Math.max(6,Math.floor(paintingCells.length*0.16)),24);
+    for(let i=0;i<paintingCount;i++) {
+      const p=paintingCells[i];
+      addPainting(p.x,p.z,p.rot,i%3===0,i%4);
+      wallDecorSlots.push(p);
+    }
+
+    const trinketCells=[];
+    for (const cell of interiorCells) {
+      if (cell.tight) continue;
+      if (Math.hypot(cell.x-spawnX,cell.z-spawnZ)<4.5||nearDoorFeature(cell.x,cell.z,2.2)) continue;
+      trinketCells.push(cell);
+    }
+    sShuf(trinketCells,currentLevel*79+21);
+    const trinketCount=Math.min(Math.max(10,Math.floor(trinketCells.length*0.25)),40);
+    for (let i=0;i<trinketCount;i++) {
+      const c=trinketCells[i];
+      addTrinketCluster(c.x,c.z,i,i%4);
+    }
+
+    for(let z=3;z<worldH-3;z+=2) for(let x=3;x<worldW-3;x+=2) {
+      if(isSolid(currentMap[z][x])||currentMap[z][x]===2||currentMap[z][x]===3||currentMap[z][x]===6) continue;
+      const px=x+0.5,pz=z+0.5;
+      const farFromWall=!isSolid(currentMap[z][x-1])&&!isSolid(currentMap[z][x+1])&&!isSolid(currentMap[z-1][x])&&!isSolid(currentMap[z+1][x]);
+      if(!farFromWall) continue;
+      if(Math.hypot(px-spawnX,pz-spawnZ)<4.5||nearDoorFeature(px,pz,3.2)) continue;
+      chandelierCells.push({x:px,z:pz});
+    }
+    sShuf(chandelierCells,currentLevel*91+13);
+    const chandelierCount=Math.min(Math.max(2,Math.floor(chandelierCells.length*0.05)),10);
+    for(let i=0;i<chandelierCount;i++){
+      const c=chandelierCells[i];
+      addChandelier(c.x,c.z,0.9+((i%3)*0.14));
     }
 
     // ── Scattered floor debris — blood, bones, stone chips across all walkable cells ──
@@ -2174,7 +2400,7 @@ import * as THREE from './assets/vendor/three.module.js';
     const progress=Math.min(idx, LEVEL_PACE) / LEVEL_PACE;
     const latePush=Math.max(0, idx-LEVEL_PACE);
     const levelScale=Math.pow(progress, 1.12);
-    let totalEnemies=Math.min(2+Math.floor(levelScale*4)+Math.floor(rooms.length*0.75)+Math.floor(latePush*0.25), Math.floor(floorCells.length*0.35));
+    let totalEnemies=Math.min(3+Math.floor(levelScale*5)+Math.floor(rooms.length*0.9)+Math.floor(latePush*0.3), Math.floor(floorCells.length*0.4));
     let cellIdx=0;
     for(let e=0;e<totalEnemies&&cellIdx<floorCells.length;e++) {
       const cell=floorCells[cellIdx++];
@@ -2182,7 +2408,7 @@ import * as THREE from './assets/vendor/three.module.js';
     }
     
     // Hallway guardians — block the path to the iron gate
-    const guardCount = Math.min(1+Math.floor(idx/3), 5);
+    const guardCount = Math.min(2+Math.floor(idx/2), 7);
     for(let g=0;g<guardCount;g++) {
       const ex=ezX1+1+Math.floor(rng(g+900)*Math.max(1,ezX2-ezX1-3));
       const ez=hallZ1+Math.floor(rng(g+950)*Math.max(1,hallZ2-hallZ1+1));
@@ -2210,18 +2436,16 @@ import * as THREE from './assets/vendor/three.module.js';
     // Ammo near the gate as a reward for reaching the key area
     if(!isSolid(map[gateZ]?.[barrierX-2]||1))
       tryAddPickup(barrierX-2+0.5, gateZ+0.5, 'ammo');
-    // Weapon upgrades stay on the every-other-level rhythm, but missed upgrades can catch up later.
-    const needsWeaponCatchup=player.gunTier<progression.gunTier;
-    if(player.gunTier<6&&(idx%3!==0||needsWeaponCatchup)) {
+    // Weapon upgrades follow the level tier curve, so the full set lands by the end of the 20-level arc.
+    if(player.gunTier<6&&progression.gunTier>player.gunTier) {
       const upRoom=pickupRoomsByDistance[0]||rooms[Math.min(1,rooms.length-1)];
       if (!tryAddPickup(upRoom.cx+0.5, upRoom.cz+0.5, 'upgrade')) {
         const fallback=pickupRoomsByDistance.find(r=>!usedPickupCells.has(`${Math.floor(r.cx+0.5)},${Math.floor(r.cz+0.5)}`));
         if (fallback) tryAddPickup(fallback.cx+0.5, fallback.cz+0.5, 'upgrade');
       }
     }
-    // Armor upgrades land on a slower cadence so the player builds up to the full 6-piece set by the end of the arc.
-    const needsArmorCatchup=player.armorTier<progression.armorTier;
-    if(player.armorTier<6&&(idx%4===2||needsArmorCatchup&&idx%2===0)) {
+    // Armor upgrades follow the same spaced-out arc, with later levels catching up missed pieces.
+    if(player.armorTier<6&&progression.armorTier>player.armorTier) {
       const armorRoom=pickupRoomsByDistance[1]||pickupRoomsByDistance[0]||rooms[Math.min(1,rooms.length-1)];
       const nextArmorTier=Math.min(player.armorTier+1,6);
       if (!tryAddPickup(armorRoom.cx+0.5, armorRoom.cz+0.5, 'armor', {tier:nextArmorTier})) {
@@ -2231,7 +2455,7 @@ import * as THREE from './assets/vendor/three.module.js';
     }
     // Add support caches when enemy scaling outpaces the player's current gear.
     const powerGap=Math.max(0,progression.gunTier-player.gunTier)+Math.max(0,progression.armorTier-player.armorTier);
-    const supportCount=Math.min(2, Math.floor(idx/6)+Math.max(0,powerGap-1));
+    const supportCount=Math.min(2, Math.max(0, Math.floor((idx-8)/5))+Math.max(0,powerGap-1));
     if (supportCount>0) {
       const supportRooms=pickupRoomsByDistance.filter(r=>!usedPickupCells.has(`${Math.floor(r.cx+0.5)},${Math.floor(r.cz+0.5)}`));
       for (let i=0;i<Math.min(supportCount,supportRooms.length);i++) {
@@ -2427,6 +2651,7 @@ import * as THREE from './assets/vendor/three.module.js';
     }
     player.x=spawnX; player.z=spawnZ; player.pitch=0; player.yaw=sy;
     player.hasKey=false; player.levelKills=0;
+    player.y=0; player.vy=0; player.grounded=true;
     if (!keepStats) { player.health=100; player.ammo=24; player.campaignKills=0; player.gunTier=0; player.armorTier=0; }
     else { player.ammo=Math.min(player.maxAmmo, player.ammo + diff.ammoBonus); }
     statusEl.textContent=`${lvl.name} — Find the key and reach the exit.`;
@@ -2466,7 +2691,7 @@ import * as THREE from './assets/vendor/three.module.js';
         turnBias:Math.random()<0.5?-1:1,
         bs:Math.random()*Math.PI*2,
         state:'patrol', alertT:0, id:i, origColor:null,
-        walkPhase:Math.random()*Math.PI*2, attackFlash:0,
+        walkPhase:Math.random()*Math.PI*2, attackFlash:0, hitFlash:0,
         animT:Math.random()*2, animFrame:0,
         baseY, isFlying:isFiend,
       };
@@ -2554,41 +2779,43 @@ import * as THREE from './assets/vendor/three.module.js';
       const wRate=d.isFlying?6.2:d.type==='goliath'?2.6:d.type==='brute'?3.5:5.2;
       if(isWalking) d.walkPhase+=dt*wRate;
       const wc=Math.sin(d.walkPhase); // walk cycle -1..1
+      if(d.hitFlash>0) d.hitFlash=Math.max(0,d.hitFlash-dt*8.5);
       if(d.attackFlash>0) d.attackFlash=Math.max(0,d.attackFlash-dt*4.5);
       // Swap the two-frame sprite: flyers/spectres flap constantly, walkers step while moving
       const animRate=d.isFlying?7:d.type==='spectre'?3:(isWalking?(d.type==='goliath'?3.5:6):1.6);
       d.animT+=dt*animRate;
       const fr=Math.floor(d.animT)&1;
       if(fr!==d.animFrame){ d.animFrame=fr; e.material.map=mkEnemyTex(d.type,false,fr); e.material.needsUpdate=true; }
+      const hitPulse=d.hitFlash>0.02?0.03:0;
 
       if(d.isFlying){
         // Fiend — wing-flap scale + hover dive
         e.position.y=d.baseY+Math.sin(t*4.5+d.bs)*0.32+d.lunge*-0.3;
-        e.scale.set(d.bsx*(1+Math.abs(wc)*0.20+d.lunge*0.08+(d.attackFlash>0?0.10:0)),
-                    d.bsy*(1-Math.abs(wc)*0.08),1);
+        e.scale.set(d.bsx*(1+Math.abs(wc)*0.20+d.lunge*0.08+(d.attackFlash>0?0.10:0)+hitPulse),
+                    d.bsy*(1-Math.abs(wc)*0.08+hitPulse*0.6),1);
       } else if(d.type==='goliath'){
         // Goliath — heavy stomp
         const stomp=isWalking?Math.abs(wc)*0.10:0;
         e.position.y=d.baseY+Math.sin(t*1.8)*0.06+stomp;
-        e.scale.set(d.bsx*(1+d.lunge*0.08+(d.attackFlash>0?0.16:0)),
-                    d.bsy*(1+d.lunge*0.12-stomp*0.6+(d.attackFlash>0?0.12:0)),1);
+        e.scale.set(d.bsx*(1+d.lunge*0.08+(d.attackFlash>0?0.16:0)+hitPulse),
+                    d.bsy*(1+d.lunge*0.12-stomp*0.6+(d.attackFlash>0?0.12:0)+hitPulse*0.6),1);
       } else if(d.type==='spectre'){
         // Spectre — opacity flicker + glide sway
         e.position.y=d.baseY+Math.sin(t*2.8+d.bs)*0.15;
         e.material.opacity=Math.max(0.15,0.30+Math.abs(Math.sin(t*6.5+d.bs))*0.32+(d.attackFlash>0?0.28:0));
-        e.scale.set(d.bsx*(1+wc*0.06),d.bsy,1);
+        e.scale.set(d.bsx*(1+wc*0.06+hitPulse),d.bsy*(1+hitPulse*0.6),1);
       } else if(d.type==='brute'){
         // Brute — heavy stomp squash
         const stomp=isWalking?Math.abs(wc)*0.07:0;
         e.position.y=d.baseY+Math.sin(t*3)*0.03+stomp;
-        e.scale.set(d.bsx*(1+d.lunge*0.07+wc*0.04+(d.attackFlash>0?0.13:0)),
-                    d.bsy*(1+d.lunge*0.10-stomp*0.65+(d.attackFlash>0?0.09:0)),1);
+        e.scale.set(d.bsx*(1+d.lunge*0.07+wc*0.04+(d.attackFlash>0?0.13:0)+hitPulse),
+                    d.bsy*(1+d.lunge*0.10-stomp*0.65+(d.attackFlash>0?0.09:0)+hitPulse*0.6),1);
       } else {
         // Grunt / soldier — walk squash-stretch bounce
         const bounce=isWalking?Math.abs(wc)*0.05:0;
         e.position.y=d.baseY+bounce*0.6+Math.sin(t*3)*0.02;
-        e.scale.set(d.bsx*(1+d.lunge*0.06-wc*0.03+(d.attackFlash>0?0.10:0)),
-                    d.bsy*(1+d.lunge*0.09+bounce*0.5+(d.attackFlash>0?0.08:0)),1);
+        e.scale.set(d.bsx*(1+d.lunge*0.06-wc*0.03+(d.attackFlash>0?0.10:0)+hitPulse),
+                    d.bsy*(1+d.lunge*0.09+bounce*0.5+(d.attackFlash>0?0.08:0)+hitPulse*0.6),1);
       }
       // Body tilt gives each mob a readable animation. Apply it as an incremental
       // local-space roll on top of lookAt() so the billboard never flips upside down.
@@ -2603,8 +2830,10 @@ import * as THREE from './assets/vendor/three.module.js';
         tiltZ=Math.sin(d.walkPhase*0.8+d.bs)*0.055 + (isWalking?Math.sin(wc*2)*0.02:0) + (d.attackFlash>0?0.02:0);
       }
       e.rotateZ(tiltZ);
-      // Attack orange flash
-      if(d.attackFlash>0.06){
+      // Damage flash takes priority over attack flash.
+      if(d.hitFlash>0.02){
+        e.material.color.setRGB(1, 0.98, 0.55);
+      } else if(d.attackFlash>0.06){
         e.material.color.setRGB(1, 0.5+d.attackFlash*0.4, 0.12);
       } else if(d.attackFlash>0){
         if(d.origColor) e.material.color.copy(d.origColor); else e.material.color.setHex(0xffffff);
@@ -2794,6 +3023,28 @@ import * as THREE from './assets/vendor/three.module.js';
 
   // ── Movement ─────────────────────────────────────────────────────────────────
   function updateMovement(dt) {
+    if (!player.grounded) player.vy-=JUMP_GRAVITY*dt;
+    player.y+=player.vy*dt;
+    const surfaceTop=walkSurfaceAt(player.x,player.z,player.radius);
+    const floorTop=0;
+    const landingTop=Math.max(floorTop,surfaceTop);
+    const ceilingTop=JUMP_MAX_Y;
+    if (player.y>ceilingTop) {
+      player.y=ceilingTop;
+      if (player.vy>0) player.vy=0;
+    }
+    if (player.y<=landingTop && player.vy<=0) {
+      player.y=landingTop;
+      player.vy=0;
+      player.grounded=true;
+    } else if (player.y<floorTop) {
+      player.y=floorTop;
+      player.vy=0;
+      player.grounded=true;
+    } else {
+      player.grounded=false;
+    }
+
     let mx=0,mz=0;
     const cos=Math.cos(player.yaw), sin=Math.sin(player.yaw);
     // Standard FPS: W=forward, S=backward, A=strafe left, D=strafe right
@@ -2806,8 +3057,8 @@ import * as THREE from './assets/vendor/three.module.js';
     if (player.moving) {
       mx/=len; mz/=len;
       const nx=player.x+mx*player.speed*dt, nz=player.z+mz*player.speed*dt;
-      if (canMoveTo(nx,player.z,player.radius)) player.x=nx;
-      if (canMoveTo(player.x,nz,player.radius)) player.z=nz;
+      if (canMoveTo(nx,player.z,player.radius,player.y)) player.x=nx;
+      if (canMoveTo(player.x,nz,player.radius,player.y)) player.z=nz;
       player.bobPhase+=dt*7.8;
     }
   }
@@ -2818,8 +3069,16 @@ import * as THREE from './assets/vendor/three.module.js';
     let sy=0,sp=0;
     if (shake.sT>0){const s=shake.sT/0.12;sy+=(Math.random()-0.5)*shake.sS*s;sp+=(Math.random()-0.5)*shake.sS*s;shake.sT=Math.max(0,shake.sT-1/60);}
     if (shake.hT>0){const s=shake.hT/0.14;sy+=(Math.random()-0.5)*shake.hS*s;sp+=(Math.random()-0.5)*shake.hS*s;shake.hT=Math.max(0,shake.hT-1/60);}
-    camera.position.set(player.x,CAM_Y+bob,player.z);
+    camera.position.set(player.x,CAM_Y+bob+player.y,player.z);
     camera.rotation.set(player.pitch+sp,player.yaw+sy,0,'YXZ');
+  }
+
+  function jump() {
+    if (gameState!=='playing'||!gameActive||player.health<=0) return;
+    if (!player.grounded) return;
+    player.vy=JUMP_VELOCITY;
+    player.grounded=false;
+    player.y=Math.max(player.y,0.02);
   }
 
   // ── Shooting ─────────────────────────────────────────────────────────────────
@@ -2857,6 +3116,7 @@ import * as THREE from './assets/vendor/three.module.js';
         const d=e.userData;
         d.hp-=DMG;
         if(!d.origColor) d.origColor=e.material.color.clone();
+        d.hitFlash=0.18;
         e.material.color.setHex(0xffffff);
         setTimeout(()=>{if(d.origColor)e.material.color.copy(d.origColor);else e.material.color.setHex(0xffffff);},60);
         d.state='chase'; d.alertT=6;
@@ -2866,7 +3126,7 @@ import * as THREE from './assets/vendor/three.module.js';
           sfx.enemyDie();
           e.material.map=mkEnemyTex(d.type,true); e.material.needsUpdate=true;
           player.levelKills++; player.campaignKills++;
-          if(d.type==='miniboss'&&player.armorTier<6) {
+          if(d.type==='miniboss'&&currentLevel>=6&&player.armorTier<6) {
             spawnDropPickup('armor',e.position.x,e.position.z,{tier:player.armorTier+1});
           } else if(d.type==='miniboss') {
             spawnDropPickup('ammo',e.position.x,e.position.z);
@@ -3047,7 +3307,7 @@ import * as THREE from './assets/vendor/three.module.js';
   document.addEventListener('keydown',ev=>{
     setKey(ev.code,true);
     if (ev.code==='KeyE') eDown=true;
-    if (ev.code==='Space'){ev.preventDefault();shoot();}
+    if (ev.code==='Space'){ev.preventDefault();jump();}
     if (ev.code==='KeyR'){ev.preventDefault();resetGame();}
   });
   document.addEventListener('keyup',ev=>{setKey(ev.code,false);if(ev.code==='KeyE')eDown=false;});
@@ -3098,13 +3358,19 @@ import * as THREE from './assets/vendor/three.module.js';
     if (gameState==='playing'&&player.health>0){gameActive=false;move.fwd=move.bck=move.lft=move.rgt=false;eDown=false;startPr.classList.remove('hidden');statusEl.textContent='Click to resume';}
   });
   document.addEventListener('pointerlockerror',()=>{pendingLock=false;setGameState('playing');startPr.classList.add('hidden');});
+  document.addEventListener('click',ev=>{
+    if (gameState!=='playing'||player.health<=0) return;
+    if (document.pointerLockElement===renderer.domElement||pendingLock) return;
+    if (ev.target===stBtn || ev.target===lbName || ev.target===lbForm) return;
+    lockPointer();
+  }, true);
 
   // ── Reset ────────────────────────────────────────────────────────────────────
   function resetGame() {
     if (advTimer){clearTimeout(advTimer);advTimer=null;}
     currentLevel=0; pendingLock=false;
     Object.assign(player,{x:1.5,z:1.5,yaw:0,pitch:0,health:100,ammo:24,hasKey:false,
-      levelKills:0,campaignKills:0,recoil:0,bobPhase:0,shootCd:0,dmgTimer:0,moving:false,gunTier:0,armorTier:0,upgrades:0});
+      levelKills:0,campaignKills:0,recoil:0,bobPhase:0,shootCd:0,dmgTimer:0,moving:false,gunTier:0,armorTier:0,upgrades:0,y:0,vy:0,grounded:true});
     muzzleLight.intensity=0; shake.sT=shake.hT=0;
     hFlash.style.opacity=sFlash.style.opacity=pkFlash.style.opacity='0';
     // Ensure overlays are in the right state before setting game state
