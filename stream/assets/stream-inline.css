@@ -39,16 +39,57 @@ body.stream-page {
 .stream-page .stream-url-input:focus { outline: none; border-color: rgba(85,232,208,.72); box-shadow: 0 0 0 4px rgba(85,232,208,.1); }
 .stream-page .stream-player, .stream-page .stream-chat { border-radius: 18px; border-color: rgba(177,205,231,.14); box-shadow: 0 22px 54px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.05); }
 .stream-page .stream-player:hover, .stream-page .stream-chat:hover { border-color: rgba(85,232,208,.3); }
-.stream-page .stream-chat::before { color: #9affeb; letter-spacing: .16em; }
+.stream-page .stream-chat::before { color: #c1c9d2; letter-spacing: .16em; }
 @media (max-width: 760px) { .stream-page .stream-container { flex-direction: column; } .stream-page .stream-chat { flex: 0 0 340px; width: 100%; } }
 
 /* Dark gunmetal stream surfaces */
 .stream-page .controls,
 .stream-page .stream-player,
 .stream-page .stream-chat { background:linear-gradient(145deg,rgba(29,36,44,.96),rgba(10,14,19,.99)); border-color:rgba(174,185,199,.16); }
-.stream-page .controls { box-shadow:0 14px 32px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.06); }
+.stream-page .controls {
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:4px;
+  position:static;
+  transform:none;
+  margin-left:auto;
+  margin-bottom:0;
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  box-shadow:none;
+}
 .stream-page .stream-player:hover,
 .stream-page .stream-chat:hover { border-color:rgba(174,185,199,.34); }
+.stream-page .controls button,
+.stream-page .controls .home-button,
+.stream-page #loadStreamBtn {
+  height:36px;
+  min-height:36px;
+  padding:0 10px;
+  border-radius:999px;
+  border:1px solid transparent;
+  color:#91a5bc;
+  background:transparent;
+  box-shadow:none;
+  font-family:inherit;
+  font-size:11px;
+  font-weight:650;
+  line-height:1;
+  letter-spacing:.11em;
+  text-transform:uppercase;
+}
+.stream-page .controls button:hover,
+.stream-page .controls .home-button:hover,
+.stream-page #loadStreamBtn:hover {
+  border-color:rgba(215,222,230,.32);
+  color:#f1f4f7;
+  background:rgba(174,185,199,.1);
+  box-shadow:none;
+}
+.stream-page .stream-url-input { height:36px; border-radius:999px; background:rgba(18,23,29,.9); border-color:rgba(174,185,199,.24); color:#d7dee6; font-family:inherit; font-size:10px; font-weight:650; line-height:1; letter-spacing:.11em; }
 
 .stream-player {
   flex: 1;
