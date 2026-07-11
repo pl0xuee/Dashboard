@@ -33,6 +33,15 @@ body.stream-page {
   visibility: visible;
 }
 
+/* Streaming workspace polish */
+.stream-page .controls { gap: 8px; padding: 6px; border-radius: 16px; border-color: rgba(85,232,208,.16); background: rgba(9,15,23,.78); box-shadow: 0 14px 32px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.05); }
+.stream-page .stream-url-input { border-radius: 11px; border: 1px solid rgba(177,205,231,.14); background: rgba(255,255,255,.045); color: #eafffb; }
+.stream-page .stream-url-input:focus { outline: none; border-color: rgba(85,232,208,.72); box-shadow: 0 0 0 4px rgba(85,232,208,.1); }
+.stream-page .stream-player, .stream-page .stream-chat { border-radius: 18px; border-color: rgba(177,205,231,.14); box-shadow: 0 22px 54px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.05); }
+.stream-page .stream-player:hover, .stream-page .stream-chat:hover { border-color: rgba(85,232,208,.3); }
+.stream-page .stream-chat::before { color: #9affeb; letter-spacing: .16em; }
+@media (max-width: 760px) { .stream-page .stream-container { flex-direction: column; } .stream-page .stream-chat { flex: 0 0 340px; width: 100%; } }
+
 .stream-player {
   flex: 1;
   min-height: 0;
