@@ -228,6 +228,14 @@
     .games-page .game-picker-btn:hover { transform: translateY(-4px); border-color: rgba(85,232,208,.62); box-shadow: 0 24px 42px rgba(0,0,0,.34), 0 0 0 1px rgba(85,232,208,.12); }
     .games-page .game-picker-btn[aria-pressed='true'], .games-page .game-picker-btn.active { border-color: #55e8d0; background: linear-gradient(145deg, rgba(24,66,68,.9), rgba(11,28,35,.98)); }
 
+    /* Dark gunmetal arcade surfaces */
+    .games-page .games-card,
+    .games-page .games-toolbar-copy,
+    .games-page .game-picker-btn,
+    .games-page .game-panel { background:linear-gradient(145deg,rgba(29,36,44,.96),rgba(11,15,20,.99)); border-color:rgba(174,185,199,.16); }
+    .games-page .game-picker-btn:hover { border-color:rgba(215,222,230,.46); box-shadow:0 24px 42px rgba(0,0,0,.36),0 0 0 1px rgba(174,185,199,.1); }
+    .games-page .game-picker-btn[aria-pressed='true'], .games-page .game-picker-btn.active { border-color:#b8c2cc; background:linear-gradient(145deg,rgba(57,66,76,.94),rgba(17,22,28,.99)); }
+
     .game-picker-btn:not(.game-picker-btn-rpg) {
       display: grid;
       grid-template-columns: 40px minmax(0, 1fr);
