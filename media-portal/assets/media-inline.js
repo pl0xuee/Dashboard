@@ -1,6 +1,7 @@
     async function checkServerStatus() {
         const statusEl = document.getElementById('server-status');
-      const probeUrl = 'http://192.168.1.212:8096/web/favicon.ico';
+      // Use the page protocol so an HTTPS deployment never requests an HTTP image.
+      const probeUrl = `${window.location.protocol}//192.168.1.212:8096/web/favicon.ico`;
 
       await new Promise((resolve) => {
         const image = new Image();
