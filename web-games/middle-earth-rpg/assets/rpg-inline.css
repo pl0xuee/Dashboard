@@ -18,6 +18,23 @@
       --font-body: "Segoe UI", system-ui, sans-serif;
     }
 
+    /* Gunmetal launcher chrome */
+    :root {
+      --panel: #131920;
+      --panel-strong: #0e1318;
+      --panel-soft: rgba(174, 185, 199, .06);
+      --border: rgba(174, 185, 199, .18);
+      --border-strong: rgba(215, 222, 230, .42);
+      --gold: #b8c2cc;
+      --gold-soft: #7f8b98;
+      --text: #e0e5ea;
+      --muted: #aeb9c7;
+      --green: #9bb5a3;
+      --red: #c78e8e;
+      --blue: #9eafc2;
+      --shadow: none;
+    }
+
     * {
       box-sizing: border-box;
     }
@@ -115,6 +132,12 @@
       border-bottom: 1px solid rgba(255, 255, 255, 0.05);
       background: rgba(11, 14, 22, 0.88);
       backdrop-filter: blur(18px);
+    }
+
+    .rpg-shell .topbar {
+      background: linear-gradient(145deg, #202830, #11171d);
+      border-bottom-color: rgba(174,185,199,.2);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,.05);
     }
 
     .title-block h1 {
@@ -1160,6 +1183,19 @@
       }
     }
 
+/* Final gunmetal RPG chrome; gameplay art remains intentionally readable. */
+.rpg-shell .topbar,
+.rpg-shell .panel,
+.rpg-shell .card,
+.rpg-shell .modal,
+.rpg-shell .log-panel { background: linear-gradient(145deg, #1c2329, #0e1318) !important; border-color: rgba(174,185,199,.2) !important; color: #d7dee6; box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important; }
+.rpg-shell button,
+.rpg-shell .meta-pill,
+.rpg-shell .soundtrack-controls,
+.rpg-shell .zoom-controls { color: #d7dee6 !important; background: linear-gradient(180deg, #252e36, #151c22) !important; border-color: rgba(174,185,199,.28) !important; }
+.rpg-shell button:hover,
+.rpg-shell .meta-pill-button:hover { color: #f0f3f6 !important; background: linear-gradient(180deg, #3a454f, #222b33) !important; border-color: rgba(215,222,230,.58) !important; }
+
     @media (max-width: 900px) {
       .topbar {
         flex-direction: column;
@@ -1253,3 +1289,16 @@
         font-size: 2rem;
       }
     }
+
+/* End-of-file gunmetal authority layer */
+.rpg-shell .topbar,
+.rpg-shell .panel,
+.rpg-shell .card,
+.rpg-shell .modal,
+.rpg-shell .log-panel { background: linear-gradient(145deg,#1c2329,#0e1318) !important; border-color: rgba(174,185,199,.2) !important; color: #d7dee6; box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important; }
+.rpg-shell button,
+.rpg-shell .meta-pill,
+.rpg-shell .soundtrack-controls,
+.rpg-shell .zoom-controls { color: #d7dee6 !important; background: linear-gradient(180deg,#252e36,#151c22) !important; border-color: rgba(174,185,199,.28) !important; }
+.rpg-shell button:hover,
+.rpg-shell .meta-pill-button:hover { color: #f0f3f6 !important; background: linear-gradient(180deg,#3a454f,#222b33) !important; border-color: rgba(215,222,230,.58) !important; }

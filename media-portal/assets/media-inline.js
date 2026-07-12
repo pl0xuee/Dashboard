@@ -1,38 +1,37 @@
-    async function checkServerStatus() {
-        const statusEl = document.getElementById('server-status');
-      // Use the page protocol so an HTTPS deployment never requests an HTTP image.
-      const probeUrl = `${window.location.protocol}//192.168.1.212:8096/web/favicon.ico`;
+(() => {
+  const statusEl = document.getElementById('server-status');
+  if (!statusEl) return;
 
-      await new Promise((resolve) => {
-        const image = new Image();
-        const timeoutId = setTimeout(() => {
-          image.onload = null;
-          image.onerror = null;
-          resolve(false);
-        }, 5000);
+  const jellyfinUrl = 'http://192.168.1.212:8096/health';
 
-        image.onload = () => {
-          clearTimeout(timeoutId);
-          resolve(true);
-        };
+  function renderStatus(isOnline) {
+    statusEl.replaceChildren();
+    const dot = document.createElement('span');
+    dot.className = `media-status-dot ${isOnline ? 'online' : 'offline'}`;
+    dot.setAttribute('aria-hidden', 'true');
+    statusEl.append(dot, document.createTextNode(isOnline ? 'Online' : 'Offline'));
+  }
 
-        image.onerror = () => {
-          clearTimeout(timeoutId);
-          resolve(false);
-        };
+  async function checkServerStatus() {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 5000);
 
-        image.src = `${probeUrl}?t=${Date.now()}`;
-      }).then((isOnline) => {
-        statusEl.textContent = '';
-
-        const dot = document.createElement('span');
-        dot.className = `media-status-dot ${isOnline ? 'online' : 'offline'}`;
-        dot.setAttribute('aria-hidden', 'true');
-
-        const text = document.createTextNode(isOnline ? 'Online' : 'Offline');
-
-        statusEl.appendChild(dot);
-        statusEl.appendChild(text);
+    try {
+      // The response is intentionally opaque: reachability is all this client-side
+      // check needs, and Jellyfin does not need to enable CORS for this to work.
+      await fetch(jellyfinUrl, {
+        method: 'GET',
+        mode: 'no-cors',
+        cache: 'no-store',
+        signal: controller.signal
       });
+      renderStatus(true);
+    } catch (_) {
+      renderStatus(false);
+    } finally {
+      window.clearTimeout(timeoutId);
     }
-    checkServerStatus();
+  }
+
+  checkServerStatus();
+})();
