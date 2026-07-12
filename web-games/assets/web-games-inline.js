@@ -4141,7 +4141,7 @@
       if (activeGame === 'retrodoom') {
         if (retroDoomFrame) {
           retroDoomFrame.src = retroDoomFrame.src;
-          setActiveGameHint('Restarted', 'Sector 93', 'Sector reset. Re-engage pointer lock to continue.');
+          setActiveGameHint('Restarted', 'Castle of the Dreadkeep', 'The keep reset. Choose Enter the Dreadkeep to continue.');
         }
         return;
       }
@@ -4430,9 +4430,9 @@
       } else if (retroDoomActive) {
         if (running && !gameOver) {
           paused = true;
-          setStatus('Paused while Sector 93 is active');
+          setStatus('Paused while Castle of the Dreadkeep is active');
         }
-        setActiveGameHint('Now Playing', 'Sector 93', 'Click the viewport to lock cursor and start moving.');
+        setActiveGameHint('Now Playing', 'Castle of the Dreadkeep', 'Choose Enter the Dreadkeep to begin, then click the viewport to recapture the mouse.');
       } else if (rpgActive) {
         if (running && !gameOver) {
           paused = true;

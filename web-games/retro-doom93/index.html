@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Sector 93</title>
+  <title>Castle of the Dreadkeep</title>
   <style>
     :root{--hud-bg:rgba(13,10,8,0.94);--hud-border:rgba(147,105,55,0.62);--text:#dfd1b2;--brass:#b78b4a;--blood:#8f2f25;--soot:#090806}
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -92,17 +92,63 @@
       background:linear-gradient(180deg,rgba(3,2,1,.42),rgba(5,4,3,.94)),radial-gradient(circle at 50% 32%,rgba(119,70,24,.12),transparent 46%);
       text-align:center;padding:24px;pointer-events:auto;z-index:5;transition:opacity 140ms ease}
     .sov.hidden{opacity:0;pointer-events:none}
-    .card{position:relative;max-width:520px;border:2px solid #795832;border-radius:2px;padding:22px 26px;
-      background:linear-gradient(145deg,rgba(31,24,17,.97),rgba(10,9,7,.98)),radial-gradient(circle at 100% 0,rgba(145,87,28,.1),transparent);
-      box-shadow:0 0 0 3px rgba(5,4,3,.85),0 0 0 4px rgba(126,88,44,.24),0 20px 45px rgba(0,0,0,.76),inset 0 0 28px rgba(0,0,0,.48),inset 0 1px rgba(235,189,108,.14)}
-    .card::before{content:'◆';position:absolute;left:50%;top:-10px;transform:translateX(-50%);padding:0 9px;color:#b17f3f;background:#100d09;font-size:.85rem;text-shadow:0 0 6px rgba(188,116,38,.5)}
-    .card h1,.card h2{font-family:Georgia,'Times New Roman',serif;font-size:clamp(1.25rem,2.5vw,1.85rem);color:#e7d0a3;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px;text-shadow:2px 3px 0 #180b05,0 0 12px rgba(159,83,25,.3)}
+    #restartCountdown{position:absolute;inset:0;display:grid;place-items:center;z-index:8;background:rgba(3,2,1,.46);pointer-events:none}
+    #restartCountdown[hidden]{display:none}
+    .restart-clock{position:relative;display:grid;place-items:center;width:132px;height:132px;border:3px solid rgba(209,167,91,.45);border-radius:50%;background:
+      conic-gradient(#d5a75b var(--countdown-progress,0%),rgba(65,43,24,.72) 0);box-shadow:0 0 0 7px rgba(8,5,3,.78),0 0 30px rgba(190,116,35,.22);animation:clockPulse 1s ease-in-out infinite}
+    .restart-clock::before{content:'';position:absolute;width:112px;height:112px;border-radius:50%;background:#100c08;box-shadow:inset 0 0 20px #000}
+    #restartCountdownValue{position:relative;font:700 3.4rem/1 Georgia,'Times New Roman',serif;color:#f1d28e;text-shadow:2px 3px 0 #160b05}
+    @keyframes clockPulse{0%,100%{transform:scale(.96)}50%{transform:scale(1.04)}}
+    .card{position:relative;max-width:560px;width:100%;border:1px solid rgba(180,130,58,.55);border-radius:3px;padding:28px 32px 24px;
+      background:linear-gradient(170deg,rgba(26,19,12,.98),rgba(8,7,5,.99)),
+        radial-gradient(ellipse at 50% 0,rgba(160,96,28,.11),transparent 60%);
+      box-shadow:0 0 0 1px rgba(255,200,80,.06),0 0 0 3px rgba(5,4,3,.9),
+        0 24px 52px rgba(0,0,0,.82),inset 0 1px 0 rgba(220,170,80,.12),
+        inset 0 0 32px rgba(0,0,0,.5)}
+    .card::before{content:'';position:absolute;inset:0;border-radius:3px;pointer-events:none;
+      background:linear-gradient(135deg,rgba(180,130,58,.06) 0,transparent 40%,transparent 60%,rgba(90,44,18,.08) 100%)}
+    .splash-ornament{display:flex;align-items:center;gap:10px;margin-bottom:14px;justify-content:center}
+    .splash-ornament::before,.splash-ornament::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(180,130,58,.45),transparent)}
+    .splash-ornament span{color:#b07830;font-size:.72rem;letter-spacing:.3em;text-transform:uppercase}
+    .card h1{font-family:Georgia,'Times New Roman',serif;font-size:clamp(1.5rem,3vw,2.1rem);color:#f0d898;letter-spacing:.22em;text-transform:uppercase;
+      text-shadow:0 2px 0 #100800,0 0 18px rgba(200,120,30,.35),2px 3px 0 rgba(0,0,0,.7);
+      margin-bottom:0;line-height:1.15;text-align:center}
+    .card h2{font-family:Georgia,'Times New Roman',serif;font-size:clamp(1.25rem,2.5vw,1.85rem);color:#e7d0a3;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px;text-shadow:2px 3px 0 #180b05,0 0 12px rgba(159,83,25,.3)}
     .card p{font-size:.88rem;line-height:1.58;color:#c8b897}
     .card pre{font-size:.82rem;line-height:1.58;color:#c8b897;white-space:pre-line;font-family:inherit}
     .card button{margin-top:16px;border:1px solid #b17f43;border-radius:1px;padding:10px 20px;
       background:linear-gradient(180deg,#6c4123,#3a2115);color:#f0dbb1;font-family:inherit;font-size:.82rem;letter-spacing:.11em;text-transform:uppercase;cursor:pointer;font-weight:700;
       box-shadow:0 3px 0 #160c07,0 5px 12px rgba(0,0,0,.45),inset 0 1px rgba(255,218,148,.2);transition:filter 120ms ease,transform 120ms ease}
     .card button:hover{filter:brightness(1.22);transform:translateY(-1px)}
+    .splash-kicker{font-size:.62rem;color:#967244;letter-spacing:.32em;text-transform:uppercase;margin-bottom:10px;text-align:center}
+    .splash-tagline{max-width:420px;margin:10px auto 0;font-family:Georgia,'Times New Roman',serif;font-size:.97rem!important;
+      color:#d4b87a!important;line-height:1.55;text-align:center}
+    .splash-divider{display:flex;align-items:center;gap:8px;margin:16px 0 12px;justify-content:center}
+    .splash-divider::before,.splash-divider::after{content:'';flex:1;height:1px;background:rgba(140,100,40,.3)}
+    .splash-divider span{font-size:.58rem;letter-spacing:.25em;text-transform:uppercase;color:#7a5e30}
+    .control-list{display:grid;grid-template-columns:1fr 1fr;gap:5px 10px;max-width:420px;margin:0 auto;}
+    .control-list .ctrl{display:flex;align-items:center;gap:6px;padding:5px 8px;
+      background:rgba(255,255,255,.025);border:1px solid rgba(140,100,40,.2);border-radius:2px}
+    .ctrl kbd{display:inline-block;min-width:2em;padding:1px 5px;background:rgba(180,130,50,.15);
+      border:1px solid rgba(180,130,50,.4);border-bottom-width:2px;border-radius:2px;
+      font:700 .72rem/1.5 monospace;color:#e8c878;text-align:center;white-space:nowrap}
+    .ctrl span{font-size:.72rem;color:#a08860;white-space:nowrap}
+    .splash-hint{margin-top:14px;padding:8px 14px;border:1px solid rgba(180,130,50,.22);
+      border-radius:2px;background:rgba(120,80,20,.1);font-size:.74rem;color:#c09050;
+      text-align:center;letter-spacing:.05em}
+    .splash-actions{display:flex;justify-content:center;gap:10px;flex-wrap:wrap;margin-top:18px}
+    .splash-actions button{margin-top:0}
+    .secondary-button{background:linear-gradient(180deg,#3b3023,#211a13)!important;border-color:#80633b!important;color:#c7b18a!important}
+    .settings-panel{margin-top:16px;padding:14px;text-align:left;border:1px solid rgba(177,127,67,.5);background:rgba(7,6,4,.72);box-shadow:inset 0 0 16px rgba(0,0,0,.4)}
+    .settings-panel[hidden]{display:none}
+    .settings-panel h3{font-size:.76rem;letter-spacing:.14em;text-transform:uppercase;color:#d0a86a;margin-bottom:10px}
+    .settings-group{display:grid;gap:8px;margin-top:12px;padding-top:10px;border-top:1px solid rgba(153,110,57,.3)}
+    .settings-group:first-of-type{margin-top:0;padding-top:0;border-top:0}
+    .setting-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;font-size:.74rem;color:#c8b897}
+    .setting-row input[type=range]{grid-column:1/-1;width:100%;accent-color:#b78b4a}
+    .setting-row select{min-width:126px;padding:4px 6px;border:1px solid rgba(155,111,58,.62);border-radius:1px;background:#0a0806;color:#ead8b5;font:inherit}
+    .setting-value{min-width:40px;text-align:right;color:#ead8b5}
+    .check-row{display:flex;gap:8px;align-items:center;font-size:.74rem;color:#c8b897}
     #startPrompt{cursor:pointer}
     #hpVal,#bowAmmoVal{display:inline-block;min-width:45px;text-align:right}
     #fpsCounter{position:absolute;top:5px;left:5px;font-family:'Courier New',monospace;color:#887656;font-size:9px;font-weight:700;letter-spacing:.06em;text-shadow:1px 1px #000;opacity:.74}
@@ -118,7 +164,7 @@
   </style>
 </head>
 <body>
-<div id="gc" aria-label="Sector 93 game">
+<div id="gc" aria-label="Castle of the Dreadkeep game">
   <div id="overlay">
     <div id="screenFx" aria-hidden="true"></div>
     <div id="fpsCounter">FPS: 60</div>
@@ -152,12 +198,45 @@
   </div>
   <div id="startPrompt" class="sov" role="button" tabindex="0" aria-label="Start game">
     <div class="card">
-      <h1>Sector 93</h1>
-      <p>Click to lock pointer &amp; engage.<br>
-         <strong>WASD</strong> / Arrows &mdash; Move &nbsp;|&nbsp; <strong>Mouse</strong> &mdash; Look<br>
-        <strong>LMB</strong> &mdash; Fire &nbsp;|&nbsp; <strong>Space</strong> &mdash; Jump<br>
-         Find the <span style="color:#f0d250">Key</span> to unlock the exit portal.
-      </p>
+      <div class="splash-kicker">A procedural medieval castle crawler</div>
+      <div class="splash-ornament"><span>⚔</span></div>
+      <h1>Castle of the<br>Dreadkeep</h1>
+      <p class="splash-tagline">Enter the cursed halls. Hunt the guardian.<br>Escape the Dreadkeep alive.</p>
+
+      <div class="splash-divider"><span>Controls</span></div>
+      <div class="control-list">
+        <div class="ctrl"><kbd>WASD</kbd><span>Move</span></div>
+        <div class="ctrl"><kbd>Mouse</kbd><span>Look</span></div>
+        <div class="ctrl"><kbd>1</kbd><span>Crossbow</span></div>
+        <div class="ctrl"><kbd>2</kbd><span>Dagger</span></div>
+        <div class="ctrl"><kbd>LMB</kbd><span>Attack</span></div>
+        <div class="ctrl"><kbd>F</kbd><span>Stab</span></div>
+        <div class="ctrl"><kbd>Space</kbd><span>Jump</span></div>
+        <div class="ctrl"><kbd>R</kbd><span>Restart</span></div>
+        <div class="ctrl"><kbd>Esc</kbd><span>Release mouse</span></div>
+      </div>
+
+      <p class="splash-hint">⚷ Find the key &nbsp;·&nbsp; ☩ Defeat the guardian &nbsp;·&nbsp; ⬚ Reach the exit</p>
+
+      <div class="splash-actions">
+        <button id="startBtn" type="button">Enter the Dreadkeep</button>
+        <button id="settingsToggle" class="secondary-button" type="button" aria-expanded="false">Settings</button>
+      </div>
+      <div id="settingsPanel" class="settings-panel" hidden>
+        <h3>Audio</h3>
+        <div class="settings-group">
+          <label class="setting-row"><span>Music volume</span><output id="musicVolumeValue" class="setting-value">100%</output><input id="musicVolume" type="range" min="0" max="1" step="0.01" /></label>
+          <label class="setting-row"><span>Gameplay volume</span><output id="sfxVolumeValue" class="setting-value">100%</output><input id="sfxVolume" type="range" min="0" max="1" step="0.01" /></label>
+          <label class="setting-row"><span>Ambient volume</span><output id="ambientVolumeValue" class="setting-value">100%</output><input id="ambientVolume" type="range" min="0" max="1" step="0.01" /></label>
+        </div>
+        <h3 style="margin-top:14px">Graphics</h3>
+        <div class="settings-group">
+          <label class="setting-row"><span>Render resolution</span><select id="resolutionSetting"><option value="3.8">Low · 50%</option><option value="2.8">Balanced · 70%</option><option value="2.2">High · 90%</option><option value="1.8">Ultra · 100%</option></select></label>
+          <label class="setting-row"><span>Fog density</span><select id="fogSetting"><option value="0.18">Dense</option><option value="0.13">Balanced</option><option value="0.09">Clear</option></select></label>
+          <label class="check-row"><input id="pixelSetting" type="checkbox" /> Crisp pixel rendering</label>
+        </div>
+        <button id="settingsDone" class="secondary-button" type="button">Done</button>
+      </div>
       <div id="startLeaderboard">
         <h3>Top Runs</h3>
         <ul id="startLbList"></ul>
@@ -180,12 +259,15 @@
       <button id="stBtn" type="button">Play Again</button>
     </div>
   </div>
+  <div id="restartCountdown" hidden aria-live="assertive" aria-label="Restart countdown">
+    <div class="restart-clock"><span id="restartCountdownValue">3</span></div>
+  </div>
 </div>
 
 <script type="module">
 import * as THREE from './assets/vendor/three.module.js';
 
-(function initSector93() {
+function initSector93() {
 
   // ── DOM ──────────────────────────────────────────────────────────────────────
   const gc        = document.getElementById('gc');
@@ -217,11 +299,39 @@ import * as THREE from './assets/vendor/three.module.js';
   const lbList    = document.getElementById('lbList');
   const leaderboardWrap = document.getElementById('leaderboardWrap');
   const startLbList = document.getElementById('startLbList');
+  const startBtn = document.getElementById('startBtn');
+  const settingsToggle = document.getElementById('settingsToggle');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const settingsDone = document.getElementById('settingsDone');
+  const restartCountdown = document.getElementById('restartCountdown');
+  const restartCountdownValue = document.getElementById('restartCountdownValue');
+  const musicVolume = document.getElementById('musicVolume');
+  const sfxVolume = document.getElementById('sfxVolume');
+  const ambientVolume = document.getElementById('ambientVolume');
+  const musicVolumeValue = document.getElementById('musicVolumeValue');
+  const sfxVolumeValue = document.getElementById('sfxVolumeValue');
+  const ambientVolumeValue = document.getElementById('ambientVolumeValue');
+  const resolutionSetting = document.getElementById('resolutionSetting');
+  const fogSetting = document.getElementById('fogSetting');
+  const pixelSetting = document.getElementById('pixelSetting');
+
+  const SETTINGS_KEY='sector93.settings.v3';
+  const LEGACY_SETTINGS_KEY='sector93.settings.v2';
+  const settings={renderScale:2.8,fogDensity:0.13,pixelated:true,music:0.5,sfx:0.5,ambient:0.5};
+  try {
+    const saved=JSON.parse(localStorage.getItem(SETTINGS_KEY)||'null');
+    if (saved) Object.assign(settings,saved);
+    else {
+      const legacy=JSON.parse(localStorage.getItem(LEGACY_SETTINGS_KEY)||'null');
+      if (legacy) Object.assign(settings,{renderScale:legacy.renderScale,fogDensity:legacy.fogDensity,pixelated:legacy.pixelated});
+    }
+  } catch(_) {}
+  const saveSettings=()=>{try{localStorage.setItem(SETTINGS_KEY,JSON.stringify(settings));}catch(_) {}}
 
   // ── Three.js ─────────────────────────────────────────────────────────────────
   const scene    = new THREE.Scene();
   scene.background = new THREE.Color(0x000000);
-  scene.fog = new THREE.FogExp2(0x000000, 0.18);
+  scene.fog = new THREE.FogExp2(0x000000, settings.fogDensity);
 
   const camera = new THREE.PerspectiveCamera(72, 1, 0.08, 80);
   camera.up.set(0,1,0);
@@ -232,13 +342,14 @@ import * as THREE from './assets/vendor/three.module.js';
   renderer.setSize(320, 240, false);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.38;
-  renderer.domElement.style.imageRendering = 'pixelated';
+  renderer.toneMappingExposure = 1.58;
+  renderer.domElement.style.imageRendering = settings.pixelated?'pixelated':'auto';
   gc.prepend(renderer.domElement);
 
   // ── Constants ────────────────────────────────────────────────────────────────
   const WALL_H    = 3.3;
   const CAM_Y     = 1.05;
+  const WALL_BUFFER = 0.14;
   const MAX_PITCH = 1.22;
   const TORCH_DT  = 1 / 30;
   const TORCH_LIGHT_BUDGET = 14;
@@ -294,8 +405,19 @@ import * as THREE from './assets/vendor/three.module.js';
       spdMult: 1 + Math.pow(pressure,1.08)*0.34 + Math.min(cycle*0.025,0.1) + lateRamp*0.018,
       dmgMult: 1 + Math.pow(pressure,1.24)*0.78 + Math.min(cycle*0.04,0.18) + lateRamp*0.04,
       extra:   Math.min(level<4 ? 2 + level : 3 + Math.floor(pressure*7.5) + Math.floor(cycle*1.1) + Math.floor(lateRamp*0.5), 18),
-      ammoBonus: Math.max(1, Math.floor(2 + pressure*2.2 + cycle*0.35 - lateRamp*0.1)),
+      ammoBonus: Math.max(1, Math.floor(1 + pressure*1.2 + cycle*0.2 - lateRamp*0.1)),
     };
+  }
+
+  function getMinibossVariant(level) {
+    const variants=[
+      {name:'The Warden',tint:0xc15dff,stats:{hp:16,spd:0.68,dmg:52,acd:1.95,ar:1.4,sx:1.22,sy:1.2}},
+      {name:'The Reaper',tint:0x65b7ff,stats:{hp:13,spd:0.92,dmg:44,acd:1.35,ar:1.5,sx:1.12,sy:1.28}},
+      {name:'The Colossus',tint:0xff7a32,stats:{hp:28,spd:0.42,dmg:68,acd:2.3,ar:1.55,sx:1.48,sy:1.38}},
+      {name:'The Hexer',tint:0x75e69b,stats:{hp:18,spd:0.62,dmg:46,acd:1.05,ar:1.35,sx:1.2,sy:1.24}},
+      {name:'The Dread Knight',tint:0xff4d70,stats:{hp:24,spd:0.76,dmg:62,acd:1.55,ar:1.55,sx:1.34,sy:1.3}},
+    ];
+    return variants[level%variants.length];
   }
 
   function getProgressionTargets(level) {
@@ -499,10 +621,13 @@ import * as THREE from './assets/vendor/three.module.js';
   let worldW = 0, worldH = 0;
   let currentMapKeys = [];
   let advTimer = null;
+  let restartTimer = null;
+  let restartStepTimer = null;
+  let levelMinibossDefeated = false;
+  let levelMinibossVariant = null;
   let torchAccum = 0;
   let torchBudgetAccum = 0;
   let atmosphereAccum = 0;
-  let frameTick  = 0;
   let lastVW = 0, lastVH = 0;
 
   const player = {
@@ -510,7 +635,7 @@ import * as THREE from './assets/vendor/three.module.js';
     speed:3.2, radius:0.22,
     health:100, ammo:24, maxAmmo:48,
     hasKey:false, levelKills:0, campaignKills:0,
-    recoil:0, bobPhase:0, shootCd:0, dmgTimer:0, moving:false, gunTier:0,
+    recoil:0, bobPhase:0, shootCd:0, meleeCd:0, weaponMode:2, moving:false, gunTier:0,
     armorTier:0, upgrades:0,
     y:0, vy:0, grounded:true,
   };
@@ -539,7 +664,7 @@ import * as THREE from './assets/vendor/three.module.js';
   let leaderboardEntries = [];
   let pendingLeaderboardPayload = null;
   let leaderboardLoaded = false;
-  const hudState={health:null,ammo:null,armorTier:null,gunTier:null,hasKey:null,level:null,kills:null};
+  const hudState={health:null,ammo:null,armorTier:null,gunTier:null,weaponMode:null,hasKey:null,level:null,kills:null};
 
   const bowNames=['Shortbow','Longbow','Bone Bow','Shadow Bow','Hellfire Bow','Storm Bow','Void Bow'];
   const bowShots=['single shot','heavier draw','triple shot','cursed volley','hellfire burst','storm volley','void barrage'];
@@ -636,10 +761,26 @@ import * as THREE from './assets/vendor/three.module.js';
   );
   carriedTorchCore.position.set(0,0.158,-0.008);
   torchRig.add(carriedTorchCore);
-  const torchLight=new THREE.PointLight(0xff9b4a,1.05*LIGHT_SOURCE_BOOST,5.8,1.7);
+  const torchLickMaterial=new THREE.MeshBasicMaterial({color:0xff9a32,transparent:true,opacity:0.72,side:THREE.DoubleSide});
+  const torchLickInnerMaterial=new THREE.MeshBasicMaterial({color:0xffd978,transparent:true,opacity:0.78,side:THREE.DoubleSide});
+  const carriedTorchLickA=new THREE.Mesh(new THREE.ConeGeometry(0.028,0.13,5),torchLickMaterial);
+  const carriedTorchLickB=new THREE.Mesh(new THREE.ConeGeometry(0.021,0.10,5),torchLickInnerMaterial);
+  carriedTorchLickA.position.set(-0.028,0.215,0.012);
+  carriedTorchLickB.position.set(0.026,0.204,-0.004);
+  carriedTorchLickA.rotation.z=-0.18;
+  carriedTorchLickB.rotation.z=0.22;
+  torchRig.add(carriedTorchLickA,carriedTorchLickB);
+  const torchLight=new THREE.PointLight(0xff9b4a,1.18*LIGHT_SOURCE_BOOST,6.4,1.7);
   torchLight.position.set(0,0.215,0);
   torchRig.add(torchLight);
-  const torchBaseIntensity=1.05*LIGHT_SOURCE_BOOST;
+  const torchSpotLight=new THREE.SpotLight(0xffa04b,0.92*LIGHT_SOURCE_BOOST,7.8,1.02,0.96,1.15);
+  torchSpotLight.position.set(0,0.18,-0.02);
+  const torchSpotTarget=new THREE.Object3D();
+  torchSpotTarget.position.set(0,0.08,-7.5);
+  torchRig.add(torchSpotLight,torchSpotTarget);
+  torchSpotLight.target=torchSpotTarget;
+  const torchBaseIntensity=1.18*LIGHT_SOURCE_BOOST;
+  const torchSpotBaseIntensity=0.92*LIGHT_SOURCE_BOOST;
 
   // Opposite-hand crossbow silhouette. It stays compact so the dungeon view and
   // crosshair remain clear while the weapon still reads at pixel resolution.
@@ -680,37 +821,72 @@ import * as THREE from './assets/vendor/three.module.js';
   crossbowRightProbe.position.set(0.28,0.075,-0.43); crossbowRig.add(crossbowRightProbe);
   crossbowRig.traverse(child=>{if(child.isMesh) child.frustumCulled=false;});
   let crossbowKick=0;
-  
-  // ── Player body (visible FPS arms/torso reference) ──────────────────────────
-  const playerBody = new THREE.Group();
-  playerBody.position.set(0, -0.35, -0.3);
-  camera.add(playerBody);
-  playerBody.visible = false;
-  
-  // Torso (simple cube)
-  const torsoGeo = new THREE.BoxGeometry(0.4, 0.5, 0.2);
-  const torsoMat = new THREE.MeshStandardMaterial({ color: 0x6b4423, roughness: 0.8 });
-  const torso = new THREE.Mesh(torsoGeo, torsoMat);
-  torso.position.y = 0;
-  playerBody.add(torso);
-  
-  // Left arm
-  const armGeo = new THREE.BoxGeometry(0.08, 0.45, 0.08);
+
+  // Dagger — held low-right, blade pointing forward at the target.
+  const meleeRig=new THREE.Group();
+  meleeRig.position.set(0.36,-0.30,-0.38);
+  meleeRig.rotation.set(-0.04,-0.06,0.04);
+  camera.add(meleeRig);
+  const daggerLeatherMat=new THREE.MeshStandardMaterial({color:0x3d1c0a,roughness:0.88,metalness:0.0});
+  const daggerWrapMat   =new THREE.MeshStandardMaterial({color:0x140908,roughness:0.94,metalness:0.0});
+  const daggerGoldMat   =new THREE.MeshStandardMaterial({color:0xc49a30,roughness:0.36,metalness:0.88});
+  const daggerBladeMat  =new THREE.MeshStandardMaterial({color:0xdde4e8,roughness:0.16,metalness:0.94});
+  const daggerFullerMat =new THREE.MeshStandardMaterial({color:0xa0abb2,roughness:0.38,metalness:0.70});
+  // Grip
+  const daggerGrip=new THREE.Mesh(new THREE.CylinderGeometry(0.026,0.032,0.16,8),daggerLeatherMat);
+  daggerGrip.rotation.x=Math.PI/2; daggerGrip.position.z=0.04; meleeRig.add(daggerGrip);
+  // Wrap rings
+  [-0.00,0.04,0.08].forEach(dz=>{
+    const wrap=new THREE.Mesh(new THREE.CylinderGeometry(0.031,0.031,0.014,8),daggerWrapMat);
+    wrap.rotation.x=Math.PI/2; wrap.position.z=dz; meleeRig.add(wrap);
+  });
+  // Pommel — disk shape
+  const daggerPommel=new THREE.Mesh(new THREE.CylinderGeometry(0.038,0.038,0.022,8),daggerGoldMat);
+  daggerPommel.rotation.x=Math.PI/2; daggerPommel.position.z=0.13; meleeRig.add(daggerPommel);
+  // Guard — simple compact crossbar, no angled quillons
+  const daggerGuard=new THREE.Mesh(new THREE.BoxGeometry(0.18,0.024,0.032),daggerGoldMat);
+  daggerGuard.position.z=-0.04; meleeRig.add(daggerGuard);
+  // Blade
+  const daggerBlade=new THREE.Mesh(new THREE.BoxGeometry(0.048,0.028,0.30),daggerBladeMat);
+  daggerBlade.position.set(0,0,-0.21); meleeRig.add(daggerBlade);
+  // Fuller groove
+  const daggerFuller=new THREE.Mesh(new THREE.BoxGeometry(0.014,0.012,0.26),daggerFullerMat);
+  daggerFuller.position.set(0,0.008,-0.19); meleeRig.add(daggerFuller);
+  // Tip
+  const daggerTip=new THREE.Mesh(new THREE.ConeGeometry(0.032,0.092,4),daggerBladeMat);
+  daggerTip.rotation.x=-Math.PI/2; daggerTip.position.z=-0.40; meleeRig.add(daggerTip);
+  // Probe for wall retraction
+  const swordTipProbe=new THREE.Object3D();
+  swordTipProbe.position.z=-0.46; meleeRig.add(swordTipProbe);
+  meleeRig.traverse(child=>{if(child.isMesh) child.frustumCulled=false;});
+  meleeRig.visible=false;
+    let meleeSwing=0;
+
+    // ── Player body (visible FPS arms/torso reference) ──────────────────────────
+    const playerBody = new THREE.Group();
+    playerBody.position.set(0, -0.35, -0.3);
+    camera.add(playerBody);
+    playerBody.visible = false;
+
+    const torsoGeo = new THREE.BoxGeometry(0.4, 0.5, 0.2);
+    const torsoMat = new THREE.MeshStandardMaterial({ color: 0x6b4423, roughness: 0.8 });
+    const torso = new THREE.Mesh(torsoGeo, torsoMat);
+    playerBody.add(torso);
+
+    const armGeo = new THREE.BoxGeometry(0.08, 0.45, 0.08);
   const armMat = new THREE.MeshStandardMaterial({ color: 0xd4a574, roughness: 0.7 });
   const leftArm = new THREE.Mesh(armGeo, armMat);
   leftArm.position.set(-0.22, -0.05, 0);
   leftArm.rotation.z = 0.3;
   playerBody.add(leftArm);
-  
-  // Right arm (holds gun)
-  const rightArm = new THREE.Mesh(armGeo, armMat);
+    const rightArm = new THREE.Mesh(armGeo, armMat);
   rightArm.position.set(0.22, -0.05, 0);
   rightArm.rotation.z = -0.3;
   playerBody.add(rightArm);
   
-  const ambient = new THREE.AmbientLight(0x3a4560, 0.26 * GLOBAL_LIGHT_BOOST);
+  const ambient = new THREE.AmbientLight(0x4a5672, 0.38 * GLOBAL_LIGHT_BOOST);
   scene.add(ambient);
-  const keyDir  = new THREE.DirectionalLight(0x9ab6e0, 0.32 * GLOBAL_LIGHT_BOOST);
+  const keyDir  = new THREE.DirectionalLight(0xa9c2ea, 0.42 * GLOBAL_LIGHT_BOOST);
   keyDir.position.set(3, 5, 2);
   scene.add(keyDir);
 
@@ -1111,6 +1287,8 @@ import * as THREE from './assets/vendor/three.module.js';
   let AC=null, _noiseBuf=null, _masterGain=null, _sfxGain=null, _ambGain=null;
   let _musicGain=null, _musicFilter=null, _melodyTimer=null, _musicActive=false;
   const _musicSources=new Set(), _ambientTimers=new Set();
+  const AUDIO_MASTER_GAIN=1.08, MUSIC_GAIN_BOOST=2.0, SFX_GAIN_BOOST=1.35, AMBIENT_GAIN_BOOST=1.45;
+  const boostedAudioGain=(value,boost)=>Math.min(1.6,Math.max(0,value*boost));
 
   function initAudio(){
     if(AC) { if(AC.state==='suspended') AC.resume(); _startMusic(); return; }
@@ -1118,9 +1296,9 @@ import * as THREE from './assets/vendor/three.module.js';
     catch(e){ return; }
     const limiter=AC.createDynamicsCompressor();
     limiter.threshold.value=-12; limiter.knee.value=12; limiter.ratio.value=5; limiter.attack.value=0.004; limiter.release.value=0.18;
-    _masterGain=AC.createGain(); _masterGain.gain.value=0.82; _masterGain.connect(limiter); limiter.connect(AC.destination);
-    _sfxGain=AC.createGain(); _sfxGain.gain.value=0.72; _sfxGain.connect(_masterGain);
-    _ambGain=AC.createGain(); _ambGain.gain.value=0.48; _ambGain.connect(_masterGain);
+    _masterGain=AC.createGain(); _masterGain.gain.value=AUDIO_MASTER_GAIN; _masterGain.connect(limiter); limiter.connect(AC.destination);
+    _sfxGain=AC.createGain(); _sfxGain.gain.value=boostedAudioGain(settings.sfx,SFX_GAIN_BOOST); _sfxGain.connect(_masterGain);
+    _ambGain=AC.createGain(); _ambGain.gain.value=boostedAudioGain(settings.ambient,AMBIENT_GAIN_BOOST); _ambGain.connect(_masterGain);
     const echo=AC.createDelay(1); echo.delayTime.value=0.19;
     const echoFilter=AC.createBiquadFilter(); echoFilter.type='lowpass'; echoFilter.frequency.value=1250;
     const echoGain=AC.createGain(); echoGain.gain.value=0.2;
@@ -1347,36 +1525,55 @@ import * as THREE from './assets/vendor/three.module.js';
   function _startMusic(){
     if(!AC||_musicActive) return;
     _musicActive=true;
-    _musicGain=AC.createGain(); _musicGain.gain.value=0.055;
+    _musicGain=AC.createGain(); _musicGain.gain.value=boostedAudioGain(settings.music,MUSIC_GAIN_BOOST);
     _musicFilter=AC.createBiquadFilter(); _musicFilter.type='lowpass'; _musicFilter.frequency.value=720;
     _musicGain.connect(_musicFilter); _musicFilter.connect(_masterGain);
-    // Deep sub-bass drones — two slightly detuned for unsettling beating
-    [40,40.7].forEach(f=>{
-      const o=_trackMusicSource(AC.createOscillator()); o.type='sawtooth'; o.frequency.value=f;
-      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=200; filt.Q.value=4;
-      const g=AC.createGain(); g.gain.value=0.42;
-      o.connect(filt); filt.connect(g); g.connect(_musicGain); o.start();
-    });
-    // Filtered noise layer — cave rumble
-    const ns=_trackMusicSource(AC.createBufferSource()); ns.buffer=_nb(); ns.loop=true;
-    const nf=AC.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=120; nf.Q.value=0.4;
-    const ng=AC.createGain(); ng.gain.value=0.05;
-    ns.connect(nf); nf.connect(ng); ng.connect(_musicGain); ns.start();
+    // Use finite musical phrases instead of a continuously running low drone.
+    // This keeps the dungeon atmosphere tense while avoiding the old monotone tone.
     _scheduleMelody(AC.currentTime+1.2);
     _scheduleAmbient();
   }
 
   function _scheduleMelody(start){
     if(!_musicActive||!AC) return;
-    // Pentatonic minor — slow, sparse, ominous
-    const scale=[55,65.4,73.4,77.8,98,110]; // A1 C2 D2 Eb2 G2 A2
-    const pat=[0,null,null,null,2,null,null,null,4,null,null,null,1,null,null,null,null,null,3,null,null,null,null,null];
-    const bl=1.35; // slow tempo
+    // Minor-key dungeon-crawler arrangement: pulse, bass, short chord swells,
+    // and a sparse lead. Every part is made of finite phrases, never a drone.
+    const scale=[55,58.3,65.4,69.3,77.8,92.5]; // A1 Bb1 C2 Db2 Eb2 F#2
+    const pat=[0,null,1,null,3,null,2,null,4,null,3,null,1,null,0,null,5,null,3,null,2,null,1,null];
+    const bl=0.42;
+    const chords=[[55,58.3,82.4],[46.2,55,73.4],[49,58.3,92.5],[41.2,55,77.8]];
+    chords.forEach((chord,bar)=>chord.forEach((freq,n)=>{
+      const t=start+bar*6*bl;
+      const o=_trackMusicSource(AC.createOscillator()); o.type=n===0?'triangle':'sine'; o.frequency.value=freq;
+      const g=AC.createGain();
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(n===0?0.045:0.028,t+0.28);
+      g.gain.setValueAtTime(n===0?0.045:0.028,t+4.0*bl); g.gain.exponentialRampToValueAtTime(0.001,t+5.6*bl);
+      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=n===0?420:760; filt.Q.value=0.7;
+      o.connect(filt); filt.connect(g); g.connect(_musicGain); o.start(t); o.stop(t+5.8*bl);
+    }));
+    const bass=[55,null,55,null,46.2,null,46.2,null,49,null,49,null,41.2,null,41.2,null,55,null,55,null,46.2,null,49,null];
+    bass.forEach((freq,i)=>{
+      if(freq===null) return;
+      const t=start+i*bl;
+      const o=_trackMusicSource(AC.createOscillator()); o.type='triangle'; o.frequency.value=freq;
+      const g=AC.createGain();
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.16,t+0.035); g.gain.exponentialRampToValueAtTime(0.001,t+bl*0.82);
+      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=260; filt.Q.value=0.8;
+      o.connect(filt); filt.connect(g); g.connect(_musicGain); o.start(t); o.stop(t+bl*0.9);
+    });
+    for(let i=0;i<pat.length;i+=2){
+      const t=start+i*bl;
+      const ns=_trackMusicSource(AC.createBufferSource()); ns.buffer=_nb();
+      const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=i%4===0?1150:1750; f.Q.value=2.2;
+      const g=AC.createGain(); g.gain.setValueAtTime(0.018,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.075);
+      ns.connect(f); f.connect(g); g.connect(_musicGain); ns.start(t); ns.stop(t+0.09);
+    }
     pat.forEach((n,i)=>{
       if(n===null) return;
       const t=start+i*bl;
       if(t<AC.currentTime+0.05) return;
-      const o=_trackMusicSource(AC.createOscillator()); o.type='triangle'; o.frequency.value=scale[n]*2;
+      const o=_trackMusicSource(AC.createOscillator()); o.type=i%4===1?'square':'triangle'; o.frequency.value=scale[n]*2;
+      o.detune.value=i%3===0?-7:i%3===1?5:0;
       const g=AC.createGain();
       g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.12,t+0.09); g.gain.exponentialRampToValueAtTime(0.001,t+bl*1.3);
       const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=700;
@@ -1505,6 +1702,7 @@ import * as THREE from './assets/vendor/three.module.js';
     return decorInfoAt(x,z,r).walkTop;
   }
   function canMoveTo(x,z,r,jumpY=0) {
+    const wallRadius=r+WALL_BUFFER;
     let decorBlock=0, walkTop=0;
     for (const c of decorColliders) {
       const overlap=c.type==='circle'
@@ -1514,8 +1712,8 @@ import * as THREE from './assets/vendor/three.module.js';
       decorBlock=Math.max(decorBlock,c.h||1.8);
       if (c.walkTop) walkTop=Math.max(walkTop,c.walkTop);
     }
-    return !isWallAt(x-r,z-r)&&!isWallAt(x+r,z-r)&&!isWallAt(x-r,z+r)&&!isWallAt(x+r,z+r)
-      && !isWallAt(x,z-r)  &&!isWallAt(x,z+r)   &&!isWallAt(x-r,z) &&!isWallAt(x+r,z)
+    return !isWallAt(x-wallRadius,z-wallRadius)&&!isWallAt(x+wallRadius,z-wallRadius)&&!isWallAt(x-wallRadius,z+wallRadius)&&!isWallAt(x+wallRadius,z+wallRadius)
+      && !isWallAt(x,z-wallRadius)  &&!isWallAt(x,z+wallRadius)   &&!isWallAt(x-wallRadius,z) &&!isWallAt(x+wallRadius,z)
       && (jumpY>=decorBlock-0.02 || (walkTop>0 && jumpY+0.16>=walkTop));
   }
   function enemyCanMoveTo(x,z,r,stepHeight=ENEMY_STEP_HEIGHT) {
@@ -1799,7 +1997,7 @@ import * as THREE from './assets/vendor/three.module.js';
       const d=e.userData;
       const dx=e.position.x-origin.x, dy=(d.baseY-0.12)-origin.y, dz=e.position.z-origin.z;
       const along=dx*dir.x+dy*dir.y+dz*dir.z;
-      if(along<=0||along>=bestDist) continue;
+      if(along<=0||along>=bestDist||along>ray.far) continue;
       const cx=origin.x+dir.x*along-e.position.x, cy=origin.y+dir.y*along-(d.baseY-0.12), cz=origin.z+dir.z*along-e.position.z;
       const rx=Math.max(0.38,d.bsx*0.52), ry=Math.max(0.52,d.bsy*0.56);
       if((cx*cx+cz*cz)/(rx*rx)+(cy*cy)/(ry*ry)<=1&&hasLOS(origin.x,origin.z,e.position.x,e.position.z)){
@@ -1814,8 +2012,15 @@ import * as THREE from './assets/vendor/three.module.js';
     for(let i=arrows.length-1;i>=0;i--){
       const a=arrows[i];
       if(a.hit){
-        if(a.stuckTarget&&!a.stuckTarget.userData.alive) a.hitLife=Math.min(a.hitLife,0.12);
-        a.hitLife-=dt;
+        if(a.stuckTarget){
+          if(!a.stuckTarget.userData.alive) a.hitLife=Math.min(a.hitLife,0.12);
+          else if(a.stuckOffset){
+            const stuckPos=a.stuckTarget.localToWorld(a.stuckOffset.clone());
+            a.mesh.position.copy(stuckPos);
+            if(a.stuckQuat) a.mesh.quaternion.copy(a.stuckTarget.quaternion).multiply(a.stuckQuat);
+          }
+        }
+        if(Number.isFinite(a.hitLife)) a.hitLife-=dt;
         if(a.hitLife<=0){ scene.remove(a.mesh); arrows.splice(i,1); }
         continue;
       }
@@ -1855,7 +2060,9 @@ import * as THREE from './assets/vendor/three.module.js';
         // of the shaft should be visibly buried instead of hovering outside.
         const penetration=0.12;
         a.mesh.position.set(from.x+vx*hitT+dirX*penetration,from.y+vy*hitT+dirY*penetration,from.z+vz*hitT+dirZ*penetration);
-        a.hit=true; a.stuckTarget=hitEnemy; a.hitLife=3.5; a.vel.set(0,0,0);
+        a.hit=true; a.stuckTarget=hitEnemy; a.hitLife=Infinity; a.vel.set(0,0,0);
+        a.stuckOffset=hitEnemy.worldToLocal(a.mesh.position.clone());
+        a.stuckQuat=hitEnemy.quaternion.clone().invert().multiply(a.mesh.quaternion);
         continue;
       }
       a.mesh.position.set(toX,toY,toZ);
@@ -1877,6 +2084,17 @@ import * as THREE from './assets/vendor/three.module.js';
   // ── Torches ──────────────────────────────────────────────────────────────────
   function addTorches(keyChamberCells) {
     const dirs=[{dx:1,dz:0},{dx:-1,dz:0},{dx:0,dz:1},{dx:0,dz:-1}];
+    const wallFlameGeo=new THREE.LatheGeometry([
+      new THREE.Vector2(0.004,0),new THREE.Vector2(0.032,0.018),
+      new THREE.Vector2(0.072,0.07),new THREE.Vector2(0.062,0.135),
+      new THREE.Vector2(0.038,0.20),new THREE.Vector2(0.012,0.255),new THREE.Vector2(0,0.29)
+    ],7);
+    const wallCoreGeo=new THREE.LatheGeometry([
+      new THREE.Vector2(0.002,0),new THREE.Vector2(0.022,0.018),
+      new THREE.Vector2(0.037,0.065),new THREE.Vector2(0.022,0.12),new THREE.Vector2(0,0.17)
+    ],6);
+    const wallFlameMat=new THREE.MeshBasicMaterial({color:0xff9933,transparent:true,opacity:0.92});
+    const wallCoreMat=new THREE.MeshBasicMaterial({color:0xffedaa,transparent:true,opacity:0.88,side:THREE.DoubleSide});
 
     // Collect wall faces, then split them into straight architectural runs.
     const candidates=[];
@@ -1939,10 +2157,11 @@ import * as THREE from './assets/vendor/three.module.js';
       const mt=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.36,0.06),mountMat);
       mt.position.set(c.wx,0.8,c.wz); levelRoot.add(mt);
       const fl=new THREE.Mesh(
-        new THREE.SphereGeometry(0.11,8,6),
-        new THREE.MeshBasicMaterial({color:0xff9933,transparent:true,opacity:0.92})
+        wallFlameGeo,wallFlameMat
       );
-      fl.position.set(c.wx,1.12,c.wz); levelRoot.add(fl);
+      fl.position.set(c.wx,0.98,c.wz); levelRoot.add(fl);
+      const core=new THREE.Mesh(wallCoreGeo,wallCoreMat);
+      core.position.set(c.wx,0.99,c.wz-0.012); levelRoot.add(core);
       const aura=addGlowSprite(levelRoot,0xff7a2c,0.9,c.wx,1.12,c.wz,0.3);
       const light=new THREE.PointLight(0xff8844,0.75 * LIGHT_SOURCE_BOOST,7.2,1.65);
       light.position.set(c.wx,1.14,c.wz); levelRoot.add(light);
@@ -1955,7 +2174,7 @@ import * as THREE from './assets/vendor/three.module.js';
         em.position.set(c.wx,1.12,c.wz); levelRoot.add(em);
         embers.push({m:em,bx:c.wx,by:1.12,bz:c.wz,age:Math.random(),life:0.7+Math.random()*0.6,ph:Math.random()*Math.PI*2,lat:0.05+Math.random()*0.045,rise:0.26+Math.random()*0.24});
       }
-      torches.push({light,flame:fl,aura,embers,ph:Math.random()*Math.PI*2,pulse:0.18+Math.random()*0.12,bi:0.65});
+      torches.push({light,flame:fl,core,aura,embers,ph:Math.random()*Math.PI*2,pulse:0.18+Math.random()*0.12,bi:0.65});
     });
     updateTorchLightBudget();
   }
@@ -2233,10 +2452,18 @@ import * as THREE from './assets/vendor/three.module.js';
       const roomy=!pos.tight;
       
       if(type===0 && roomy) {
-        // Stone pillar/column
-        const col=new THREE.Mesh(new THREE.CylinderGeometry(0.2,0.22,1.8,6),new THREE.MeshStandardMaterial({color:0x6b6b7b,roughness:0.85,metalness:0.05}));
-        col.position.set(pos.x,0.9,pos.z); col.rotation.y=angle; levelRoot.add(col);
-        addCircleCollider(pos.x,pos.z,0.24);
+        // Medieval stone support with a foot, faceted shaft, and capital.
+        const stoneMat=new THREE.MeshStandardMaterial({color:0x69625b,roughness:0.92,metalness:0.02});
+        const trimMat=new THREE.MeshStandardMaterial({color:0x877965,roughness:0.86,metalness:0.03});
+        const base=new THREE.Mesh(new THREE.CylinderGeometry(0.31,0.36,0.14,8),trimMat);
+        const shaft=new THREE.Mesh(new THREE.CylinderGeometry(0.19,0.23,1.58,8),stoneMat);
+        const capital=new THREE.Mesh(new THREE.CylinderGeometry(0.29,0.23,0.14,8),trimMat);
+        base.position.set(pos.x,0.07,pos.z);
+        shaft.position.set(pos.x,0.86,pos.z);
+        capital.position.set(pos.x,1.67,pos.z);
+        base.rotation.y=shaft.rotation.y=capital.rotation.y=angle;
+        levelRoot.add(base,shaft,capital);
+        addCircleCollider(pos.x,pos.z,0.30);
       } else if(type===1 && roomy) {
         // Wooden barrel
         const barrel=new THREE.Mesh(new THREE.CylinderGeometry(0.22,0.24,0.5,8),new THREE.MeshStandardMaterial({color:0x8b6f47,roughness:0.88,metalness:0.02}));
@@ -2331,6 +2558,7 @@ import * as THREE from './assets/vendor/three.module.js';
     const rugTrimMat=new THREE.MeshStandardMaterial({color:0xc9a15d,roughness:0.82,metalness:0.08});
     const woodMat=new THREE.MeshStandardMaterial({color:0x8a5c34,map:woodGrainTex,roughness:0.88,metalness:0.02});
     const darkWoodMat=new THREE.MeshStandardMaterial({color:0x603921,map:woodGrainTex,roughness:0.9,metalness:0.01});
+    const libraryMats=[0x7e2429,0x34506f,0x6a5429,0x536b51].map(color=>new THREE.MeshStandardMaterial({color,roughness:0.9}));
     const fabricMat=new THREE.MeshStandardMaterial({color:0x8f7642,map:fabricTex,roughness:0.92,metalness:0});
     const candleWaxMat=new THREE.MeshStandardMaterial({color:0xe9d9b6,roughness:0.72,metalness:0.02});
     const brassMat=new THREE.MeshStandardMaterial({color:0x9a7740,roughness:0.46,metalness:0.78});
@@ -2418,6 +2646,48 @@ import * as THREE from './assets/vendor/three.module.js';
       trim.rotation.x=-Math.PI/2; trim.rotation.z=rot; trim.position.set(px,0.009,pz); levelRoot.add(trim);
       const inner=new THREE.Mesh(new THREE.PlaneGeometry(w*0.72,h*0.58),alt?rugMatA:rugMatB);
       inner.rotation.x=-Math.PI/2; inner.rotation.z=rot; inner.position.set(px,0.01,pz); levelRoot.add(inner);
+    }
+
+    function addThrone(px,pz,rot=0) {
+      const g=new THREE.Group();
+      const throneWood=new THREE.MeshStandardMaterial({color:0x482219,map:woodGrainTex,roughness:0.88,metalness:0.02});
+      const throneTrim=new THREE.MeshStandardMaterial({color:0xb08743,roughness:0.5,metalness:0.72});
+      const seat=new THREE.Mesh(new THREE.BoxGeometry(0.62,0.12,0.52),throneWood); seat.position.y=0.55; g.add(seat);
+      const back=new THREE.Mesh(new THREE.BoxGeometry(0.62,1.15,0.14),throneWood); back.position.set(0,1.08,0.19); g.add(back);
+      [-1,1].forEach(side=>{
+        const arm=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.16,0.58),throneTrim); arm.position.set(side*0.34,0.72,0); g.add(arm);
+        const post=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.055,0.34,6),throneTrim); post.position.set(side*0.27,1.72,0.19); g.add(post);
+      });
+      const crest=new THREE.Mesh(new THREE.ConeGeometry(0.12,0.18,4),throneTrim); crest.position.set(0,1.86,0.19); g.add(crest);
+      g.position.set(px,0,pz); g.rotation.y=rot; levelRoot.add(g);
+      addBoxCollider(px,pz,0.72,0.7,rot,0.05,1.15,1.15);
+    }
+
+    function addBookshelf(px,pz,rot=0) {
+      const g=new THREE.Group();
+      const shelfWood=new THREE.MeshStandardMaterial({color:0x4d2d1b,map:woodGrainTex,roughness:0.9,metalness:0.01});
+      const shelf=new THREE.Mesh(new THREE.BoxGeometry(0.86,1.7,0.22),shelfWood); shelf.position.y=0.86; g.add(shelf);
+      for(let row=0;row<4;row++) {
+        const plank=new THREE.Mesh(new THREE.BoxGeometry(0.92,0.045,0.28),darkWoodMat); plank.position.set(0,0.22+row*0.4,0.01); g.add(plank);
+        for(let book=0;book<4;book++) {
+          const cover=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.26+(book%2)*0.05,0.18),libraryMats[(row+book)%4]);
+          cover.position.set(-0.3+book*0.2,0.35+row*0.4, -0.14); cover.rotation.z=(book%2?0.04:-0.03); g.add(cover);
+        }
+      }
+      g.position.set(px,0,pz); g.rotation.y=rot; levelRoot.add(g);
+      addBoxCollider(px,pz,0.5,0.25,rot,0.04,1.8,1.8);
+    }
+
+    function addAltar(px,pz,rot=0) {
+      const g=new THREE.Group();
+      const altarStone=new THREE.MeshStandardMaterial({color:0x686158,roughness:0.92,metalness:0.02});
+      const top=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.16,0.48),altarStone); top.position.y=0.82; g.add(top);
+      const legA=new THREE.Mesh(new THREE.BoxGeometry(0.16,0.78,0.3),altarStone);
+      const legB=legA.clone(); legA.position.set(-0.3,0.39,0); legB.position.set(0.3,0.39,0); g.add(legA,legB);
+      const cross=new THREE.Mesh(new THREE.BoxGeometry(0.06,0.42,0.04),brassMat); cross.position.set(0,1.05,0); g.add(cross);
+      const crossBar=new THREE.Mesh(new THREE.BoxGeometry(0.24,0.06,0.04),brassMat); crossBar.position.set(0,1.12,0); g.add(crossBar);
+      g.position.set(px,0,pz); g.rotation.y=rot; levelRoot.add(g);
+      addBoxCollider(px,pz,0.98,0.56,rot,0.04,0.9,0.9);
     }
 
     function addBanner(px,pz,rot,warm=false) {
@@ -2528,8 +2798,15 @@ import * as THREE from './assets/vendor/three.module.js';
       cup.position.set(rot===Math.PI/2?0.19:rot===-Math.PI/2?-0.19:0,0.05,rot===0?-0.19:rot===Math.PI?0.19:0); cup.rotation.z=Math.PI; g.add(cup);
       const flame=new THREE.Mesh(new THREE.SphereGeometry(0.026,5,4),new THREE.MeshBasicMaterial({color:theme===2?0xffcc66:0xffb24c,transparent:true,opacity:0.9}));
       flame.position.set(rot===Math.PI/2?0.19:rot===-Math.PI/2?-0.19:0,0.11,rot===0?-0.19:rot===Math.PI?0.19:0); g.add(flame);
+      const core=new THREE.Mesh(new THREE.SphereGeometry(0.018,5,4),new THREE.MeshBasicMaterial({color:0xffedaa,transparent:true,opacity:0.92}));
+      core.position.copy(flame.position).add(new THREE.Vector3(0,0.018,0)); g.add(core);
+      const lickA=new THREE.Mesh(new THREE.ConeGeometry(0.014,0.055,5),new THREE.MeshBasicMaterial({color:0xff8228,transparent:true,opacity:0.72,side:THREE.DoubleSide}));
+      const lickB=new THREE.Mesh(new THREE.ConeGeometry(0.010,0.04,5),new THREE.MeshBasicMaterial({color:0xffd36e,transparent:true,opacity:0.78,side:THREE.DoubleSide}));
+      lickA.position.copy(flame.position).add(new THREE.Vector3(-0.012,0.026,0.004));
+      lickB.position.copy(flame.position).add(new THREE.Vector3(0.011,0.022,-0.003));
+      g.add(lickA,lickB);
       const light=new THREE.PointLight(theme===2?0xffdd88:0xffb15a,0.42 * LIGHT_SOURCE_BOOST,3.0,1.8); light.position.set(0,0.12,0); g.add(light);
-      fixtureLights.push({light});
+      fixtureLights.push({light,flame,core,lickA,lickB,ph:Math.random()*Math.PI*2});
       addGlowSprite(g,theme===2?0xffdd88:0xffa345,0.48,0,0.12,0,0.22);
       g.position.set(px,WALL_H*0.52,pz);
       g.rotation.y=rot;
@@ -2712,11 +2989,36 @@ import * as THREE from './assets/vendor/three.module.js';
       roomCenters.push({x:px,z:pz,area:roomW*roomH});
     }
     roomCenters.sort((a,b)=>b.area-a.area||a.z-b.z||a.x-b.x);
-    for(const c of roomCenters)if(chandelierCells.every(p=>Math.hypot(p.x-c.x,p.z-c.z)>=5.5))chandelierCells.push(c);
+    // Prefer broad, symmetrical rooms, but fall back to the larger open cells so
+    // procedural layouts always retain visible castle lighting.
+    const chandelierCandidates=[...roomCenters,...interiorCells
+      .filter(c=>c.spanX>=4&&c.spanZ>=4)
+      .sort((a,b)=>(b.spanX*b.spanZ)-(a.spanX*a.spanZ))];
+    for(const c of chandelierCandidates) {
+      if(chandelierCells.every(p=>Math.hypot(p.x-c.x,p.z-c.z)>=5.5)
+        && reservedInterior.every(p=>Math.hypot(p.x-c.x,p.z-c.z)>=2.4)) chandelierCells.push(c);
+      if(chandelierCells.length>=5) break;
+    }
+    // A small final fallback prevents an unusually narrow generated map from
+    // losing all ceiling fixtures.
+    if(!chandelierCells.length) {
+      const fallback=interiorCells.find(c=>Math.hypot(c.x-spawnX,c.z-spawnZ)>=5.5);
+      if(fallback) chandelierCells.push(fallback);
+    }
     const chandelierCount=Math.min(5,chandelierCells.length);
     for(let i=0;i<chandelierCount;i++){
       const c=chandelierCells[i];
       addChandelier(c.x,c.z,0.9+((i%3)*0.14));
+    }
+    const grandRoomCells=roomCenters.filter(c=>
+      chandelierCells.every(p=>Math.hypot(p.x-c.x,p.z-c.z)>=2.4)
+      && reservedInterior.every(p=>Math.hypot(p.x-c.x,p.z-c.z)>=2.2)
+    );
+    for(let i=0;i<Math.min(3,grandRoomCells.length);i++) {
+      const c=grandRoomCells[i];
+      if(i%3===0) addThrone(c.x,c.z,roomRot(c));
+      else if(i%3===1) addBookshelf(c.x,c.z,wallRot(c).rot);
+      else addAltar(c.x,c.z,roomRot(c));
     }
     updateTorchLightBudget();
 
@@ -2819,6 +3121,23 @@ import * as THREE from './assets/vendor/three.module.js';
       const in2=Math.max(0.18,(tr.bi+fl) * FLICKER_LIGHT_BOOST);
       if (tr.light) tr.light.intensity=in2;
       const sc=0.8+in2*0.38; tr.flame.scale.set(sc,sc+0.1,sc);
+      if (tr.core) {
+        tr.core.position.x=tr.flame.position.x+Math.sin(t*12.0+tr.ph)*0.012;
+        tr.core.position.y=tr.flame.position.y+0.01+Math.sin(t*16.0+tr.ph)*0.008;
+        tr.core.scale.setScalar(0.8+in2*0.16);
+      }
+      if (tr.lickA) {
+        tr.lickA.position.x=tr.flame.position.x-0.035+Math.sin(t*10.5+tr.ph)*0.018;
+        tr.lickA.position.y=tr.flame.position.y+0.09+Math.sin(t*14.0+tr.ph)*0.012;
+        tr.lickA.rotation.z=-0.16+Math.sin(t*9.0+tr.ph)*0.18;
+        tr.lickA.scale.set(0.82+in2*0.14,0.8+in2*0.2,0.82+in2*0.14);
+      }
+      if (tr.lickB) {
+        tr.lickB.position.x=tr.flame.position.x+0.03+Math.sin(t*13.0+tr.ph+1)*0.014;
+        tr.lickB.position.y=tr.flame.position.y+0.07+Math.sin(t*17.0+tr.ph+1)*0.01;
+        tr.lickB.rotation.z=0.2+Math.sin(t*11.0+tr.ph)*0.2;
+        tr.lickB.scale.set(0.8+in2*0.14,0.82+in2*0.18,0.8+in2*0.14);
+      }
       if (tr.aura) {
         const as=0.72+in2*0.25;
         tr.aura.scale.set(as,as,1);
@@ -2842,6 +3161,17 @@ import * as THREE from './assets/vendor/three.module.js';
         fl2.aura.scale.set(as,as,1);
         fl2.aura.material.opacity=Math.min(0.52,0.24+in2*0.1);
       }
+    });
+    fixtureLights.forEach(fx=>{
+      if (!fx.flame) return;
+      const flicker=0.9+Math.sin(t*9.2+fx.ph)*0.08+Math.sin(t*16.4+fx.ph*1.7)*0.045;
+      fx.light.intensity=fx.light.intensity*0.82+flicker*0.18;
+      fx.flame.scale.set(0.9+flicker*0.12,1.0+flicker*0.18,0.9+flicker*0.12);
+      fx.core.scale.setScalar(0.86+flicker*0.1);
+      fx.lickA.position.y=0.136+Math.sin(t*12.0+fx.ph)*0.006;
+      fx.lickA.rotation.z=-0.16+Math.sin(t*10.0+fx.ph)*0.2;
+      fx.lickB.position.y=0.132+Math.sin(t*14.0+fx.ph+1)*0.005;
+      fx.lickB.rotation.z=0.2+Math.sin(t*11.0+fx.ph)*0.22;
     });
   }
 
@@ -2974,9 +3304,9 @@ import * as THREE from './assets/vendor/three.module.js';
     // Engraved heading — dark carved shadow first, then glowing face
     sctx.shadowBlur=0;
     sctx.font='bold 23px serif'; sctx.textAlign='center';
-    sctx.fillStyle='rgba(0,0,0,0.85)'; sctx.fillText(`✶ SECTOR ${levelNum} ✶`, 128, 35);
+    sctx.fillStyle='rgba(0,0,0,0.85)'; sctx.fillText(`✶ KEEP ${levelNum} ✶`, 128, 35);
     sctx.shadowColor='#ff6a1a'; sctx.shadowBlur=18;
-    sctx.fillStyle='#ffb060'; sctx.fillText(`✶ SECTOR ${levelNum} ✶`, 128, 33);
+    sctx.fillStyle='#ffb060'; sctx.fillText(`✶ KEEP ${levelNum} ✶`, 128, 33);
     // Rune row
     sctx.shadowBlur=9; sctx.font='12px serif'; sctx.fillStyle='#cc5220';
     sctx.fillText('ᚱᚢᚾ ◆ ᛖᚠᚺ ◆ ᚹᚾᛇ ◆ ᛖᚱᚢ', 128, 57);
@@ -3310,7 +3640,7 @@ import * as THREE from './assets/vendor/three.module.js';
     // ── Atmosphere cycles through 3 moods ─────────────────────────────
     const atm = idx%3;
     return {
-      name:`Sector ${idx+1}`,
+      name:`Keep ${idx+1}`,
       fogColor: [0x050b0d,0x030a08,0x090708][atm],
       fogDensity: Math.min(0.22, 0.145 + Math.floor(idx/6)*0.009),
       ambCol: [0x405768,0x365c50,0x493b48][atm],
@@ -3326,8 +3656,10 @@ import * as THREE from './assets/vendor/three.module.js';
     clearLevel();
     const lvl=generateLevel(idx);
     const diff=getDifficulty(idx);
+    levelMinibossDefeated=false;
+    levelMinibossVariant=getMinibossVariant(idx);
     const fc=new THREE.Color(lvl.fogColor);
-    scene.fog.color.copy(fc); scene.fog.density=lvl.fogDensity; scene.background.copy(fc);
+    scene.fog.color.copy(fc); scene.fog.density=lvl.fogDensity*(settings.fogDensity/0.13); scene.background.copy(fc);
     ambient.color.setHex(lvl.ambCol); ambient.intensity=lvl.ambInt * GLOBAL_LIGHT_BOOST;
     currentMap=lvl.map.map(r=>[...r]); sealBorders(currentMap);
     bossExitRoom=lvl.bossExitRoom||null;
@@ -3465,9 +3797,9 @@ import * as THREE from './assets/vendor/three.module.js';
         const t=pickMobType(idx, mapSlot, i+5000, true);
         allEnemies.push({x:pos.x,z:pos.z,type:t});
       }
-      // Add miniboss as final boss near the exit door
-      allEnemies.push({x:exitX,z:exitZ,type:'miniboss'});
     }
+    // Every level has a guardian. Its defeat is required before the exit can open.
+    allEnemies.push({x:exitX,z:exitZ,type:'miniboss',variant:levelMinibossVariant});
     spawnEnemies(allEnemies, diff, spawnX, spawnZ);
 
     // Pickups: base level pickups + map keys + bonus ammo on higher cycles
@@ -3534,7 +3866,7 @@ import * as THREE from './assets/vendor/three.module.js';
     player.y=0; player.vy=0; player.grounded=true;
     if (!keepStats) { player.health=100; player.ammo=24; player.campaignKills=0; player.gunTier=0; player.armorTier=0; }
     else { player.ammo=Math.min(player.maxAmmo, player.ammo + diff.ammoBonus); }
-    statusEl.textContent=`${lvl.name} — Find the key and reach the exit.`;
+    statusEl.textContent=`${lvl.name} — Find the key and defeat ${levelMinibossVariant.name}.`;
     updateHud(); updateCamera();
   }
 
@@ -3546,7 +3878,8 @@ import * as THREE from './assets/vendor/three.module.js';
     const occupied=[];
     list.forEach((e,i)=>{
       const type=e.type||'grunt';
-      const et=ETYPES[type]||ETYPES.grunt;
+      const variant=type==='miniboss'?(e.variant||getMinibossVariant(currentLevel)):null;
+      const et=variant?variant.stats:(ETYPES[type]||ETYPES.grunt);
       const isSpectre=type==='spectre';
       const isFiend=type==='fiend';
       // Build all sprite states during level loading instead of hitching on the first animation or kill.
@@ -3558,6 +3891,7 @@ import * as THREE from './assets/vendor/three.module.js';
         opacity:isSpectre?0.58:1.0,
         depthWrite:!isSpectre,side:THREE.DoubleSide
       });
+      if(variant) mat.color.setHex(variant.tint);
       const mesh=new THREE.Mesh(geo,mat);
       mesh.scale.set(et.sx,et.sy,1); mesh.renderOrder=isSpectre?4:3; mesh.frustumCulled=false;
       const sp=safeSpawn(e.x,e.z,occupied,spawnX,spawnZ,type==='miniboss');
@@ -3572,8 +3906,8 @@ import * as THREE from './assets/vendor/three.module.js';
       shadow.scale.set(et.sx*(type==='goliath'||type==='miniboss'?1.35:1),et.sx*0.65,1);
       shadow.renderOrder=1;
       mesh.userData={
-        alive:true,dying:0,deathT:0,type,
-        hp:   Math.max(1,Math.round(et.hp   * D.hpMult)),
+        alive:true,dying:0,deathT:0,type,bossVariant:variant?.name||null,bossAcd:et.acd,
+        hp:   Math.max(1,Math.round(et.hp   * D.hpMult * (type==='miniboss'?0.75:1))),
         spd:  et.spd  * D.spdMult,
         dmg:  Math.max(1,Math.round(et.dmg  * D.dmgMult)),
         acd:  et.acd*0.5+Math.random()*et.acd*0.5,
@@ -3640,6 +3974,46 @@ import * as THREE from './assets/vendor/three.module.js';
     return null;
   }
 
+  // Steering helper: try the desired direction, slide along each axis, then
+  // sweep a fan of angles so enemies navigate around ground objects.
+  const STEER_OFFSETS=[0,-0.26,0.26,-0.52,0.52,-0.82,0.82,-1.1,1.1,-1.57,1.57];
+  function steerEnemy(ex,ez,nx,nz,step,er) {
+    // Straight
+    if (enemyCanMoveTo(nx,nz,er)) return {x:nx,z:nz};
+    // Axis slides
+    if (enemyCanMoveTo(nx,ez,er)) return {x:nx,z:ez};
+    if (enemyCanMoveTo(ex,nz,er)) return {x:ex,z:nz};
+    // Angle sweep around the obstacle — picks the closest result to the target
+    const baseAng=Math.atan2(nz-ez,nx-ex);
+    let best=null, bestDist=Infinity;
+    for (let i=1;i<STEER_OFFSETS.length;i++) {
+      const a=baseAng+STEER_OFFSETS[i];
+      const cx=ex+Math.cos(a)*step, cz=ez+Math.sin(a)*step;
+      if (!enemyCanMoveTo(cx,cz,er)) continue;
+      const d=Math.hypot(nx-cx,nz-cz);
+      if (d<bestDist) { bestDist=d; best={x:cx,z:cz}; }
+    }
+    return best;
+  }
+
+  // Pick a flee destination: a free cell that maximises distance from the player
+  // and ideally has no line-of-sight to the player.
+  function findFleeSpot(enemy,er=0.26) {
+    const ex=enemy.position.x, ez=enemy.position.z;
+    let best=null, bestScore=-Infinity;
+    for (let i=0;i<24;i++) {
+      const ang=(i/24)*Math.PI*2;
+      const radius=2.5+Math.random()*2.5;
+      const cx=ex+Math.cos(ang)*radius, cz=ez+Math.sin(ang)*radius;
+      if (!enemyCanMoveTo(cx,cz,er)) continue;
+      const distToPlayer=Math.hypot(cx-player.x,cz-player.z);
+      const los=hasLOS(cx,cz,player.x,player.z);
+      const score=distToPlayer+(los?0:2.5);
+      if (score>bestScore) { bestScore=score; best={x:cx,z:cz}; }
+    }
+    return best;
+  }
+
   function updateEnemies(dt) {
     const er=0.26;
     enemies.forEach(e=>{
@@ -3659,46 +4033,81 @@ import * as THREE from './assets/vendor/three.module.js';
       }
       const sees=d.sees;
       const t=performance.now()*0.001+d.bs;
-      if (sees) { d.state='chase'; d.alertT=4; d.hx=player.x; d.hz=player.z; }
-      else if (d.alertT>0) { d.alertT-=dt; if(d.alertT<=0) d.state='patrol'; }
-      if (d.state==='chase') {
+
+      // ── State transitions ────────────────────────────────────────────────────
+      // Low HP threshold: below 25% of max HP triggers flee for non-boss enemies
+      const fleeable=d.type!=='miniboss'&&d.type!=='goliath';
+      const fleeHpRatio=0.25;
+      const maxHp=ETYPES[d.type]?ETYPES[d.type].hp:10;
+      if (fleeable && d.hp>0 && d.hp/maxHp<fleeHpRatio && d.state!=='flee') {
+        d.state='flee';
+        d.fleeDest=findFleeSpot(e,er);
+        d.fleeT=3+Math.random()*2;
+      }
+      if (d.state==='flee') {
+        d.fleeT-=dt;
+        // Snap out of fleeing if HP recovered (e.g. future mechanic) or timeout
+        if (d.fleeT<=0 || d.hp/maxHp>=fleeHpRatio+0.05) d.state='patrol';
+      } else if (sees) {
+        d.state='chase'; d.alertT=4; d.hx=player.x; d.hz=player.z;
+      } else if (d.alertT>0) {
+        d.alertT-=dt; if(d.alertT<=0) d.state='patrol';
+      }
+
+      // ── Movement ─────────────────────────────────────────────────────────────
+      if (d.state==='flee') {
+        // Refresh flee destination periodically or when reached
+        if (!d.fleeDest || Math.hypot(e.position.x-d.fleeDest.x,e.position.z-d.fleeDest.z)<0.5) {
+          d.fleeDest=findFleeSpot(e,er);
+        }
+        if (d.fleeDest) {
+          const fx=d.fleeDest.x-e.position.x, fz=d.fleeDest.z-e.position.z;
+          const fd=Math.hypot(fx,fz);
+          if (fd>0.05) {
+            const step=d.spd*dt*1.15;
+            const nx=e.position.x+fx/fd*step, nz=e.position.z+fz/fd*step;
+            const moved=steerEnemy(e.position.x,e.position.z,nx,nz,step,er);
+            if (moved) { e.position.x=moved.x; e.position.z=moved.z; }
+          }
+        }
+      } else if (d.state==='chase') {
         if (dist>0.02) {
           const targetX=sees?player.x:d.hx, targetZ=sees?player.z:d.hz;
-          const move=findChaseMove(e.position.x,e.position.z,targetX,targetZ,d.spd*dt,er,d.turnBias,enemyCanMoveTo,d.avoidT>0);
-          if (move) {
-            e.position.x=move.x; e.position.z=move.z;
-            if (Math.abs(move.usedOffset)>0.3) {
-              d.turnBias=move.usedOffset>0?1:-1;
-              d.avoidT=0.7;
-            }
+          const dx=targetX-e.position.x, dz=targetZ-e.position.z;
+          const dd=Math.hypot(dx,dz);
+          const step=d.spd*dt;
+          const nx=e.position.x+dx/dd*step, nz=e.position.z+dz/dd*step;
+          const moved=steerEnemy(e.position.x,e.position.z,nx,nz,step,er);
+          if (moved) {
+            e.position.x=moved.x; e.position.z=moved.z;
           } else {
-            const baseAng=Math.atan2(targetZ-e.position.z,targetX-e.position.x)+(Math.PI/2)*d.turnBias;
-            const sideMove=findChaseMove(
-              e.position.x,e.position.z,
-              e.position.x+Math.cos(baseAng),e.position.z+Math.sin(baseAng),
-              d.spd*dt*1.05,er,d.turnBias,enemyCanMoveTo
-            );
-            if (sideMove) { e.position.x=sideMove.x; e.position.z=sideMove.z; }
+            // Perpendicular nudge in the preferred turn direction
+            const perpAng=Math.atan2(dz,dx)+Math.PI/2*d.turnBias;
+            const pnx=e.position.x+Math.cos(perpAng)*step, pnz=e.position.z+Math.sin(perpAng)*step;
+            const perp=steerEnemy(e.position.x,e.position.z,pnx,pnz,step,er);
+            if (perp) { e.position.x=perp.x; e.position.z=perp.z; }
             else d.turnBias*=-1;
           }
         }
         const mv=Math.hypot(e.position.x-d.px,e.position.z-d.pz);
         if (dist>0.9&&mv<0.003) d.stuckT+=dt; else d.stuckT=Math.max(0,d.stuckT-dt*1.2);
-        if (d.stuckT>0.85) {
+        if (d.stuckT>0.9) {
           d.turnBias*=-1;
-          const nudge=findChaseMove(e.position.x,e.position.z,d.hx,d.hz,d.spd*dt*1.25,er,d.turnBias,enemyCanMoveTo);
-          if (nudge) { e.position.x=nudge.x; e.position.z=nudge.z; d.stuckT=0.35; }
+          d.stuckT=0.2;
         }
-        if (d.stuckT>2.2) {
+        if (d.stuckT>2.0) {
           const recovery=findEnemyRecoverySpot(e,er);
           if (recovery) { e.position.x=recovery.x; e.position.z=recovery.z; }
           d.stuckT=0;
         }
       } else {
+        // Patrol
         d.wT-=dt; if(d.wT<=0){d.wA+=(Math.random()-0.5)*1.4;d.wT=1+Math.random()*2;}
-        const wx=e.position.x+Math.cos(d.wA)*d.spd*0.4*dt, wz=e.position.z+Math.sin(d.wA)*d.spd*0.4*dt;
-        if (Math.hypot(wx-d.hx,wz-d.hz)<4&&enemyCanMoveTo(wx,wz,er)){e.position.x=wx;e.position.z=wz;}
-        else {d.wA+=Math.PI;d.wT=0;}
+        const step=d.spd*0.4*dt;
+        const wx=e.position.x+Math.cos(d.wA)*step, wz=e.position.z+Math.sin(d.wA)*step;
+        const pm=steerEnemy(e.position.x,e.position.z,wx,wz,step,er);
+        if (pm && Math.hypot(pm.x-d.hx,pm.z-d.hz)<4) { e.position.x=pm.x; e.position.z=pm.z; }
+        else { d.wA+=Math.PI*(0.8+Math.random()*0.4); d.wT=0; }
       }
       const movedDistance=Math.hypot(e.position.x-d.px,e.position.z-d.pz);
       if (d.shadow) {
@@ -3786,14 +4195,15 @@ import * as THREE from './assets/vendor/three.module.js';
           &&hasClearAttackPath(e.position.x,e.position.z,player.x,player.z)) {
         d.attackFlash=0.32;
         spawnEnemySpell(e);
-        d.acd=ETYPES[d.type].acd*0.8+Math.random()*0.35;
+        d.acd=(d.bossAcd||ETYPES[d.type].acd)*0.8+Math.random()*0.35;
         return;
       }
         if (dist<d.ar&&d.acd<=0&&player.health>0
           &&hasClearAttackPath(e.position.x,e.position.z,player.x,player.z)) {
         d.attackFlash=0.24;
         applyPlayerDamage(d.dmg+Math.floor(Math.random()*4)-1);
-        d.acd=ETYPES[d.type].acd*0.7+Math.random()*ETYPES[d.type].acd*0.5;
+        const attackCooldown=d.bossAcd||ETYPES[d.type].acd;
+        d.acd=attackCooldown*0.7+Math.random()*attackCooldown*0.5;
       }
     });
   }
@@ -3921,7 +4331,7 @@ import * as THREE from './assets/vendor/three.module.js';
         player.health=Math.min(100,player.health+25);
         pkFlash.style.background='rgba(80,220,130,0.22)'; statusEl.textContent='Medkit — +25 HP';
       } else if (p.type==='ammo') {
-        player.ammo=Math.min(player.maxAmmo,player.ammo+20);
+        player.ammo=Math.min(player.maxAmmo,player.ammo+8);
         pkFlash.style.background='rgba(185,132,54,0.22)'; statusEl.textContent='Quiver — +20 arrows';
       } else if (p.type==='upgrade') {
         player.gunTier=Math.min(player.gunTier+1,6);
@@ -3954,6 +4364,7 @@ import * as THREE from './assets/vendor/three.module.js';
     const dist=Math.hypot(levelExit.x-player.x,levelExit.z-player.z);
     if (dist<1.1&&player.health>0) {
       if (!player.hasKey) statusEl.textContent='The iron gate is sealed — find the key.';
+      else if (!levelMinibossDefeated) statusEl.textContent=`The guardian lives — defeat ${levelMinibossVariant?.name||'the miniboss'} first.`;
       else onLevelComplete();
     }
   }
@@ -4025,9 +4436,17 @@ import * as THREE from './assets/vendor/three.module.js';
     const rootDistance=Math.hypot(rootWorldPos.x-camera.position.x,rootWorldPos.z-camera.position.z);
     const probeOffset=Math.max(0,distance-rootDistance);
     const steps=Math.max(2,Math.ceil(distance/0.035));
+    const propBuffer=0.08;
     for(let i=1;i<=steps;i++){
       const t=i/steps;
-      if(isSolid(cellAt(Math.floor(camera.position.x+dx*t),Math.floor(camera.position.z+dz*t)))){
+      const px=camera.position.x+dx*t, pz=camera.position.z+dz*t;
+      const clipsWall=isWallAt(px-propBuffer,pz-propBuffer)
+        ||isWallAt(px+propBuffer,pz-propBuffer)
+        ||isWallAt(px-propBuffer,pz+propBuffer)
+        ||isWallAt(px+propBuffer,pz+propBuffer)
+        ||isWallAt(px-propBuffer,pz)||isWallAt(px+propBuffer,pz)
+        ||isWallAt(px,pz-propBuffer)||isWallAt(px,pz+propBuffer);
+      if(clipsWall){
         return Math.max(0.16,Math.min(maxDepth,distance*t-0.12-probeOffset));
       }
     }
@@ -4063,6 +4482,7 @@ import * as THREE from './assets/vendor/three.module.js';
     torchRig.rotation.z=-0.025+Math.sin(elapsed*2.1)*0.012;
     const flicker=0.94+Math.sin(elapsed*17.0)*0.035+Math.sin(elapsed*29.0)*0.025;
     torchLight.intensity=torchBaseIntensity*flicker;
+    torchSpotLight.intensity=torchSpotBaseIntensity*(0.96+Math.sin(elapsed*13.0)*0.025+Math.sin(elapsed*27.0)*0.018);
     const flameSway=Math.sin(elapsed*11.5)*0.006+Math.sin(elapsed*23.0)*0.003;
     carriedTorchFlame.position.set(flameSway,0.151+Math.sin(elapsed*18.0)*0.004,Math.sin(elapsed*14.0)*0.003);
     carriedTorchFlame.rotation.set(Math.sin(elapsed*15.0)*0.10,Math.sin(elapsed*19.0)*0.12,flameSway*5.0);
@@ -4071,6 +4491,14 @@ import * as THREE from './assets/vendor/three.module.js';
     carriedTorchCore.position.set(flameSway*0.55,0.158+Math.sin(elapsed*18.0)*0.003,-0.008+Math.sin(elapsed*16.0)*0.002);
     carriedTorchCore.rotation.y+=dt*2.2;
     carriedTorchCore.scale.setScalar(0.9+flicker*0.12);
+    carriedTorchLickA.position.x=-0.028+Math.sin(elapsed*13.0)*0.012;
+    carriedTorchLickA.position.y=0.215+Math.sin(elapsed*17.0)*0.009;
+    carriedTorchLickA.rotation.z=-0.18+Math.sin(elapsed*11.0)*0.16;
+    carriedTorchLickA.scale.set(0.82+flicker*0.18,0.88+flicker*0.24,0.82+flicker*0.18);
+    carriedTorchLickB.position.x=0.026+Math.sin(elapsed*15.0+1.4)*0.010;
+    carriedTorchLickB.position.y=0.204+Math.sin(elapsed*19.0+0.8)*0.008;
+    carriedTorchLickB.rotation.z=0.22+Math.sin(elapsed*12.0+0.5)*0.18;
+    carriedTorchLickB.scale.set(0.82+flicker*0.16,0.86+flicker*0.22,0.82+flicker*0.16);
     crossbowRig.position.x=0.38+Math.sin(elapsed*2.4+1.2)*0.006;
     crossbowRig.position.y=-0.31+bob*0.8+Math.sin(elapsed*3.2+0.7)*0.004;
     crossbowKick=Math.max(0,crossbowKick-dt*2.8);
@@ -4083,10 +4511,35 @@ import * as THREE from './assets/vendor/three.module.js';
     crossbowRig.position.z=-Math.max(0.16,bowDepth-Math.min(crossbowKick,Math.max(0,bowDepth-0.16)));
     // Keep the crossbow present while walking beside walls. Its depth is
     // retracted against the muzzle clearance above rather than popping out.
-    crossbowRig.visible=true;
+    crossbowRig.visible=player.weaponMode===2&&meleeSwing<=0;
     crossbowRig.rotation.z=Math.sin(elapsed*2.2)*0.008;
     crossbowRig.rotation.x=-crossbowKick*0.65;
     crossbowString.position.y=0.105-crossbowKick*0.20;
+    if(meleeSwing>0) {
+      // Dagger stab: thrust straight forward then pull back to ready.
+      meleeSwing=Math.max(0,meleeSwing-dt*7.5);
+      const swing=1-meleeSwing;
+      const stab=Math.min(1,swing/0.40);
+      const pull=Math.max(0,(swing-0.40)/0.60);
+      const stabEase=stab*stab*(3-2*stab);
+      const pullEase=pull*pull*(3-2*pull);
+      meleeRig.visible=true;
+      // Thrust forward along z, slight upward tilt at full extension.
+      meleeRig.position.x=0.36-0.04*stabEase+0.04*pullEase;
+      meleeRig.position.y=-0.30+0.02*stabEase-0.02*pullEase;
+      meleeRig.position.z=-0.38-0.42*stabEase+0.42*pullEase;
+      meleeRig.rotation.x=-0.04-0.08*stabEase+0.08*pullEase;
+      meleeRig.rotation.y=-0.06+0.03*stabEase-0.03*pullEase;
+      meleeRig.rotation.z=0.04;
+    } else {
+      meleeRig.visible=player.weaponMode===1;
+      meleeRig.position.set(0.36,-0.30,-0.38);
+      meleeRig.rotation.set(-0.04,-0.06,0.04);
+      // Retract so the blade does not clip into walls.
+      const swordNominal=0.38;
+      const swordDepth=heldPropDepth(meleeRig,swordNominal,swordTipProbe);
+      meleeRig.position.z=-Math.max(0.10,swordDepth);
+    }
   }
 
   function jump() {
@@ -4112,6 +4565,10 @@ import * as THREE from './assets/vendor/three.module.js';
       sfx.enemyDie(d.type);
       e.material.map=mkEnemyTex(d.type,true); e.material.needsUpdate=true;
       player.levelKills++; player.campaignKills++;
+      if(d.type==='miniboss') {
+        levelMinibossDefeated=true;
+        statusEl.textContent=`${d.bossVariant||'The guardian'} defeated — the exit is unsealed.`;
+      }
       if(d.type==='miniboss'&&currentLevel>=6&&player.armorTier<6) {
         spawnDropPickup('armor',e.position.x,e.position.z,{tier:player.armorTier+1});
       } else if(d.type==='miniboss') {
@@ -4124,8 +4581,28 @@ import * as THREE from './assets/vendor/three.module.js';
     }
   }
 
+  function meleeAttack() {
+    if(player.health<=0||gameState!=='playing'||player.meleeCd>0) return;
+    player.meleeCd=0.30;
+    meleeSwing=1;
+    const camDir=new THREE.Vector3(); camera.getWorldDirection(camDir);
+    const ray=new THREE.Raycaster(camera.position.clone(),camDir,0,2.15);
+    const target=findArrowHit(ray,new Set());
+    // The sword is deliberately weaker than even a tier-I arrow.
+    if(target) damageEnemy(target,0.5);
+    shake.sT=0.07; shake.sS=0.035;
+    updateHud();
+  }
+
+  function setWeaponMode(mode) {
+    if(mode!==1&&mode!==2) return;
+    player.weaponMode=mode;
+    if(gameState==='playing') statusEl.textContent=mode===1?'Sword equipped':'Bow equipped';
+    updateHud();
+  }
+
   function shoot() {
-    if (player.ammo<=0||player.health<=0||gameState!=='playing'||player.shootCd>0) return;
+    if (player.weaponMode!==2||player.ammo<=0||player.health<=0||gameState!=='playing'||player.shootCd>0) return;
     player.ammo--;
     const T=Math.max(0,Math.min(player.gunTier,6));
     const SHOOT_CD=[0.46,0.38,0.38,0.32,0.28,0.24,0.2];
@@ -4200,9 +4677,12 @@ import * as THREE from './assets/vendor/three.module.js';
     }
     if (hudState.gunTier!==player.gunTier) {
       hudState.gunTier=player.gunTier;
-      if (weaponNameEl) weaponNameEl.textContent=bowNames[Math.min(player.gunTier,bowNames.length-1)];
       if (bowRankEl) bowRankEl.textContent=bowTierBadges[Math.min(player.gunTier,bowTierBadges.length-1)]||'I';
       syncTierTrack(bowTierTrack, player.gunTier);
+    }
+    if (hudState.weaponMode!==player.weaponMode) {
+      hudState.weaponMode=player.weaponMode;
+      if (weaponNameEl) weaponNameEl.textContent=player.weaponMode===1?'Dagger':bowNames[Math.min(player.gunTier,bowNames.length-1)];
     }
     if (hudState.level!==currentLevel||hudState.kills!==player.levelKills) {
       hudState.level=currentLevel;
@@ -4366,14 +4846,23 @@ import * as THREE from './assets/vendor/three.module.js';
       || target instanceof HTMLTextAreaElement
       || target?.isContentEditable;
   }
+  const gameControlKeys=new Set(['KeyW','KeyA','KeyS','KeyD','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space','KeyR','KeyF','Digit1','Digit2','Escape']);
 
   document.addEventListener('keydown',ev=>{
     if (isTypingTarget(ev.target)) return;
+    if (!gameControlKeys.has(ev.code)) return;
+    if (ev.code!=='Escape') ev.preventDefault();
+    if (restartTimer) return;
+    if (ev.code==='Digit1'&&!ev.repeat){setWeaponMode(2);return;}
+    if (ev.code==='Digit2'&&!ev.repeat){setWeaponMode(1);return;}
     setKey(ev.code,true);
     if (ev.code==='Space'){ev.preventDefault();if(!ev.repeat)jump();}
-    if (ev.code==='KeyR'&&!ev.repeat){ev.preventDefault();resetGame();}
+    if (ev.code==='KeyR'&&!ev.repeat) startRestartCountdown();
   });
-  document.addEventListener('keyup',ev=>{setKey(ev.code,false);});
+  document.addEventListener('keyup',ev=>{
+    if(ev.code==='KeyR'&&restartTimer){cancelRestartCountdown();return;}
+    if(gameControlKeys.has(ev.code)) setKey(ev.code,false);
+  });
   window.addEventListener('blur',clearMovementInput);
   document.addEventListener('mousemove',ev=>{
     if (document.pointerLockElement!==renderer.domElement) return;
@@ -4381,11 +4870,52 @@ import * as THREE from './assets/vendor/three.module.js';
     player.pitch=Math.max(-MAX_PITCH,Math.min(MAX_PITCH,player.pitch));
   });
   renderer.domElement.addEventListener('click',()=>{
+    if (gameState==='start') return;
     if (document.pointerLockElement!==renderer.domElement){lockPointer();return;}
-    shoot();
+    if(player.weaponMode===1) meleeAttack();
+    else if(player.ammo>0) shoot();
   });
-  startPr.addEventListener('click',lockPointer);
-  startPr.addEventListener('keydown',ev=>{if(ev.key==='Enter'||ev.key===' '){ev.preventDefault();lockPointer();}});
+  function applyAudioSettings() {
+    if (_musicGain) _musicGain.gain.value=boostedAudioGain(settings.music,MUSIC_GAIN_BOOST);
+    if (_sfxGain) _sfxGain.gain.value=boostedAudioGain(settings.sfx,SFX_GAIN_BOOST);
+    if (_ambGain) _ambGain.gain.value=boostedAudioGain(settings.ambient,AMBIENT_GAIN_BOOST);
+    saveSettings();
+  }
+  function syncSettingsUI() {
+    musicVolume.value=settings.music;
+    sfxVolume.value=settings.sfx;
+    ambientVolume.value=settings.ambient;
+    musicVolumeValue.value=musicVolumeValue.textContent=`${Math.round(settings.music*100)}%`;
+    sfxVolumeValue.value=sfxVolumeValue.textContent=`${Math.round(settings.sfx*100)}%`;
+    ambientVolumeValue.value=ambientVolumeValue.textContent=`${Math.round(settings.ambient*100)}%`;
+    resolutionSetting.value=String(settings.renderScale);
+    fogSetting.value=String(settings.fogDensity);
+    pixelSetting.checked=!!settings.pixelated;
+  }
+  syncSettingsUI();
+  [musicVolume,sfxVolume,ambientVolume].forEach(input=>input.addEventListener('input',()=>{
+    settings.music=Number(musicVolume.value);
+    settings.sfx=Number(sfxVolume.value);
+    settings.ambient=Number(ambientVolume.value);
+    syncSettingsUI(); applyAudioSettings();
+  }));
+  resolutionSetting.addEventListener('change',()=>{settings.renderScale=Number(resolutionSetting.value);applyGraphicsSettings();});
+  fogSetting.addEventListener('change',()=>{settings.fogDensity=Number(fogSetting.value);applyGraphicsSettings();});
+  pixelSetting.addEventListener('change',()=>{settings.pixelated=pixelSetting.checked;applyGraphicsSettings();});
+  settingsToggle.addEventListener('click',ev=>{
+    ev.stopPropagation();
+    const closing=!settingsPanel.hidden;
+    settingsPanel.hidden=!settingsPanel.hidden;
+    settingsToggle.setAttribute('aria-expanded',String(!settingsPanel.hidden));
+    // If user just closed via the toggle button, re-enable the start button visually
+    if (closing) startBtn.focus();
+  });
+  settingsPanel.addEventListener('click',ev=>ev.stopPropagation());
+  settingsPanel.addEventListener('keydown',ev=>ev.stopPropagation());
+  settingsDone.addEventListener('click',ev=>{
+    ev.stopPropagation(); settingsPanel.hidden=true; settingsToggle.setAttribute('aria-expanded','false');
+  });
+  startBtn.addEventListener('click',ev=>{ev.stopPropagation();if(!settingsPanel.hidden){settingsPanel.hidden=true;settingsToggle.setAttribute('aria-expanded','false');return;}lockPointer();});
   stBtn.addEventListener('click',resetGame);
   lbForm?.addEventListener('submit',async ev=>{
     ev.preventDefault();
@@ -4422,20 +4952,58 @@ import * as THREE from './assets/vendor/three.module.js';
     if (gameState==='playing'&&player.health>0){gameActive=false;clearMovementInput();startPr.classList.remove('hidden');statusEl.textContent='Click to resume';}
   });
   document.addEventListener('pointerlockerror',()=>{pendingLock=false;setGameState('playing');startPr.classList.add('hidden');});
-  document.addEventListener('click',ev=>{
-    if (gameState!=='playing'||player.health<=0) return;
-    if (document.pointerLockElement===renderer.domElement||pendingLock) return;
-    if (ev.target===stBtn || ev.target===lbName || ev.target===lbForm) return;
-    lockPointer();
-  }, true);
 
   // ── Reset ────────────────────────────────────────────────────────────────────
+  function startRestartCountdown() {
+    if (gameState!=='playing'||player.health<=0||restartTimer) return;
+    clearMovementInput();
+    gameActive=false;
+    pendingLock=false;
+    let remaining=3;
+    restartCountdownValue.textContent=remaining;
+    restartCountdown.style.setProperty('--countdown-progress','0%');
+    restartCountdown.hidden=false;
+    statusEl.textContent='Restarting…';
+    restartStepTimer=setInterval(()=>{
+      remaining--;
+      restartCountdownValue.textContent=Math.max(0,remaining);
+      restartCountdown.style.setProperty('--countdown-progress',`${(3-remaining)*33.333}%`);
+      if (remaining<=0) {
+        clearInterval(restartStepTimer);
+        restartStepTimer=null;
+        restartTimer=null;
+        restartCountdown.hidden=true;
+        resetGame();
+      }
+    },1000);
+    restartTimer=restartStepTimer;
+  }
+
+  function cancelRestartCountdown() {
+    if (!restartTimer) return;
+    clearInterval(restartStepTimer);
+    restartStepTimer=null;
+    restartTimer=null;
+    restartCountdown.hidden=true;
+    gameActive=true;
+    if (document.pointerLockElement===renderer.domElement) {
+      startPr.classList.add('hidden');
+      statusEl.textContent='Engaged';
+    } else {
+      startPr.classList.remove('hidden');
+      statusEl.textContent='Click to resume';
+    }
+  }
+
   function resetGame() {
+    if (restartStepTimer){clearInterval(restartStepTimer);restartStepTimer=null;}
+    restartTimer=null;
+    restartCountdown.hidden=true;
     if (advTimer){clearTimeout(advTimer);advTimer=null;}
     _stopMusic();
     currentLevel=0; pendingLock=false;
     Object.assign(player,{x:1.5,z:1.5,yaw:0,pitch:0,health:100,ammo:24,hasKey:false,
-      levelKills:0,campaignKills:0,recoil:0,bobPhase:0,shootCd:0,dmgTimer:0,moving:false,gunTier:0,armorTier:0,upgrades:0,y:0,vy:0,grounded:true});
+      levelKills:0,campaignKills:0,recoil:0,bobPhase:0,shootCd:0,meleeCd:0,weaponMode:2,dmgTimer:0,moving:false,gunTier:0,armorTier:0,upgrades:0,y:0,vy:0,grounded:true});
     muzzleLight.intensity=0; shake.sT=shake.hT=0;
     hFlash.style.opacity=sFlash.style.opacity=pkFlash.style.opacity='0';
     // Ensure overlays are in the right state before setting game state
@@ -4453,14 +5021,26 @@ import * as THREE from './assets/vendor/three.module.js';
     if (!force&&w===lastVW&&h===lastVH) return;
     lastVW=w;lastVH=h;
     camera.aspect=w/h;camera.updateProjectionMatrix();
-    renderer.setSize(Math.round(w/2.8),Math.round(h/2.8),false);
+    renderer.setSize(Math.max(160,Math.round(w/settings.renderScale)),Math.max(120,Math.round(h/settings.renderScale)),false);
     renderer.domElement.style.width=w+'px';renderer.domElement.style.height=h+'px';
+  }
+  function applyGraphicsSettings() {
+    renderer.domElement.style.imageRendering=settings.pixelated?'pixelated':'auto';
+    scene.fog.density=settings.fogDensity;
+    onResize(true);
+    saveSettings();
   }
   const ro=new ResizeObserver(()=>requestAnimationFrame(()=>onResize(true)));
   ro.observe(gc);
 
   // ── Main loop ────────────────────────────────────────────────────────────────
   function animate() {
+    // Do not spend CPU/GPU updating a hidden tab. The next animation frame
+    // resumes normally when the page becomes visible again.
+    if (document.hidden) {
+      requestAnimationFrame(animate);
+      return;
+    }
     const dt=Math.min(clock.getDelta(),0.05);
     const elapsed=performance.now()*0.001;
     
@@ -4473,6 +5053,7 @@ import * as THREE from './assets/vendor/three.module.js';
     }
     
     if (player.shootCd>0) player.shootCd=Math.max(0,player.shootCd-dt);
+    if (player.meleeCd>0) player.meleeCd=Math.max(0,player.meleeCd-dt);
     if (player.dmgTimer>0) player.dmgTimer=Math.max(0,player.dmgTimer-dt);
     if (muzzleLight.intensity>0) muzzleLight.intensity=Math.max(0,muzzleLight.intensity-dt*38);
     if (gameState==='playing'&&gameActive&&player.health>0) {
@@ -4487,7 +5068,7 @@ import * as THREE from './assets/vendor/three.module.js';
     torchAccum+=dt;
     if (torchAccum>=TORCH_DT) { updateTorches(elapsed,torchAccum); torchAccum=0; }
     torchBudgetAccum+=dt;
-    if (torchBudgetAccum>=0.25) { updateTorchLightBudget(); torchBudgetAccum=0; }
+    if (torchBudgetAccum>=0.6) { updateTorchLightBudget(); torchBudgetAccum=0; }
     _audioMoodAccum+=dt;
     if(AC&&_musicFilter&&_audioMoodAccum>=0.25) {
       _audioMoodAccum=0;
@@ -4495,9 +5076,8 @@ import * as THREE from './assets/vendor/three.module.js';
       for(const e of enemies) if(e.userData.alive&&e.userData.state==='chase'&&Math.hypot(e.position.x-player.x,e.position.z-player.z)<9) threat++;
       const intensity=Math.min(1,threat/5), now=AC.currentTime;
       _musicFilter.frequency.setTargetAtTime(720+intensity*520,now,0.35);
-      _musicGain.gain.setTargetAtTime(0.055+intensity*0.025,now,0.4);
+      _musicGain.gain.setTargetAtTime(Math.min(1.6,boostedAudioGain(settings.music,MUSIC_GAIN_BOOST)+intensity*0.05),now,0.4);
     }
-    frameTick=(frameTick+1)%20; if(frameTick===0) onResize(false);
     renderer.render(scene,camera);
     requestAnimationFrame(animate);
   }
@@ -4512,7 +5092,8 @@ import * as THREE from './assets/vendor/three.module.js';
   loadLeaderboard();
   animate();
 
-})();
+}
+initSector93();
 </script>
 </body>
 </html>
