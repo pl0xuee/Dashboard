@@ -19,23 +19,128 @@
   justify-content: center;
 }
 
-.stream-player {
+.stream-grid {
   flex: 1;
+  display: grid;
+  gap: 8px;
   /* Twitch's embed refuses to autoplay below ~400x300px ("style visibility"
      error) — keep comfortable headroom above that floor at every breakpoint. */
   min-width: 460px;
   min-height: 340px;
+  overflow: auto;
+}
+
+.stream-grid[data-count="1"] { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+.stream-grid[data-count="2"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr; }
+.stream-grid[data-count="3"],
+.stream-grid[data-count="4"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
+
+.stream-tile {
+  display: none;
+  flex-direction: column;
+  position: relative;
   background: var(--bg);
   border-radius: var(--r-lg);
   overflow: hidden;
   border: 1px solid var(--border);
-  /* A wide-blur shadow (--shadow-md) visually bleeds across the 10px gap
-     into the adjacent chat panel. Twitch's player treats that bleed as its
-     video being occluded and refuses to autoplay ("style visibility" error)
-     — keep the blur radius tighter than the gap so it can't reach across. */
+  /* A wide-blur shadow (--shadow-md) visually bleeds across the gap into the
+     adjacent panel. Twitch's player treats that bleed as its video being
+     occluded and refuses to autoplay ("style visibility" error) — keep the
+     blur radius tighter than the gap so it can't reach across. */
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
-  transition: border-color 0.24s var(--ease);
+  transition: border-color 0.24s var(--ease), box-shadow 0.24s var(--ease);
+  min-width: 400px;
+  min-height: 300px;
 }
+
+.stream-tile.is-visible { display: flex; }
+
+.stream-tile.is-focused {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft), 0 10px 24px rgba(0, 0, 0, 0.35);
+}
+
+.stream-tile.is-empty.is-focused { box-shadow: none; }
+
+.stream-tile-body { flex: 1; min-height: 0; min-width: 0; }
+.stream-tile-body iframe,
+.stream-tile-body > div { width: 100%; height: 100%; }
+
+.stream-tile-placeholder {
+  position: absolute;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.stream-tile.is-empty { border-style: dashed; }
+.stream-tile.is-empty .stream-tile-placeholder { display: flex; }
+.stream-tile.is-empty:hover { border-color: var(--accent-border); }
+.stream-tile.is-empty .stream-tile-header { display: none; }
+
+.stream-tile-placeholder-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--text-faint);
+  transition: color 0.15s;
+}
+.stream-tile.is-empty:hover .stream-tile-placeholder-label,
+.stream-tile.is-empty.is-focused .stream-tile-placeholder-label { color: var(--accent-strong); }
+
+.stream-tile-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: linear-gradient(180deg, rgba(5, 7, 10, 0.85), rgba(5, 7, 10, 0));
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.stream-tile:hover .stream-tile-header,
+.stream-tile.is-focused .stream-tile-header { opacity: 1; }
+.stream-tile-header > * { pointer-events: auto; }
+
+.stream-tile-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--text-faint); }
+.stream-tile[data-platform="twitch"] .stream-tile-dot { background: #a970ff; }
+.stream-tile[data-platform="youtube"] .stream-tile-dot { background: #ff6a4a; }
+
+.stream-tile-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stream-tile-close {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.stream-tile-close:hover { background: var(--danger); border-color: var(--danger); }
 
 .stream-chat {
   flex: 0 0 390px;
@@ -50,7 +155,7 @@
   transition: border-color 0.24s var(--ease);
 }
 
-.stream-container:hover .stream-player,
+.stream-container:hover .stream-tile:not(.is-focused),
 .stream-container:hover .stream-chat {
   border-color: var(--border-strong);
 }
@@ -152,10 +257,11 @@ body.stream-theater-mode > .page { margin: 0; padding: 0; max-width: none !impor
 body.stream-theater-mode > .page > .page-header { display: none; }
 body.stream-theater-mode .main { overflow: visible; margin: 0; padding: 0; }
 body.stream-theater-mode .stream-container { position: fixed; inset: 0; gap: 0; border-radius: 0; background: #05070a; z-index: 30; }
-body.stream-theater-mode .stream-player,
-body.stream-theater-mode .stream-chat { height: 100dvh; border-radius: 0; border-top: 0; border-bottom: 0; }
-body.stream-theater-mode .stream-player { border-left: 0; }
-body.stream-theater-mode .stream-chat { border-right: 0; }
+body.stream-theater-mode .stream-grid,
+body.stream-theater-mode .stream-chat { height: 100dvh; }
+body.stream-theater-mode .stream-tile { border-radius: 0; border-top: 0; border-bottom: 0; }
+body.stream-theater-mode .stream-grid { border-left: 0; }
+body.stream-theater-mode .stream-chat { border-radius: 0; border-top: 0; border-bottom: 0; border-right: 0; }
 
 @media (max-width: 1200px) {
   .stream-chat { flex-basis: 340px; width: 340px; }
@@ -165,12 +271,54 @@ body.stream-theater-mode .stream-chat { border-right: 0; }
 @media (max-width: 980px) {
   .stream-container { flex-direction: column; }
   .stream-chat { width: 100%; flex: 0 0 340px; }
-  /* .stream-player keeps its base min-height here — Twitch refuses to
+  /* .stream-tile keeps its base min-height here — Twitch refuses to
      autoplay below ~300px tall, so this floor can't be relaxed on mobile. */
+  .stream-grid[data-count="2"] { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .stream-grid[data-count="3"],
+  .stream-grid[data-count="4"] { grid-template-columns: 1fr; grid-template-rows: repeat(4, 1fr); }
 }
 
 @media (max-width: 760px) {
   .controls { flex-wrap: wrap; justify-content: flex-start; }
   .stream-url-input { width: 100%; margin: 0; }
   .dropdown-content { min-width: 92vw; width: 92vw; }
+  .stream-layout-group { order: 10; }
+}
+
+.stream-layout-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 2px;
+}
+.stream-layout-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin-right: 2px;
+  white-space: nowrap;
+}
+.stream-layout-btn {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.stream-layout-btn:hover { border-color: var(--accent-border); color: var(--text); }
+.stream-layout-btn.is-active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 22%, var(--surface-raised));
+  color: #fff;
 }

@@ -1,3 +1,4 @@
+    const MAX_SLOTS = 4;
     const DROPDOWN_REFRESH_COOLDOWN_MS = 15000;
     const TWITCH_FOLLOW_SYNC_INTERVAL_MS = 120000;
     const YOUTUBE_LIVE_CACHE_TTL_MS = 120000;
@@ -16,13 +17,16 @@
     let youtubeLiveInFlight = null;
     let youtubeRetryAfter = 0;
     let lastHiddenAt = 0;
-    let lastTwitchEmbedLoadAt = 0;
-    let twitchResumeTimer = null;
-    let currentTwitchEmbed = null;
-    let currentTwitchPlayer = null;
-    let unmuteOnInteractionHandler = null;
-    let activeStream = { platform: null, id: '' };
     let streamTheaterMode = false;
+
+    // slots[i] is either null (empty) or a plain object describing the
+    // stream loaded into tile i:
+    //   { platform: 'twitch'|'youtube', id, label,
+    //     twitchEmbed, twitchPlayer, unmuteHandler, lastEmbedLoadAt, resumeTimer }
+    let slots = [null, null, null, null];
+    let focusedSlot = 0;
+    // How many tile slots the "Streams" menu currently shows (1-4).
+    let desiredSlotCount = 1;
 
     function updateTheaterModeButton() {
       const toggleBtn = document.getElementById('toggleTheaterBtn');
@@ -36,8 +40,8 @@
       document.body.classList.toggle('stream-theater-mode', streamTheaterMode);
       document.documentElement.classList.toggle('stream-theater-mode', streamTheaterMode);
       updateTheaterModeButton();
-      // The resize this triggers can leave the embedded Twitch player paused.
-      scheduleTwitchResume('theatermode');
+      // The resize this triggers can leave embedded Twitch players paused.
+      scheduleTwitchResumeAll('theatermode');
     }
 
     function toggleStreamTheaterMode() {
@@ -110,35 +114,41 @@
       return twitchEmbedScriptPromise;
     }
 
-    function clearUnmuteOnInteraction() {
-      if (!unmuteOnInteractionHandler) return;
-      document.removeEventListener('click', unmuteOnInteractionHandler, true);
-      document.removeEventListener('keydown', unmuteOnInteractionHandler, true);
-      unmuteOnInteractionHandler = null;
+    function clearSlotUnmuteHandler(slot) {
+      if (!slot || !slot.unmuteHandler) return;
+      document.removeEventListener('click', slot.unmuteHandler, true);
+      document.removeEventListener('keydown', slot.unmuteHandler, true);
+      slot.unmuteHandler = null;
     }
 
     // Browsers won't start audio+video playback without a direct user
     // gesture on the media itself, and our "Load"/dropdown click doesn't
     // count for a cross-origin embed. So: arm a one-time listener that
-    // unmutes the current player on the user's very next click/keypress
-    // anywhere on the page — unmuting an already-playing video is allowed
-    // even without a fresh gesture, unlike starting playback unmuted.
-    function armUnmuteOnNextInteraction(twitchPlayer, channel) {
-      clearUnmuteOnInteraction();
+    // unmutes the player on the user's very next click/keypress anywhere on
+    // the page — unmuting an already-playing video is allowed even without a
+    // fresh gesture, unlike starting playback unmuted. Only ever fires for
+    // whichever slot is focused at the moment the interaction happens.
+    function armUnmuteOnNextInteraction(twitchPlayer, channel, slotIndex) {
+      const slot = slots[slotIndex];
+      if (!slot) return;
+      clearSlotUnmuteHandler(slot);
 
-      unmuteOnInteractionHandler = () => {
-        clearUnmuteOnInteraction();
-        if (activeStream.platform !== 'twitch' || activeStream.id !== channel) return;
-        if (currentTwitchPlayer !== twitchPlayer) return;
+      const handler = () => {
+        clearSlotUnmuteHandler(slot);
+        if (focusedSlot !== slotIndex) return;
+        if (slots[slotIndex] !== slot) return;
+        if (slot.platform !== 'twitch' || slot.id !== channel) return;
+        if (slot.twitchPlayer !== twitchPlayer) return;
         try { twitchPlayer.setMuted(false); } catch (_) {}
       };
 
-      document.addEventListener('click', unmuteOnInteractionHandler, true);
-      document.addEventListener('keydown', unmuteOnInteractionHandler, true);
+      slot.unmuteHandler = handler;
+      document.addEventListener('click', handler, true);
+      document.addEventListener('keydown', handler, true);
     }
 
     // Twitch's embed appears to check its container's size once at mount and
-    // cache the verdict — if our flex layout hasn't actually resolved the
+    // cache the verdict — if our layout hasn't actually resolved the
     // container to its final box yet at that instant, every later retry just
     // replays the same cached "too small" block instead of re-measuring. So:
     // don't construct the embed until the container is confirmed full-sized.
@@ -184,23 +194,28 @@
       }
     }
 
-    function beginTwitchPlayback(twitchPlayer, channel) {
+    function beginTwitchPlayback(twitchPlayer, channel, slotIndex) {
       // Muted autoplay IS reliably allowed by browsers, so start there...
       try {
         twitchPlayer.setMuted(true);
         twitchPlayer.play();
       } catch (_) {}
 
-      // ...and unmute the instant the user next clicks/types anywhere on the
-      // page — unmuting an already-playing video doesn't require a fresh
-      // gesture the way starting playback unmuted does.
-      armUnmuteOnNextInteraction(twitchPlayer, channel);
+      if (slotIndex === focusedSlot) {
+        // Unmuting an already-playing video doesn't require a fresh gesture
+        // the way starting playback unmuted does — try immediately, and
+        // also arm a next-interaction fallback for stricter browsers.
+        try { twitchPlayer.setMuted(false); } catch (_) {}
+        armUnmuteOnNextInteraction(twitchPlayer, channel, slotIndex);
+      }
 
       // Guard against a stubborn autoplay block (extension, browser quirk,
-      // slow-to-init player) by re-nudging playback a few times.
+      // slow-to-init player) by re-nudging playback a few times. Keeps
+      // background (unfocused) tiles muted, but still playing.
       let retries = 0;
       const retryTimer = window.setInterval(() => {
-        const stillCurrent = activeStream.platform === 'twitch' && activeStream.id === channel && currentTwitchPlayer === twitchPlayer;
+        const slot = slots[slotIndex];
+        const stillCurrent = slot && slot.platform === 'twitch' && slot.id === channel && slot.twitchPlayer === twitchPlayer;
         if (!stillCurrent || retries >= 5) {
           window.clearInterval(retryTimer);
           return;
@@ -210,14 +225,24 @@
           window.clearInterval(retryTimer);
         } else {
           try {
-            twitchPlayer.setMuted(true);
+            twitchPlayer.setMuted(slotIndex !== focusedSlot);
             twitchPlayer.play();
           } catch (_) {}
         }
       }, TWITCH_AUTOPLAY_RETRY_INTERVAL_MS);
     }
 
-    function loadTwitchEmbed(channel, options = {}) {
+    function teardownSlot(slotIndex) {
+      const slot = slots[slotIndex];
+      if (slot) {
+        if (slot.resumeTimer) window.clearTimeout(slot.resumeTimer);
+        clearSlotUnmuteHandler(slot);
+      }
+      const body = document.getElementById(`streamTileBody${slotIndex}`);
+      if (body) body.innerHTML = '';
+    }
+
+    function loadTwitchEmbedInSlot(slotIndex, channel, options = {}) {
       const { keepInputText = false } = options;
       const cleanChannel = normalizeTwitchChannel(channel);
       if (!cleanChannel) return;
@@ -227,47 +252,49 @@
         return;
       }
 
-      const inputElement = document.getElementById('streamUrl');
-      const player = document.getElementById('player');
-      const chat = document.getElementById('chat');
-
       const parentHosts = getTwitchParentHosts();
-      if (!parentHosts.length || window.location.protocol === 'file:') {
+      if (!parentHosts.length) {
         alert('Twitch embed requires running this page on http(s) with a valid host.');
         return;
       }
 
-      player.style.display = 'block';
-      player.style.visibility = 'visible';
+      const body = document.getElementById(`streamTileBody${slotIndex}`);
+      if (!body) return;
+
+      teardownSlot(slotIndex);
+
+      const newSlot = {
+        platform: 'twitch',
+        id: cleanChannel,
+        label: cleanChannel,
+        twitchEmbed: null,
+        twitchPlayer: null,
+        unmuteHandler: null,
+        lastEmbedLoadAt: Date.now(),
+        resumeTimer: null,
+      };
+      slots[slotIndex] = newSlot;
+
       // Twitch's embed silently refuses to autoplay below ~400x300px
       // ("style visibility" / autoplay requirements error) — keep headroom.
-      player.style.minWidth = '460px';
-      player.style.minHeight = '340px';
-      chat.style.display = 'block';
+      body.innerHTML = `<div id="twitch-player-${slotIndex}" style="width:100%;height:100%;min-width:400px;min-height:300px;visibility:visible;display:block"></div>`;
 
-      activeStream = { platform: 'twitch', id: cleanChannel };
-      lastTwitchEmbedLoadAt = Date.now();
-      currentTwitchEmbed = null;
-      currentTwitchPlayer = null;
-      clearUnmuteOnInteraction();
-      inputElement.dataset.lastInput = cleanChannel;
-      if (!keepInputText) {
-        inputElement.value = 'You are Watching: ' + cleanChannel;
+      renderGrid();
+      if (slotIndex === focusedSlot) {
+        updateChatForFocusedSlot();
+        if (!keepInputText) syncStreamUrlInputToFocused();
       }
 
-      player.innerHTML = '<div id="twitch-player" style="width:100%;height:100%;min-width:460px;min-height:340px;visibility:visible;display:block"></div>';
-      chat.innerHTML = `<iframe src="https://www.twitch.tv/embed/${encodeURIComponent(cleanChannel)}/chat?parent=${window.location.hostname}&darkpopout"></iframe>`;
-
       window.requestAnimationFrame(() => {
-        if (activeStream.platform !== 'twitch' || activeStream.id !== cleanChannel) return;
-        const targetEl = document.getElementById('twitch-player');
+        if (slots[slotIndex] !== newSlot) return;
+        const targetEl = document.getElementById(`twitch-player-${slotIndex}`);
         if (!targetEl) return;
 
-        Promise.all([loadTwitchEmbedScript(), waitForElementSize(targetEl, 460, 340)])
+        Promise.all([loadTwitchEmbedScript(), waitForElementSize(targetEl, 400, 300)])
           .then(() => {
-            if (activeStream.platform !== 'twitch' || activeStream.id !== cleanChannel) return;
+            if (slots[slotIndex] !== newSlot) return;
 
-            const embed = new Twitch.Embed('twitch-player', {
+            const embed = new Twitch.Embed(`twitch-player-${slotIndex}`, {
               width: '100%',
               height: '100%',
               channel: cleanChannel,
@@ -276,60 +303,65 @@
               muted: true,
               parent: parentHosts
             });
-            currentTwitchEmbed = embed;
+            newSlot.twitchEmbed = embed;
 
             embed.addEventListener(Twitch.Embed.VIDEO_READY, () => {
-              if (activeStream.platform !== 'twitch' || activeStream.id !== cleanChannel) return;
+              if (slots[slotIndex] !== newSlot) return;
               const twitchPlayer = embed.getPlayer();
               if (!twitchPlayer) return;
-              currentTwitchPlayer = twitchPlayer;
-              beginTwitchPlayback(twitchPlayer, cleanChannel);
+              newSlot.twitchPlayer = twitchPlayer;
+              beginTwitchPlayback(twitchPlayer, cleanChannel, slotIndex);
             });
 
             // Twitch's SDK fires this specifically when the browser (or its
             // own min-size check) blocks autoplay — react immediately
             // instead of waiting on a poll.
             embed.addEventListener(Twitch.Embed.PLAYBACK_BLOCKED, () => {
-              if (activeStream.platform !== 'twitch' || activeStream.id !== cleanChannel) return;
+              if (slots[slotIndex] !== newSlot) return;
               const twitchPlayer = embed.getPlayer();
               if (!twitchPlayer) return;
-              currentTwitchPlayer = twitchPlayer;
+              newSlot.twitchPlayer = twitchPlayer;
               try {
                 twitchPlayer.setMuted(true);
                 twitchPlayer.play();
               } catch (_) {}
-              armUnmuteOnNextInteraction(twitchPlayer, cleanChannel);
+              if (slotIndex === focusedSlot) armUnmuteOnNextInteraction(twitchPlayer, cleanChannel, slotIndex);
             });
           })
           .catch((error) => {
             console.error(error);
-            player.innerHTML = '<div class="stream-list-empty">Unable to load Twitch embed.</div>';
+            if (slots[slotIndex] === newSlot) {
+              body.innerHTML = '<div class="stream-list-empty">Unable to load Twitch embed.</div>';
+            }
           });
       });
-
     }
 
-    function canResumeTwitch(minHiddenMs = 0) {
+    function canResumeTwitch(slotIndex, minHiddenMs = 0) {
       if (document.visibilityState !== 'visible') return false;
-      if (activeStream.platform !== 'twitch' || !activeStream.id) return false;
+      const slot = slots[slotIndex];
+      if (!slot || slot.platform !== 'twitch' || !slot.id) return false;
       if (minHiddenMs && Date.now() - lastHiddenAt < minHiddenMs) return false;
       return true;
     }
 
-    function reloadTwitchEmbedIfDue(channelId) {
-      if (Date.now() - lastTwitchEmbedLoadAt < TWITCH_RESUME_RELOAD_COOLDOWN_MS) return;
-      loadTwitchEmbed(channelId, { keepInputText: true });
+    function reloadTwitchEmbedIfDue(slotIndex) {
+      const slot = slots[slotIndex];
+      if (!slot) return;
+      if (Date.now() - (slot.lastEmbedLoadAt || 0) < TWITCH_RESUME_RELOAD_COOLDOWN_MS) return;
+      loadTwitchEmbedInSlot(slotIndex, slot.id, { keepInputText: true });
     }
 
-    function attemptTwitchResume(reason) {
+    function attemptTwitchResume(slotIndex, reason) {
       // Only require the tab to have been hidden a while when the trigger IS a
       // tab-visibility change. Theater-mode toggles are an explicit user action,
       // not a background return, so they shouldn't be gated on lastHiddenAt.
       const minHiddenMs = reason === 'visibilitychange' ? TWITCH_TAB_RESUME_MIN_HIDDEN_MS : 0;
-      if (!canResumeTwitch(minHiddenMs)) return;
+      if (!canResumeTwitch(slotIndex, minHiddenMs)) return;
 
-      const channelId = activeStream.id;
-      const player = currentTwitchPlayer;
+      const slot = slots[slotIndex];
+      const channelId = slot.id;
+      const player = slot.twitchPlayer;
 
       // If we still hold a live player reference, just nudge playback in place —
       // no need to tear down and rebuild the iframe (and chat) for a simple unpause.
@@ -343,26 +375,281 @@
         } catch (_) {}
 
         window.setTimeout(() => {
-          if (activeStream.platform !== 'twitch' || activeStream.id !== channelId) return;
+          const current = slots[slotIndex];
+          if (!current || current.platform !== 'twitch' || current.id !== channelId) return;
           if (document.visibilityState !== 'visible') return;
-          const stillInactive = !currentTwitchPlayer || !isTwitchPlaybackActive(currentTwitchPlayer);
-          if (stillInactive) reloadTwitchEmbedIfDue(channelId);
+          const stillInactive = !current.twitchPlayer || !isTwitchPlaybackActive(current.twitchPlayer);
+          if (stillInactive) reloadTwitchEmbedIfDue(slotIndex);
         }, TWITCH_RESUME_RETRY_DELAY_MS);
         return;
       }
 
-      reloadTwitchEmbedIfDue(channelId);
+      reloadTwitchEmbedIfDue(slotIndex);
     }
 
-    function scheduleTwitchResume(reason, delayMs = TWITCH_RESUME_DEBOUNCE_MS) {
-      if (twitchResumeTimer) {
-        clearTimeout(twitchResumeTimer);
+    function scheduleTwitchResume(slotIndex, reason, delayMs = TWITCH_RESUME_DEBOUNCE_MS) {
+      const slot = slots[slotIndex];
+      if (!slot) return;
+      if (slot.resumeTimer) {
+        window.clearTimeout(slot.resumeTimer);
       }
 
-      twitchResumeTimer = window.setTimeout(() => {
-        twitchResumeTimer = null;
-        attemptTwitchResume(reason);
+      slot.resumeTimer = window.setTimeout(() => {
+        slot.resumeTimer = null;
+        attemptTwitchResume(slotIndex, reason);
       }, delayMs);
+    }
+
+    function scheduleTwitchResumeAll(reason) {
+      for (let i = 0; i < MAX_SLOTS; i++) {
+        if (slots[i] && slots[i].platform === 'twitch') scheduleTwitchResume(i, reason);
+      }
+    }
+
+    function ytCommand(iframe, func, args = []) {
+      try {
+        iframe?.contentWindow?.postMessage(JSON.stringify({ event: 'command', func, args }), '*');
+      } catch (_) {}
+    }
+
+    function getYoutubeIframeForSlot(slotIndex) {
+      const body = document.getElementById(`streamTileBody${slotIndex}`);
+      return body ? body.querySelector('iframe.stream-yt-player') : null;
+    }
+
+    function ytMuteSlot(slotIndex) {
+      const iframe = getYoutubeIframeForSlot(slotIndex);
+      if (iframe) ytCommand(iframe, 'mute');
+    }
+
+    function ytUnmuteSlot(slotIndex) {
+      const iframe = getYoutubeIframeForSlot(slotIndex);
+      if (iframe) {
+        ytCommand(iframe, 'unMute');
+        ytCommand(iframe, 'playVideo');
+      }
+    }
+
+    function mountYoutubeIframe(slotIndex, src) {
+      const body = document.getElementById(`streamTileBody${slotIndex}`);
+      if (!body) return null;
+      body.innerHTML = '';
+      const iframe = document.createElement('iframe');
+      iframe.className = 'stream-yt-player';
+      iframe.src = src;
+      iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
+      iframe.setAttribute('allowfullscreen', '');
+      body.appendChild(iframe);
+
+      // YouTube always starts muted for reliable autoplay (see mount below);
+      // if this slot is the focused one, unmute it via the postMessage API
+      // once the player has had a moment to attach its message listener.
+      iframe.addEventListener('load', () => {
+        if (slotIndex !== focusedSlot) return;
+        ytUnmuteSlot(slotIndex);
+        window.setTimeout(() => {
+          if (slotIndex === focusedSlot) ytUnmuteSlot(slotIndex);
+        }, 800);
+      });
+
+      return iframe;
+    }
+
+    // --- Grid rendering / focus / chat -----------------------------------
+
+    function syncStreamUrlInputToFocused() {
+      const inputElement = document.getElementById('streamUrl');
+      if (!inputElement) return;
+      const slot = slots[focusedSlot];
+      if (slot) {
+        inputElement.dataset.lastInput = slot.id;
+        inputElement.value = 'You are Watching: ' + slot.label;
+      } else {
+        inputElement.dataset.lastInput = '';
+        inputElement.value = '';
+      }
+    }
+
+    function updateChatForFocusedSlot() {
+      const chat = document.getElementById('chat');
+      if (!chat) return;
+      const slot = slots[focusedSlot];
+      chat.innerHTML = '';
+
+      if (!slot) {
+        const empty = document.createElement('div');
+        empty.className = 'stream-list-empty';
+        empty.textContent = 'Focus a stream to see its chat';
+        chat.appendChild(empty);
+        return;
+      }
+
+      const iframe = document.createElement('iframe');
+      if (slot.platform === 'twitch') {
+        iframe.src = `https://www.twitch.tv/embed/${encodeURIComponent(slot.id)}/chat?parent=${window.location.hostname}&darkpopout`;
+      } else {
+        iframe.src = `https://www.youtube.com/live_chat?v=${encodeURIComponent(slot.id)}&embed_domain=${window.location.hostname}&dark_theme=1`;
+      }
+      chat.appendChild(iframe);
+    }
+
+    function updateLayoutMenuUI() {
+      document.querySelectorAll('.stream-layout-btn').forEach((btn) => {
+        btn.classList.toggle('is-active', Number(btn.dataset.count) === desiredSlotCount);
+      });
+    }
+
+    function renderGrid() {
+      const grid = document.getElementById('streamGrid');
+      if (grid) grid.dataset.count = String(desiredSlotCount);
+
+      for (let i = 0; i < MAX_SLOTS; i++) {
+        const tile = document.getElementById(`streamTile${i}`);
+        if (!tile) continue;
+        const slot = slots[i];
+        const visible = i < desiredSlotCount;
+        const isEmpty = visible && !slot;
+
+        tile.classList.toggle('is-visible', visible);
+        tile.classList.toggle('is-empty', isEmpty);
+        tile.classList.toggle('is-focused', visible && focusedSlot === i);
+        tile.style.order = String(i);
+
+        if (slot) {
+          tile.dataset.platform = slot.platform;
+          const label = tile.querySelector('.stream-tile-label');
+          if (label) label.textContent = slot.label;
+        } else {
+          delete tile.dataset.platform;
+        }
+      }
+
+      updateLayoutMenuUI();
+    }
+
+    function setFocusedSlot(index) {
+      if (index < 0 || index >= desiredSlotCount) return;
+      if (index === focusedSlot) return;
+
+      const prevSlot = slots[focusedSlot];
+      if (prevSlot) {
+        if (prevSlot.platform === 'twitch' && prevSlot.twitchPlayer) {
+          try { prevSlot.twitchPlayer.setMuted(true); } catch (_) {}
+        } else if (prevSlot.platform === 'youtube') {
+          ytMuteSlot(focusedSlot);
+        }
+      }
+
+      focusedSlot = index;
+
+      const nextSlot = slots[focusedSlot];
+      if (nextSlot) {
+        if (nextSlot.platform === 'twitch' && nextSlot.twitchPlayer) {
+          try { nextSlot.twitchPlayer.setMuted(false); } catch (_) {}
+        } else if (nextSlot.platform === 'youtube') {
+          ytUnmuteSlot(focusedSlot);
+        }
+      }
+
+      renderGrid();
+      updateChatForFocusedSlot();
+      syncStreamUrlInputToFocused();
+      if (!nextSlot) {
+        const inputElement = document.getElementById('streamUrl');
+        if (inputElement) inputElement.focus();
+      }
+    }
+
+    function closeSlot(index) {
+      if (!slots[index]) return;
+      teardownSlot(index);
+      slots[index] = null;
+
+      if (focusedSlot === index) {
+        const nextFilled = slots.findIndex((s, i) => s && i < desiredSlotCount);
+        focusedSlot = nextFilled !== -1 ? nextFilled : index;
+        updateChatForFocusedSlot();
+        syncStreamUrlInputToFocused();
+      }
+
+      renderGrid();
+    }
+
+    function setDesiredSlotCount(n) {
+      n = Math.max(1, Math.min(MAX_SLOTS, Math.round(n) || 1));
+      if (n === desiredSlotCount) {
+        renderGrid();
+        return;
+      }
+      desiredSlotCount = n;
+
+      let removedFocused = false;
+      for (let i = MAX_SLOTS - 1; i >= desiredSlotCount; i--) {
+        if (slots[i]) {
+          teardownSlot(i);
+          slots[i] = null;
+          if (focusedSlot === i) removedFocused = true;
+        }
+      }
+
+      if (focusedSlot >= desiredSlotCount || removedFocused) {
+        const nextFilled = slots.findIndex((s, i) => s && i < desiredSlotCount);
+        focusedSlot = nextFilled !== -1 ? nextFilled : 0;
+        updateChatForFocusedSlot();
+        syncStreamUrlInputToFocused();
+      }
+
+      renderGrid();
+    }
+
+    function loadIntoSlot(slotIndex, rawInput) {
+      const input = (rawInput || '').trim();
+      if (!input) return;
+
+      const sanitizeYoutubeId = (value) => String(value || '').trim().replace(/[^A-Za-z0-9_-]/g, '');
+
+      if (input.includes('youtube.com') || input.includes('youtu.be') || input.includes('@')) {
+        if (input.includes('@')) {
+          const handle = sanitizeYoutubeId(input.split('@').pop().split('/')[0]);
+          if (!handle) return;
+          teardownSlot(slotIndex);
+          slots[slotIndex] = { platform: 'youtube', id: handle, label: handle };
+          mountYoutubeIframe(slotIndex, `https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(handle)}&autoplay=1&mute=1&origin=${window.location.origin}&enablejsapi=1`);
+          renderGrid();
+          if (slotIndex === focusedSlot) {
+            updateChatForFocusedSlot();
+            syncStreamUrlInputToFocused();
+          }
+          return;
+        }
+
+        let videoId = '';
+        if (input.includes('v=')) {
+          videoId = input.split('v=')[1].split('&')[0];
+        } else if (input.includes('youtu.be/')) {
+          videoId = input.split('youtu.be/')[1].split('?')[0];
+        } else if (input.includes('/embed/')) {
+          videoId = input.split('/embed/')[1].split('?')[0];
+        } else {
+          videoId = input.split('/').pop();
+        }
+
+        videoId = sanitizeYoutubeId(videoId);
+        if (!videoId) return;
+
+        teardownSlot(slotIndex);
+        slots[slotIndex] = { platform: 'youtube', id: videoId, label: videoId };
+        mountYoutubeIframe(slotIndex, `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?autoplay=1&mute=1&origin=${window.location.origin}&enablejsapi=1`);
+        renderGrid();
+        if (slotIndex === focusedSlot) {
+          updateChatForFocusedSlot();
+          syncStreamUrlInputToFocused();
+        }
+        return;
+      }
+
+      const channel = input.includes('twitch.tv/') ? input.split('twitch.tv/').pop().split('/')[0] : input;
+      loadTwitchEmbedInSlot(slotIndex, channel);
     }
 
     function setDropdownOpen(dropdown, isOpen) {
@@ -424,77 +711,8 @@
     window.loadStream = function() {
       const inputElement = document.getElementById('streamUrl');
       const input = inputElement.value.trim();
-      const player = document.getElementById('player');
-      const chat = document.getElementById('chat');
-
-      const sanitizeYoutubeId = (value) => {
-        const raw = String(value || '').trim();
-        if (!raw) return '';
-        return raw.replace(/[^A-Za-z0-9_-]/g, '');
-      };
-
-      const mountPlayerIframe = (src) => {
-        player.innerHTML = '';
-        const iframe = document.createElement('iframe');
-        iframe.src = src;
-        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
-        iframe.setAttribute('allowfullscreen', '');
-        player.appendChild(iframe);
-      };
-      
       if (!input) return;
-      if (input.includes('youtube.com') || input.includes('youtu.be') || input.includes('@')) {
-        activeStream = { platform: 'youtube', id: '' };
-        let videoId = "";
-        if (input.includes('v=')) {
-          videoId = input.split('v=')[1].split('&')[0];
-        } else if (input.includes('youtu.be/')) {
-          videoId = input.split('youtu.be/')[1].split('?')[0];
-        } else if (input.includes('/embed/')) {
-          videoId = input.split('/embed/')[1].split('?')[0];
-        } else if (input.includes('@')) {
-            videoId = sanitizeYoutubeId(input.split('@').pop().split('/')[0]);
-            if (!videoId) return;
-            mountPlayerIframe(`https://www.youtube.com/embed/live_stream?channel=${encodeURIComponent(videoId)}&autoplay=1&origin=${window.location.origin}&enablejsapi=1`);
-            chat.innerHTML = '';
-            const liveChatIframe = document.createElement('iframe');
-            liveChatIframe.src = `https://www.youtube.com/live_chat?v=${encodeURIComponent(videoId)}&embed_domain=${window.location.hostname}&dark_theme=1`;
-            chat.appendChild(liveChatIframe);
-            return;
-        } else {
-          videoId = input.split('/').pop();
-        }
-
-        videoId = sanitizeYoutubeId(videoId);
-        if (!videoId) return;
-
-        mountPlayerIframe(`https://www.youtube.com/embed/${encodeURIComponent(videoId)}?autoplay=1&origin=${window.location.origin}&enablejsapi=1`);
-
-        const chatIframe = document.createElement('iframe');
-        chatIframe.src = `https://www.youtube.com/live_chat?v=${encodeURIComponent(videoId)}&embed_domain=${window.location.hostname}&dark_theme=1`;
-
-        chatIframe.onload = function() {
-          try {
-            const body = chatIframe.contentDocument.body;
-            if (body && body.innerText.includes('disabled')) {
-              chat.style.display = 'none';
-            } else {
-                chat.style.display = 'block';
-            }
-          } catch(e) {
-            chat.style.display = 'block';
-    }
-        };
-
-        chat.innerHTML = '';
-        chat.appendChild(chatIframe);
-
-        inputElement.dataset.lastInput = videoId;
-        inputElement.value = "You are Watching: " + videoId;
-      } else {
-        const channel = input.includes('twitch.tv/') ? input.split('twitch.tv/').pop().split('/')[0] : input;
-        loadTwitchEmbed(channel);
-      }
+      loadIntoSlot(focusedSlot, input);
     };
 
     window.toggleChat = function() {
@@ -503,8 +721,9 @@
     };
 
     window.popoutChat = function() {
-      if (activeStream.platform !== 'twitch' || !activeStream.id) {
-        alert('Load a Twitch stream first to pop out its chat.');
+      const slot = slots[focusedSlot];
+      if (!slot || slot.platform !== 'twitch') {
+        alert('Focus a Twitch stream first to pop out its chat.');
         return;
       }
       // Twitch's embedded chat iframe runs in a third-party context, so
@@ -512,21 +731,14 @@
       // Brave) let the login popup succeed on twitch.tv but never let the
       // iframe see the resulting session - it just reloads still logged
       // out. A real new tab is first-party to twitch.tv, so login sticks.
-      window.open(`https://www.twitch.tv/popout/${encodeURIComponent(activeStream.id)}/chat`, '_blank', 'noopener,noreferrer');
+      window.open(`https://www.twitch.tv/popout/${encodeURIComponent(slot.id)}/chat`, '_blank', 'noopener,noreferrer');
     };
 
     window.loadStreamDirect = function(url) {
-      document.getElementById('streamUrl').value = url;
       const input = (url || '').trim();
       if (!input) return;
-
-      if (input.includes('youtube.com') || input.includes('youtu.be') || input.includes('@')) {
-        loadStream();
-        return;
-      }
-
-      const channel = input.includes('twitch.tv/') ? input.split('twitch.tv/').pop().split('/')[0] : input;
-      loadTwitchEmbed(channel);
+      document.getElementById('streamUrl').value = url;
+      loadIntoSlot(focusedSlot, input);
     };
 
     function formatViewerCount(n) {
@@ -1235,12 +1447,33 @@
         lastHiddenAt = Date.now();
         return;
       }
-      scheduleTwitchResume('visibilitychange');
+      scheduleTwitchResumeAll('visibilitychange');
     });
 
     window.addEventListener('pageshow', function(event) {
       if (!event.persisted) return;
-      scheduleTwitchResume('pageshow');
+      scheduleTwitchResumeAll('pageshow');
+    });
+
+    const streamGrid = document.getElementById('streamGrid');
+    if (streamGrid) {
+      streamGrid.addEventListener('click', (event) => {
+        const closeBtn = event.target.closest('.stream-tile-close');
+        if (closeBtn) {
+          event.preventDefault();
+          event.stopPropagation();
+          closeSlot(Number(closeBtn.dataset.slot));
+          return;
+        }
+
+        const tile = event.target.closest('.stream-tile');
+        if (!tile || !tile.classList.contains('is-visible')) return;
+        setFocusedSlot(Number(tile.dataset.slot));
+      });
+    }
+
+    document.querySelectorAll('.stream-layout-btn').forEach((btn) => {
+      btn.addEventListener('click', () => setDesiredSlotCount(Number(btn.dataset.count)));
     });
 
     const streamerDropdown = document.querySelector('.dropdown');
@@ -1341,6 +1574,9 @@
         if (streamTheaterMode) toggleStreamTheaterMode();
       });
     }
+
+    renderGrid();
+    updateChatForFocusedSlot();
 
     window.onload = async function() {
       updateTheaterModeButton();

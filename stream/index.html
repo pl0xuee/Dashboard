@@ -11,7 +11,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="../assets/css/styles.css?v=20260713revert1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
-  <link rel="stylesheet" href="./assets/stream-inline.css?v=20260713clean1" />
+  <link rel="stylesheet" href="./assets/stream-inline.css?v=20260713multi1" />
 </head>
 <body class="stream-page">
   <div class="page">
@@ -32,6 +32,13 @@
       <div class="controls">
         <input type="text" id="streamUrl" class="stream-url-input" placeholder="YouTube URL or Twitch Channel Name">
         <button id="loadStreamBtn" class="home-button">Load</button>
+        <div class="stream-layout-group" role="group" aria-label="Number of streams">
+          <span class="stream-layout-label">Streams</span>
+          <button type="button" class="stream-layout-btn" data-count="1">1</button>
+          <button type="button" class="stream-layout-btn" data-count="2">2</button>
+          <button type="button" class="stream-layout-btn" data-count="3">3</button>
+          <button type="button" class="stream-layout-btn" data-count="4">4</button>
+        </div>
         <button id="toggleTheaterBtn" class="home-button">Theater Mode</button>
         <button id="toggleChatBtn" class="home-button">Toggle Chat</button>
         <button id="popoutChatBtn" class="home-button" title="Opens Twitch chat in a new tab so login works around browser third-party cookie blocking">Pop-out Chat</button>
@@ -54,7 +61,44 @@
     <main class="main">
       <div class="stream-container">
         <button id="streamTheaterExitBtn" type="button" class="home-button stream-theater-exit">Default View</button>
-        <div class="stream-player" id="player"></div>
+        <div class="stream-grid" id="streamGrid" data-count="1">
+          <div class="stream-tile" id="streamTile0" data-slot="0">
+            <div class="stream-tile-header">
+              <span class="stream-tile-dot" aria-hidden="true"></span>
+              <span class="stream-tile-label"></span>
+              <button type="button" class="stream-tile-close" data-slot="0" title="Close stream">×</button>
+            </div>
+            <div class="stream-tile-body" id="streamTileBody0"></div>
+            <div class="stream-tile-placeholder"><span class="stream-tile-placeholder-label">+ Add Stream</span></div>
+          </div>
+          <div class="stream-tile" id="streamTile1" data-slot="1">
+            <div class="stream-tile-header">
+              <span class="stream-tile-dot" aria-hidden="true"></span>
+              <span class="stream-tile-label"></span>
+              <button type="button" class="stream-tile-close" data-slot="1" title="Close stream">×</button>
+            </div>
+            <div class="stream-tile-body" id="streamTileBody1"></div>
+            <div class="stream-tile-placeholder"><span class="stream-tile-placeholder-label">+ Add Stream</span></div>
+          </div>
+          <div class="stream-tile" id="streamTile2" data-slot="2">
+            <div class="stream-tile-header">
+              <span class="stream-tile-dot" aria-hidden="true"></span>
+              <span class="stream-tile-label"></span>
+              <button type="button" class="stream-tile-close" data-slot="2" title="Close stream">×</button>
+            </div>
+            <div class="stream-tile-body" id="streamTileBody2"></div>
+            <div class="stream-tile-placeholder"><span class="stream-tile-placeholder-label">+ Add Stream</span></div>
+          </div>
+          <div class="stream-tile" id="streamTile3" data-slot="3">
+            <div class="stream-tile-header">
+              <span class="stream-tile-dot" aria-hidden="true"></span>
+              <span class="stream-tile-label"></span>
+              <button type="button" class="stream-tile-close" data-slot="3" title="Close stream">×</button>
+            </div>
+            <div class="stream-tile-body" id="streamTileBody3"></div>
+            <div class="stream-tile-placeholder"><span class="stream-tile-placeholder-label">+ Add Stream</span></div>
+          </div>
+        </div>
         <div class="stream-chat" id="chat"></div>
       </div>
     </main>
@@ -62,7 +106,7 @@
   <script src="../assets/js/script.js"></script>
   <script type="module" src="./assets/config-inline.js?v=20260630c"></script>
 
-  <script src="./assets/stream-inline.js?v=20260713popoutchat1"></script>
+  <script src="./assets/stream-inline.js?v=20260713multi1"></script>
 </body>
 </html>
 
