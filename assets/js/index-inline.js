@@ -78,13 +78,18 @@
       try {
         let feedUrl = '';
 
-        // Set RSS feeds based on category
+        // Set RSS feeds based on category.
+        // Note: Google News RSS URLs are not used here because rss2json's
+        // fetcher is reliably blocked/rejected by Google (verified: 100%
+        // failure rate across repeated requests), which was causing the
+        // news list to fall back on nearly every load. These publisher
+        // feeds are fetched by rss2json consistently.
         if (type === 'usa') {
-          feedUrl = 'https://news.google.com/rss/search?q=' + encodeURIComponent('United States news') + '&hl=en-US&gl=US&ceid=US:en';
+          feedUrl = 'https://feeds.npr.org/1001/rss.xml';
         } else if (type === 'world') {
-          feedUrl = 'https://news.google.com/rss/search?q=' + encodeURIComponent('world news') + '&hl=en-US&gl=US&ceid=US:en';
+          feedUrl = 'http://feeds.bbci.co.uk/news/world/rss.xml';
         } else if (type === 'finance') {
-          feedUrl = 'https://news.google.com/rss/search?q=' + encodeURIComponent('finance stocks market') + '&hl=en-US&gl=US&ceid=US:en';
+          feedUrl = 'https://www.cnbc.com/id/10000664/device/rss/rss.html';
         } else {
           feedUrl = 'https://feeds.bloomberg.com/markets/news.rss';
         }
@@ -185,8 +190,11 @@
         } catch (e) {
           console.error(`Attempt ${attempt + 1} failed:`, e.message);
           if (attempt === maxRetries - 1) {
-            console.warn('Using fallback news - RSS feed unavailable');
-            return FALLBACK_NEWS;
+            // Throw (rather than returning FALLBACK_NEWS) so the caller's
+            // catch block shows the fallback without persisting it to the
+            // news cache - a cached fallback would otherwise get served
+            // for CACHE_DURATION even after the underlying feed recovers.
+            throw e;
           }
         }
       }
