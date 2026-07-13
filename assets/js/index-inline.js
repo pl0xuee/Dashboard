@@ -1,6 +1,6 @@
     let allNewsItems = [];
     const NEWS_MAX_ITEMS = 10;
-    const NEWS_CACHE_PREFIX = 'homeNewsCache:';
+    const NEWS_CACHE_PREFIX = 'homeNewsCache:v2:';
     const NEWS_REQUEST_TIMEOUT_MS = 9000;
     const NEWS_LOADING_TIMEOUT_MS = 12000;
     const WEATHER_CACHE_TTL_MS = 15 * 60 * 1000;
