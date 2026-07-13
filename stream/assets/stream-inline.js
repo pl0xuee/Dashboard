@@ -502,6 +502,19 @@
       chat.style.display = (chat.style.display === 'none') ? 'block' : 'none';
     };
 
+    window.popoutChat = function() {
+      if (activeStream.platform !== 'twitch' || !activeStream.id) {
+        alert('Load a Twitch stream first to pop out its chat.');
+        return;
+      }
+      // Twitch's embedded chat iframe runs in a third-party context, so
+      // browsers that block third-party cookies (Chrome, Firefox, Safari,
+      // Brave) let the login popup succeed on twitch.tv but never let the
+      // iframe see the resulting session - it just reloads still logged
+      // out. A real new tab is first-party to twitch.tv, so login sticks.
+      window.open(`https://www.twitch.tv/popout/${encodeURIComponent(activeStream.id)}/chat`, '_blank', 'noopener,noreferrer');
+    };
+
     window.loadStreamDirect = function(url) {
       document.getElementById('streamUrl').value = url;
       const input = (url || '').trim();
@@ -1310,6 +1323,11 @@
     const toggleChatBtn = document.getElementById('toggleChatBtn');
     if (toggleChatBtn) {
       toggleChatBtn.addEventListener('click', () => toggleChat());
+    }
+
+    const popoutChatBtn = document.getElementById('popoutChatBtn');
+    if (popoutChatBtn) {
+      popoutChatBtn.addEventListener('click', () => popoutChat());
     }
 
     const toggleTheaterBtn = document.getElementById('toggleTheaterBtn');
