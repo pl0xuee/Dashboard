@@ -7,6 +7,7 @@
     const TWITCH_RESUME_DEBOUNCE_MS = 250;
     const TWITCH_RESUME_RETRY_DELAY_MS = 1800;
     const TWITCH_RESUME_RELOAD_COOLDOWN_MS = 7000;
+    const TWITCH_AUTOPLAY_RETRY_INTERVAL_MS = 2000;
 
     let lastDropdownRefreshAt = 0;
     let dropdownRefreshInFlight = false;
@@ -16,8 +17,10 @@
     let youtubeRetryAfter = 0;
     let lastHiddenAt = 0;
     let lastTwitchEmbedLoadAt = 0;
-    let lastTheaterModeToggleAt = 0;
     let twitchResumeTimer = null;
+    let currentTwitchEmbed = null;
+    let currentTwitchPlayer = null;
+    let unmuteOnInteractionHandler = null;
     let activeStream = { platform: null, id: '' };
     let streamTheaterMode = false;
 
@@ -29,11 +32,12 @@
     }
 
     function setStreamTheaterMode(nextValue) {
-      lastTheaterModeToggleAt = Date.now();
       streamTheaterMode = Boolean(nextValue);
       document.body.classList.toggle('stream-theater-mode', streamTheaterMode);
       document.documentElement.classList.toggle('stream-theater-mode', streamTheaterMode);
       updateTheaterModeButton();
+      // The resize this triggers can leave the embedded Twitch player paused.
+      scheduleTwitchResume('theatermode');
     }
 
     function toggleStreamTheaterMode() {
@@ -106,8 +110,115 @@
       return twitchEmbedScriptPromise;
     }
 
+    function clearUnmuteOnInteraction() {
+      if (!unmuteOnInteractionHandler) return;
+      document.removeEventListener('click', unmuteOnInteractionHandler, true);
+      document.removeEventListener('keydown', unmuteOnInteractionHandler, true);
+      unmuteOnInteractionHandler = null;
+    }
+
+    // Browsers won't start audio+video playback without a direct user
+    // gesture on the media itself, and our "Load"/dropdown click doesn't
+    // count for a cross-origin embed. So: arm a one-time listener that
+    // unmutes the current player on the user's very next click/keypress
+    // anywhere on the page — unmuting an already-playing video is allowed
+    // even without a fresh gesture, unlike starting playback unmuted.
+    function armUnmuteOnNextInteraction(twitchPlayer, channel) {
+      clearUnmuteOnInteraction();
+
+      unmuteOnInteractionHandler = () => {
+        clearUnmuteOnInteraction();
+        if (activeStream.platform !== 'twitch' || activeStream.id !== channel) return;
+        if (currentTwitchPlayer !== twitchPlayer) return;
+        try { twitchPlayer.setMuted(false); } catch (_) {}
+      };
+
+      document.addEventListener('click', unmuteOnInteractionHandler, true);
+      document.addEventListener('keydown', unmuteOnInteractionHandler, true);
+    }
+
+    // Twitch's embed appears to check its container's size once at mount and
+    // cache the verdict — if our flex layout hasn't actually resolved the
+    // container to its final box yet at that instant, every later retry just
+    // replays the same cached "too small" block instead of re-measuring. So:
+    // don't construct the embed until the container is confirmed full-sized.
+    function waitForElementSize(el, minWidth, minHeight, timeoutMs = 3000) {
+      return new Promise((resolve) => {
+        const fits = () => {
+          const rect = el.getBoundingClientRect();
+          return rect.width >= minWidth && rect.height >= minHeight;
+        };
+
+        if (fits()) {
+          resolve();
+          return;
+        }
+
+        let settled = false;
+        const finish = () => {
+          if (settled) return;
+          settled = true;
+          observer.disconnect();
+          resolve();
+        };
+
+        const observer = new ResizeObserver(() => {
+          if (fits()) finish();
+        });
+        observer.observe(el);
+        window.setTimeout(finish, timeoutMs);
+      });
+    }
+
+    // The embed's own isPaused() only reports true for the "Idle" playback
+    // state — a stream stuck on "Ready" (loaded, autoplay blocked, never
+    // started) reads as "not paused" even though nothing is playing. Read
+    // the real state instead so retry logic isn't fooled by that.
+    function isTwitchPlaybackActive(twitchPlayer) {
+      try {
+        const state = twitchPlayer.getPlayerState && twitchPlayer.getPlayerState();
+        const playback = state && state.playback;
+        return playback === 'Buffering' || playback === 'Playing';
+      } catch (_) {
+        return false;
+      }
+    }
+
+    function beginTwitchPlayback(twitchPlayer, channel) {
+      // Muted autoplay IS reliably allowed by browsers, so start there...
+      try {
+        twitchPlayer.setMuted(true);
+        twitchPlayer.play();
+      } catch (_) {}
+
+      // ...and unmute the instant the user next clicks/types anywhere on the
+      // page — unmuting an already-playing video doesn't require a fresh
+      // gesture the way starting playback unmuted does.
+      armUnmuteOnNextInteraction(twitchPlayer, channel);
+
+      // Guard against a stubborn autoplay block (extension, browser quirk,
+      // slow-to-init player) by re-nudging playback a few times.
+      let retries = 0;
+      const retryTimer = window.setInterval(() => {
+        const stillCurrent = activeStream.platform === 'twitch' && activeStream.id === channel && currentTwitchPlayer === twitchPlayer;
+        if (!stillCurrent || retries >= 5) {
+          window.clearInterval(retryTimer);
+          return;
+        }
+        retries += 1;
+        if (isTwitchPlaybackActive(twitchPlayer)) {
+          window.clearInterval(retryTimer);
+        } else {
+          try {
+            twitchPlayer.setMuted(true);
+            twitchPlayer.play();
+          } catch (_) {}
+        }
+      }, TWITCH_AUTOPLAY_RETRY_INTERVAL_MS);
+    }
+
     function loadTwitchEmbed(channel, options = {}) {
-      const { keepInputText = false, startUnmuted = false, autoplay = true } = options;
+      const { keepInputText = false } = options;
       const cleanChannel = normalizeTwitchChannel(channel);
       if (!cleanChannel) return;
 
@@ -128,23 +239,31 @@
 
       player.style.display = 'block';
       player.style.visibility = 'visible';
-      player.style.minHeight = '300px';
+      // Twitch's embed silently refuses to autoplay below ~400x300px
+      // ("style visibility" / autoplay requirements error) — keep headroom.
+      player.style.minWidth = '460px';
+      player.style.minHeight = '340px';
       chat.style.display = 'block';
 
       activeStream = { platform: 'twitch', id: cleanChannel };
       lastTwitchEmbedLoadAt = Date.now();
+      currentTwitchEmbed = null;
+      currentTwitchPlayer = null;
+      clearUnmuteOnInteraction();
       inputElement.dataset.lastInput = cleanChannel;
       if (!keepInputText) {
         inputElement.value = 'You are Watching: ' + cleanChannel;
       }
 
-      player.innerHTML = '<div id="twitch-player" style="width:100%;height:100%;min-height:300px;visibility:visible;display:block"></div>';
+      player.innerHTML = '<div id="twitch-player" style="width:100%;height:100%;min-width:460px;min-height:340px;visibility:visible;display:block"></div>';
       chat.innerHTML = `<iframe src="https://www.twitch.tv/embed/${encodeURIComponent(cleanChannel)}/chat?parent=${window.location.hostname}&darkpopout"></iframe>`;
 
       window.requestAnimationFrame(() => {
         if (activeStream.platform !== 'twitch' || activeStream.id !== cleanChannel) return;
+        const targetEl = document.getElementById('twitch-player');
+        if (!targetEl) return;
 
-        loadTwitchEmbedScript()
+        Promise.all([loadTwitchEmbedScript(), waitForElementSize(targetEl, 460, 340)])
           .then(() => {
             if (activeStream.platform !== 'twitch' || activeStream.id !== cleanChannel) return;
 
@@ -153,33 +272,33 @@
               height: '100%',
               channel: cleanChannel,
               layout: 'video',
-              autoplay,
+              autoplay: true,
               muted: true,
               parent: parentHosts
             });
+            currentTwitchEmbed = embed;
 
             embed.addEventListener(Twitch.Embed.VIDEO_READY, () => {
+              if (activeStream.platform !== 'twitch' || activeStream.id !== cleanChannel) return;
               const twitchPlayer = embed.getPlayer();
               if (!twitchPlayer) return;
-              twitchPlayer.setMuted(true);
-              if (autoplay) twitchPlayer.play();
+              currentTwitchPlayer = twitchPlayer;
+              beginTwitchPlayback(twitchPlayer, cleanChannel);
+            });
 
-              // If playback gets blocked (e.g. autoplay policy or an
-              // interfering extension), retry muted playback a few times.
-              let retries = 0;
-              const retryTimer = window.setInterval(() => {
-                if (activeStream.platform !== 'twitch' || activeStream.id !== cleanChannel || retries >= 5) {
-                  window.clearInterval(retryTimer);
-                  return;
-                }
-                retries += 1;
-                if (twitchPlayer.isPaused && twitchPlayer.isPaused()) {
-                  twitchPlayer.setMuted(true);
-                  twitchPlayer.play();
-                } else {
-                  window.clearInterval(retryTimer);
-                }
-              }, 2000);
+            // Twitch's SDK fires this specifically when the browser (or its
+            // own min-size check) blocks autoplay — react immediately
+            // instead of waiting on a poll.
+            embed.addEventListener(Twitch.Embed.PLAYBACK_BLOCKED, () => {
+              if (activeStream.platform !== 'twitch' || activeStream.id !== cleanChannel) return;
+              const twitchPlayer = embed.getPlayer();
+              if (!twitchPlayer) return;
+              currentTwitchPlayer = twitchPlayer;
+              try {
+                twitchPlayer.setMuted(true);
+                twitchPlayer.play();
+              } catch (_) {}
+              armUnmuteOnNextInteraction(twitchPlayer, cleanChannel);
             });
           })
           .catch((error) => {
@@ -190,27 +309,49 @@
 
     }
 
-    function canResumeTwitch(minHiddenMs = TWITCH_TAB_RESUME_MIN_HIDDEN_MS) {
+    function canResumeTwitch(minHiddenMs = 0) {
       if (document.visibilityState !== 'visible') return false;
       if (activeStream.platform !== 'twitch' || !activeStream.id) return false;
-      if (Date.now() - lastHiddenAt < minHiddenMs) return false;
-      if (Date.now() - lastTheaterModeToggleAt < TWITCH_RESUME_RELOAD_COOLDOWN_MS) return false;
-      if (Date.now() - lastTwitchEmbedLoadAt < TWITCH_RESUME_RELOAD_COOLDOWN_MS) return false;
+      if (minHiddenMs && Date.now() - lastHiddenAt < minHiddenMs) return false;
       return true;
     }
 
+    function reloadTwitchEmbedIfDue(channelId) {
+      if (Date.now() - lastTwitchEmbedLoadAt < TWITCH_RESUME_RELOAD_COOLDOWN_MS) return;
+      loadTwitchEmbed(channelId, { keepInputText: true });
+    }
+
     function attemptTwitchResume(reason) {
-      if (!canResumeTwitch()) return;
+      // Only require the tab to have been hidden a while when the trigger IS a
+      // tab-visibility change. Theater-mode toggles are an explicit user action,
+      // not a background return, so they shouldn't be gated on lastHiddenAt.
+      const minHiddenMs = reason === 'visibilitychange' ? TWITCH_TAB_RESUME_MIN_HIDDEN_MS : 0;
+      if (!canResumeTwitch(minHiddenMs)) return;
 
       const channelId = activeStream.id;
-      loadTwitchEmbed(channelId, { keepInputText: true });
+      const player = currentTwitchPlayer;
 
-      // Some browsers/media stacks need a second kick after returning from background.
-      window.setTimeout(() => {
-        if (activeStream.platform !== 'twitch' || activeStream.id !== channelId) return;
-        if (!canResumeTwitch(0)) return;
-        loadTwitchEmbed(channelId, { keepInputText: true });
-      }, TWITCH_RESUME_RETRY_DELAY_MS);
+      // If we still hold a live player reference, just nudge playback in place —
+      // no need to tear down and rebuild the iframe (and chat) for a simple unpause.
+      if (player && typeof player.getPlayerState === 'function') {
+        if (isTwitchPlaybackActive(player)) return;
+
+        // Just nudge play() — don't force mute here, so a stream the user
+        // already unmuted stays unmuted across a resume.
+        try {
+          player.play();
+        } catch (_) {}
+
+        window.setTimeout(() => {
+          if (activeStream.platform !== 'twitch' || activeStream.id !== channelId) return;
+          if (document.visibilityState !== 'visible') return;
+          const stillInactive = !currentTwitchPlayer || !isTwitchPlaybackActive(currentTwitchPlayer);
+          if (stillInactive) reloadTwitchEmbedIfDue(channelId);
+        }, TWITCH_RESUME_RETRY_DELAY_MS);
+        return;
+      }
+
+      reloadTwitchEmbedIfDue(channelId);
     }
 
     function scheduleTwitchResume(reason, delayMs = TWITCH_RESUME_DEBOUNCE_MS) {
@@ -352,7 +493,7 @@
         inputElement.value = "You are Watching: " + videoId;
       } else {
         const channel = input.includes('twitch.tv/') ? input.split('twitch.tv/').pop().split('/')[0] : input;
-        loadTwitchEmbed(channel, { autoplay: true, startUnmuted: false });
+        loadTwitchEmbed(channel);
       }
     };
 
@@ -361,7 +502,7 @@
       chat.style.display = (chat.style.display === 'none') ? 'block' : 'none';
     };
 
-    window.loadStreamDirect = function(url, options = {}) {
+    window.loadStreamDirect = function(url) {
       document.getElementById('streamUrl').value = url;
       const input = (url || '').trim();
       if (!input) return;
@@ -372,8 +513,7 @@
       }
 
       const channel = input.includes('twitch.tv/') ? input.split('twitch.tv/').pop().split('/')[0] : input;
-      const { autoplay = true, startUnmuted = false } = options;
-      loadTwitchEmbed(channel, { startUnmuted, autoplay });
+      loadTwitchEmbed(channel);
     };
 
     function formatViewerCount(n) {
@@ -814,7 +954,7 @@
             link.addEventListener('click', (event) => {
               event.preventDefault();
               closeStreamerDropdownImmediately();
-              if (item.url) loadStreamDirect(item.url, { autoplay: true, startUnmuted: false });
+              if (item.url) loadStreamDirect(item.url);
             });
 
             row.appendChild(link);
@@ -1082,6 +1222,7 @@
         lastHiddenAt = Date.now();
         return;
       }
+      scheduleTwitchResume('visibilitychange');
     });
 
     window.addEventListener('pageshow', function(event) {
