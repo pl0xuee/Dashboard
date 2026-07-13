@@ -11,18 +11,16 @@
     const COMBAT_TURN_PACE_MS = 1900;
     const COMBAT_RESULT_PACE_MS = 1200;
     const LOCAL_SCENE_ART_SOURCES = [
-      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61.png',
-      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (1).png',
-      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (2).png',
-      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (3).png',
-      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (4).png',
-      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (5).png',
-      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (6).png',
-      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (7).png',
-      './Canvas Pictures/rpg.png',
-      './rpg.png'
+      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61.webp',
+      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (1).webp',
+      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (2).webp',
+      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (3).webp',
+      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (4).webp',
+      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (5).webp',
+      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (6).webp',
+      './Canvas Pictures/Gemini_Generated_Image_4a61454a61454a61 (7).webp',
+      './Canvas Pictures/rpg.webp'
     ];
-    const LOCAL_SCENE_ART_PREFER_WEBP = true;
     const YOUTUBE_SOUNDTRACK_ID = 'stgT4hOG8lU';
     const VERSION = 1;
     const SKILL_TO_ABILITY = {
@@ -383,11 +381,7 @@
       const startIndex = hashSeed(`${seedBase}:scene-art`) % total;
       const ordered = [];
       for (let offset = 0; offset < total; offset += 1) {
-        const source = LOCAL_SCENE_ART_SOURCES[(startIndex + offset) % total];
-        if (LOCAL_SCENE_ART_PREFER_WEBP && /\.png$/i.test(source)) {
-          ordered.push(source.replace(/\.png$/i, '.webp'));
-        }
-        ordered.push(source);
+        ordered.push(LOCAL_SCENE_ART_SOURCES[(startIndex + offset) % total]);
       }
       return ordered;
     }

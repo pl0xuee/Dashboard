@@ -56,32 +56,6 @@
       return geo;
     }
 
-    async function getAreaNewsFeedUrl() {
-      const fallback = 'https://news.google.com/rss/search?q=' + encodeURIComponent('regional news us') + '&hl=en-US&gl=US&ceid=US:en';
-
-      if (!navigator.geolocation) return fallback;
-
-      try {
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 7000 });
-        });
-
-        const { latitude, longitude } = position.coords;
-        const geo = await getReverseGeocode(latitude, longitude);
-
-        // Use broader area only (state/region + country), not pinpoint city/locality.
-        const region = geo.principalSubdivision || geo.principalSubdivisionCode || '';
-        const country = geo.countryName || geo.countryCode || 'US';
-        const query = [region, country, 'regional news'].filter(Boolean).join(' ');
-
-        if (!query) return fallback;
-
-        return 'https://news.google.com/rss/search?q=' + encodeURIComponent(query) + '&hl=en-US&gl=US&ceid=US:en';
-      } catch (e) {
-        return fallback;
-      }
-    }
-
     // News cache with timestamps
     const newsCache = {};
     const CACHE_DURATION = 3600000; // 1 hour in milliseconds
@@ -168,45 +142,6 @@
       writeStorageJson(persistentCacheKey, newsCache[cacheKey]);
       
       return data;
-    }
-
-    // Parse RSS XML and extract items
-    function parseRSSItems(xmlText) {
-      try {
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlText, 'text/xml');
-        
-        // Check for parsing errors
-        if (xmlDoc.getElementsByTagName('parsererror').length) {
-          throw new Error('Invalid XML');
-        }
-        
-        const items = [];
-        const rssItems = xmlDoc.getElementsByTagName('item');
-        
-        for (let i = 0; i < rssItems.length && items.length < 20; i++) {
-          const item = rssItems[i];
-          
-          const title = item.getElementsByTagName('title')[0]?.textContent || 'No title';
-          const link = item.getElementsByTagName('link')[0]?.textContent || '#';
-          const pubDate = item.getElementsByTagName('pubDate')[0]?.textContent || new Date().toISOString();
-          const author = item.getElementsByTagName('author')[0]?.textContent || 
-                        item.getElementsByTagName('creator')[0]?.textContent || 
-                        'News';
-          
-          items.push({
-            title: title.trim(),
-            link: link.trim(),
-            pubDate: pubDate,
-            author: author.trim()
-          });
-        }
-        
-        return { items: items };
-      } catch (e) {
-        console.error('RSS parsing error:', e);
-        return { items: [] };
-      }
     }
 
     async function fetchNewsWithRetry(feedUrl, maxRetries = 3) {

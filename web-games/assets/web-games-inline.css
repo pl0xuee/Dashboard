@@ -26,7 +26,7 @@
       align-items: flex-start;
       gap: 12px;
       flex-wrap: wrap;
-      background: linear-gradient(145deg,#1c2329 0%,#0e1318 100%);
+      background: transparent;
       border-radius: 16px;
     }
 
@@ -46,7 +46,7 @@
     .games-lead {
       margin: 0;
       font-size: 0.9rem;
-      color: #f1d7aa;
+      color: var(--accent-strong);
       letter-spacing: 0.16em;
       text-transform: uppercase;
       font-weight: 700;
@@ -70,15 +70,15 @@
       margin: 0;
       padding: 9px 10px;
       border-radius: 12px;
-      border: 1px solid rgba(167, 188, 255, 0.14);
+      border: 1px solid var(--border);
       background: rgba(255, 255, 255, 0.03);
-      color: #dbe7fb;
+      color: var(--text-muted);
       font-size: 0.77rem;
       line-height: 1.45;
     }
 
     .games-toolbar-note strong {
-      color: #f3dfb6;
+      color: var(--gold-strong);
       font-weight: 700;
     }
 
@@ -116,12 +116,12 @@
       min-height: 0;
       padding: 11px 16px 12px;
       border-radius: 18px;
-      border: 1px solid rgba(167, 188, 255, 0.32);
+      border: 1px solid var(--accent-border);
       background:
-        linear-gradient(180deg, rgba(27, 37, 53, 0.98), rgba(16, 23, 35, 0.99)),
-        radial-gradient(circle at top left, rgba(126, 232, 255, 0.14), transparent 56%),
-        radial-gradient(circle at 90% 120%, rgba(241, 215, 170, 0.12), transparent 46%);
-      color: #dce8fb;
+        linear-gradient(180deg, var(--surface-raised), var(--surface)),
+        radial-gradient(circle at top left, var(--accent-soft), transparent 56%),
+        radial-gradient(circle at 90% 120%, var(--gold-soft), transparent 46%);
+      color: var(--text);
       font-size: 0.88rem;
       line-height: 1.3;
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
@@ -160,9 +160,9 @@
       max-width: 100%;
       padding: 4px 10px;
       border-radius: 999px;
-      border: 1px solid rgba(241, 215, 170, 0.24);
-      background: linear-gradient(180deg, rgba(73, 58, 35, 0.42), rgba(37, 30, 20, 0.36));
-      color: #f1d7aa;
+      border: 1px solid var(--gold-border);
+      background: var(--gold-soft);
+      color: var(--gold-strong);
       font-size: 0.68rem;
       font-weight: 800;
       letter-spacing: 0.18em;
@@ -171,7 +171,7 @@
     }
 
     .game-toolbar-hint-title {
-      color: #f4f8ff;
+      color: var(--text);
       font-size: 1.08rem;
       font-weight: 800;
       letter-spacing: 0.035em;
@@ -182,13 +182,9 @@
 
     .game-toolbar-hint-meta {
       flex: 1 0 100%;
-      color: #c8d8f2;
+      color: var(--text-muted);
       font-size: 0.78rem;
       line-height: 1.42;
-    }
-
-    .game-toolbar-actions .back-btn {
-      margin-left: auto;
     }
 
     .fullscreen-btn.hidden {
@@ -220,22 +216,20 @@
       min-width: 0;
     }
 
-    /* Arcade hub art direction */
+    /* Arcade hub identity */
     .games-page .games-shell { max-width: 1480px; gap: 20px; }
-    .games-page .games-toolbar-copy { border-color:rgba(174,185,199,.22); background:linear-gradient(145deg,rgba(29,36,44,.96),rgba(12,17,22,.98)); box-shadow:none; }
-    .games-page .games-lead { color:#d7dee6; letter-spacing:.2em; }
-    .games-page .games-sublead { color:#9ca8b5; }
+    .games-page .games-toolbar-copy { border-color: var(--border); background: linear-gradient(160deg, var(--surface-raised), var(--surface)); box-shadow: none; }
+    .games-page .games-lead { color: var(--accent-strong); letter-spacing: .2em; }
+    .games-page .games-sublead { color: var(--text-muted); }
     .games-page .game-picker { gap: 16px; }
-    .games-page .game-picker-btn { min-height: 112px; border-radius: 20px; border-color: rgba(174,185,199,.18); background:linear-gradient(145deg,#1c2329,#0e1318); box-shadow:none; }
-    .games-page .game-picker-btn:hover { transform: translateY(-2px); border-color:rgba(215,222,230,.38); box-shadow:none; }
-    .games-page .game-picker-btn[aria-pressed='true'], .games-page .game-picker-btn.active { border-color: #b8c2cc; background: linear-gradient(145deg, rgba(57,66,76,.94), rgba(17,22,28,.99)); }
+    .games-page .game-picker-btn { min-height: 112px; border-radius: 20px; border-color: var(--border); background: linear-gradient(160deg, var(--surface-raised), var(--surface)); box-shadow: none; }
+    .games-page .game-picker-btn:hover { transform: translateY(-2px); border-color: var(--border-strong); box-shadow: none; }
+    .games-page .game-picker-btn[aria-pressed='true'], .games-page .game-picker-btn.active { border-color: var(--accent-border); background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 18%, var(--surface-raised)), var(--surface)); }
 
-    /* Dark gunmetal arcade surfaces */
     .games-page .games-card,
     .games-page .game-picker-btn,
-    .games-page .game-panel { background:#131920; border-color:rgba(174,185,199,.10); box-shadow:none; }
-    .games-page .games-toolbar-copy { border-color:rgba(174,185,199,.22); background:linear-gradient(145deg,rgba(29,36,44,.96),rgba(12,17,22,.98)); box-shadow:none; }
-    .games-page .welcome-inner { background:linear-gradient(145deg,#1c2329 0%,#0e1318 100%); border:1px solid rgba(174,185,199,.16); border-radius:20px; }
+    .games-page .game-panel { background: var(--surface); border-color: var(--border); box-shadow: none; }
+    .games-page .welcome-inner { background: linear-gradient(160deg, var(--surface-raised), var(--surface)); border: 1px solid var(--border); border-radius: 20px; }
 
     .game-picker-btn:not(.game-picker-btn-rpg) {
       display: grid;
@@ -245,8 +239,8 @@
       min-height: 126px;
       height: auto;
       align-items: flex-start;
-      border-color: rgba(174,185,199,.16);
-      background: #131920;
+      border-color: var(--border);
+      background: var(--surface);
       box-shadow: none;
       isolation: isolate;
     }
@@ -258,17 +252,12 @@
       right: 0;
       bottom: 0;
       height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(174,185,199,.22), transparent);
+      background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
       opacity: 1;
       pointer-events: none;
       z-index: 0;
     }
 
-    .game-picker-btn-rpg {
-      grid-column: 1 / -1;
-      min-height: 360px;
-      height: 360px;
-    }
 
     .games-side-title {
       margin-bottom: 0;
@@ -340,9 +329,9 @@
     }
 
     .back-btn {
-      border-color: rgba(210, 168, 108, 0.26);
-      background: linear-gradient(180deg, rgba(73, 58, 35, 0.28), rgba(37, 30, 20, 0.28));
-      color: #f7e1bc;
+      border-color: var(--accent-border);
+      background: var(--accent-soft);
+      color: var(--accent-strong);
     }
 
     .game-toolbar-actions .home-button {
@@ -365,26 +354,27 @@
 
     .game-toolbar-actions .home-button:focus-visible,
     .game-picker-btn:focus-visible {
-      outline: 2px solid rgba(210, 168, 108, 0.76);
+      outline: 2px solid var(--accent-border);
       outline-offset: 2px;
     }
 
     .game-toolbar-actions .back-btn {
-      border-color: rgba(210, 168, 108, 0.38);
-      background: linear-gradient(180deg, rgba(84, 66, 39, 0.36), rgba(38, 31, 20, 0.36));
-      box-shadow: 0 10px 20px rgba(25, 18, 10, 0.22);
+      margin-left: auto;
+      border-color: var(--accent-border);
+      background: var(--accent-soft);
+      box-shadow: none;
     }
 
     .game-toolbar-actions .fullscreen-btn {
-      border-color: rgba(95, 194, 203, 0.34);
-      background: linear-gradient(180deg, rgba(36, 77, 86, 0.32), rgba(18, 42, 48, 0.32));
-      color: #ddfbff;
+      border-color: var(--border-strong);
+      background: var(--surface-hover);
+      color: var(--text);
     }
 
     .game-toolbar-actions .restart-btn {
-      border-color: rgba(255, 163, 135, 0.32);
-      background: linear-gradient(180deg, rgba(96, 56, 42, 0.32), rgba(54, 29, 20, 0.32));
-      color: #ffe8dd;
+      border-color: color-mix(in srgb, var(--warn) 45%, var(--border-strong));
+      background: color-mix(in srgb, var(--warn) 14%, var(--surface));
+      color: var(--text);
     }
 
     .game-toolbar-actions .restart-btn:disabled {
@@ -400,7 +390,7 @@
       font-weight: 800;
       letter-spacing: 0.045em;
       text-transform: none;
-      color: #f3f6ff;
+      color: var(--text);
       min-width: 0;
       max-width: 100%;
       white-space: normal;
@@ -425,8 +415,8 @@
       align-items: center;
       padding: 3px 7px;
       border-radius: 999px;
-      background: rgba(210, 168, 108, 0.14);
-      color: #f1d7aa;
+      background: var(--accent-soft);
+      color: var(--accent-strong);
       font-size: 0.62rem;
       font-weight: 700;
       letter-spacing: 0.1em;
@@ -436,7 +426,7 @@
 
     .game-picker-meta {
       display: block;
-      color: rgba(217, 229, 250, 0.78);
+      color: var(--text-muted);
       font-size: 0.73rem;
       font-weight: 600;
       letter-spacing: 0.03em;
@@ -668,54 +658,6 @@
       position: absolute;
     }
 
-    /* Final gunmetal games hub pass */
-    .games-page .games-toolbar,
-    .games-page .games-toolbar-copy,
-    .games-page .game-toolbar-hint,
-    .games-page .games-card,
-    .games-page .game-panel,
-    .games-page .game-picker-btn {
-      color: #d7dee6;
-      background: linear-gradient(145deg, #1c2329, #0e1318) !important;
-      border-color: rgba(174,185,199,.18) !important;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important;
-    }
-
-    .games-page .games-toolbar-copy,
-    .games-page .game-toolbar-hint {
-      background: linear-gradient(145deg, #252e36, #151c22) !important;
-    }
-
-    .games-page .game-picker-btn:hover,
-    .games-page .game-picker-btn[aria-pressed='true'],
-    .games-page .game-picker-btn.active {
-      color: #f0f3f6;
-      background: linear-gradient(145deg, #303a43, #171e24) !important;
-      border-color: rgba(215,222,230,.52) !important;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.07) !important;
-    }
-
-    .games-page .games-lead,
-    .games-page .game-toolbar-hint-kicker,
-    .games-page .game-picker-kicker,
-    .games-page .game-toolbar-hint-title,
-    .games-page .game-picker-label { color: #e0e5ea !important; }
-
-    .games-page .games-sublead,
-    .games-page .games-toolbar-note,
-    .games-page .game-toolbar-hint-meta,
-    .games-page .game-picker-meta { color: #aeb9c7 !important; }
-
-    .games-page .game-toolbar-hint-kicker,
-    .games-page .game-picker-kicker {
-      background: rgba(174,185,199,.12) !important;
-      border-color: rgba(174,185,199,.25) !important;
-    }
-
-    .games-page .game-picker-btn::after {
-      background: linear-gradient(90deg, transparent, rgba(174,185,199,.3), transparent) !important;
-    }
-
     .game-picker-art.rpg::before {
       left: 3px;
       top: 17px;
@@ -746,15 +688,6 @@
         5px 5px 0 #8e7446,
         -10px 10px 0 rgba(239, 211, 142, 0.35),
         10px 10px 0 rgba(239, 211, 142, 0.35);
-    }
-
-    .game-picker-btn.featured {
-      min-height: 88px;
-      border-color: rgba(214, 188, 132, 0.34);
-      background:
-        linear-gradient(180deg, rgba(54, 43, 28, 0.96), rgba(25, 30, 45, 0.96)),
-        radial-gradient(circle at top left, rgba(216, 189, 132, 0.2), transparent 56%);
-      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 16px 30px rgba(16, 16, 24, 0.24);
     }
 
     .game-picker-btn.featured .game-picker-art {
@@ -830,10 +763,12 @@
     }
 
     .game-picker-btn.featured {
+      min-height: 88px;
       border-color: rgba(212, 178, 114, 0.42);
       background:
         linear-gradient(180deg, rgba(72, 58, 34, 0.9), rgba(38, 32, 20, 0.9)),
         radial-gradient(circle at top left, rgba(230, 191, 122, 0.18), transparent 52%);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07), 0 16px 30px rgba(16, 16, 24, 0.24);
     }
 
     .game-picker-btn.featured:hover,
@@ -1405,10 +1340,6 @@
       gap: 8px;
     }
 
-    body.rpg-active-mode #rpgPanel .games-title {
-      margin-bottom: 2px;
-    }
-
     body.rpg-active-mode #rpgPanel .control-hint {
       margin-top: 4px;
       padding: 8px 10px;
@@ -1425,27 +1356,19 @@
 
     #rpgPanel.active.rpg-theater-mode {
       position: fixed;
-      left: 0;
-      right: 0;
-      top: clamp(148px, 20vh, 220px);
-      bottom: 12px;
+      inset: 0;
       width: auto;
       max-width: none;
       margin: 0;
       min-height: 0;
-      gap: 6px;
+      gap: 0;
       z-index: 30;
-    }
-
-    #rpgPanel.active.rpg-theater-mode {
-      inset: 0;
       border-radius: 0;
       border: 0;
       padding: 0;
       background: #070b12;
       display: grid;
       grid-template-rows: minmax(0, 1fr);
-      gap: 0;
     }
 
     #rpgPanel.active.rpg-theater-mode .games-title,
@@ -1619,6 +1542,7 @@
     .game-picker-btn-rpg {
       grid-column: 1 / -1;
       min-height: 240px;
+      height: 360px;
       padding: 0;
       align-items: stretch;
       flex-direction: column;
@@ -2083,44 +2007,6 @@
       }
     }
 
-/* Cascade-safe final gunmetal pass */
-.games-page .games-card,
-.games-page .game-panel,
-.games-page .games-toolbar,
-.games-page .games-toolbar-copy,
-.games-page .game-toolbar-hint,
-.games-page .game-picker-btn {
-  background: linear-gradient(145deg, #1c2329, #0e1318) !important;
-  border-color: rgba(174,185,199,.2) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important;
-}
-.games-page .games-toolbar-copy,
-.games-page .game-toolbar-hint { background: linear-gradient(145deg, #252e36, #151c22) !important; }
-.games-page .game-picker-btn:hover,
-.games-page .game-picker-btn[aria-selected='true'],
-.games-page .game-picker-btn[aria-pressed='true'],
-.games-page .game-picker-btn.active {
-  background: linear-gradient(145deg, #303a43, #171e24) !important;
-  border-color: rgba(215,222,230,.58) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.08) !important;
-}
-.games-page .games-lead,
-.games-page .game-picker-kicker,
-.games-page .game-toolbar-hint-kicker,
-.games-page .game-picker-label,
-.games-page .game-toolbar-hint-title { color: #e0e5ea !important; }
-.games-page .games-sublead,
-.games-page .games-toolbar-note,
-.games-page .game-picker-meta,
-.games-page .game-toolbar-hint-meta,
-.games-page .control-hint { color: #aeb9c7 !important; }
-.games-page .game-picker-kicker,
-.games-page .game-toolbar-hint-kicker { background: rgba(174,185,199,.12) !important; border-color: rgba(174,185,199,.28) !important; }
-.games-page .game-picker-btn::after { background: linear-gradient(90deg, transparent, rgba(174,185,199,.34), transparent) !important; }
-.games-page .stat,
-.games-page .game-status,
-.games-page .controls-note { background: #151c22 !important; border-color: rgba(174,185,199,.18) !important; color: #c1c9d2 !important; }
-
     .simon-grid {
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2356,42 +2242,6 @@
       }
     }
 
-/* End-of-file gunmetal authority layer */
-.games-page .games-card,
-.games-page .game-panel,
-.games-page .games-toolbar,
-.games-page .games-toolbar-copy,
-.games-page .game-toolbar-hint,
-.games-page .game-picker-btn { background: linear-gradient(145deg,#1c2329,#0e1318) !important; border-color: rgba(174,185,199,.2) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.04) !important; }
-.games-page .games-toolbar-copy,
-.games-page .game-toolbar-hint { background: linear-gradient(145deg,#252e36,#151c22) !important; }
-.games-page .game-picker-btn:hover,
-.games-page .game-picker-btn[aria-selected='true'],
-.games-page .game-picker-btn[aria-pressed='true'],
-.games-page .game-picker-btn.active { background: linear-gradient(145deg,#303a43,#171e24) !important; border-color: rgba(215,222,230,.58) !important; }
-.games-page .games-lead,
-.games-page .game-picker-kicker,
-.games-page .game-toolbar-hint-kicker,
-.games-page .game-picker-label,
-.games-page .game-toolbar-hint-title { color: #e0e5ea !important; }
-.games-page .games-sublead,
-.games-page .games-toolbar-note,
-.games-page .game-picker-meta,
-.games-page .game-toolbar-hint-meta,
-.games-page .control-hint { color: #aeb9c7 !important; }
-.games-page .game-picker-kicker,
-.games-page .game-toolbar-hint-kicker { background: rgba(174,185,199,.12) !important; border-color: rgba(174,185,199,.28) !important; }
-.games-page .game-picker-btn::after { background: linear-gradient(90deg,transparent,rgba(174,185,199,.34),transparent) !important; }
-
-/* Arcade remix: keep the shell gunmetal while giving each mode a steel identity. */
-.games-page .games-toolbar { border-left: 3px solid rgba(215,222,230,.42) !important; }
-.games-page .game-picker-btn:nth-child(3n + 1) { border-left-color: rgba(215,222,230,.42) !important; }
-.games-page .game-picker-btn:nth-child(3n + 2) { border-left-color: rgba(174,185,199,.56) !important; }
-.games-page .game-picker-btn:nth-child(3n) { border-left-color: rgba(141,153,168,.72) !important; }
-.games-page .game-picker-btn:hover,
-.games-page .game-picker-btn[aria-selected='true'] { transform: translateY(-2px); box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 16px 30px rgba(0,0,0,.2) !important; }
-.games-page .game-panel { border-top-color: rgba(215,222,230,.34) !important; }
-
 @media (prefers-reduced-motion: reduce) {
   .games-page .game-picker-btn:hover,
   .games-page .game-picker-btn[aria-selected='true'] { transform: none; }
@@ -2406,15 +2256,6 @@
 .games-page .game-picker-btn:hover,
 .games-page .game-picker-btn[aria-selected='true'] {
   transform: none !important;
-}
-
-/* Games cards use one neutral gunmetal edge; no per-card accent strip. */
-.games-page .games-card,
-.games-page .game-panel,
-.games-page .game-picker-btn,
-.games-page .games-toolbar {
-  border-left-color: rgba(174,185,199,.2) !important;
-  border-top-color: rgba(174,185,199,.2) !important;
 }
 
 .games-page .memory-card:hover,

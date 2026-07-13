@@ -1,10 +1,10 @@
-const CACHE_NAME = 'command-center-v70';
+const CACHE_NAME = 'command-center-v71';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
-  '/assets/css/styles.css?v=20260711gunmetal19',
+  '/assets/css/styles.css?v=20260712refined1',
   '/assets/js/script.js',
-  '/assets/js/index-inline.js?v=20260706marketcalendar1',
+  '/assets/js/index-inline.js?v=20260712dedupe1',
   '/manifest.webmanifest',
   '/assets/icons/favicon.svg',
   '/dashboard/',
@@ -13,19 +13,19 @@ const APP_SHELL_FILES = [
   '/stream/',
   '/stream/index.html',
   '/stream/assets/config-inline.js?v=20260630c',
-  '/stream/assets/stream-inline.css?v=20260711gunmetal16',
+  '/stream/assets/stream-inline.css?v=20260712refined1',
   '/stream/assets/stream-inline.js?v=20260706theaterexit1',
   '/media-portal/',
   '/media-portal/index.html',
   '/media-portal/assets/media-inline.js?v=20260711media2',
   '/web-games/',
   '/web-games/index.html',
-  '/web-games/assets/web-games-inline.css?v=20260711gunmetal12',
-  '/web-games/assets/web-games-inline.js?v=20260706gameplayux15',
+  '/web-games/assets/web-games-inline.css?v=20260712refined1',
+  '/web-games/assets/web-games-inline.js?v=20260712dedupe1',
   '/web-games/middle-earth-rpg/',
   '/web-games/middle-earth-rpg/index.html',
   '/web-games/middle-earth-rpg/assets/rpg-inline.css?v=20260711gunmetal2',
-  '/web-games/middle-earth-rpg/assets/rpg-inline.js?v=20260707webp1'
+  '/web-games/middle-earth-rpg/assets/rpg-inline.js?v=20260712webponly1'
 ];
 
 function isAppShellAsset(requestUrl) {

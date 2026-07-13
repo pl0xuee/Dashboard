@@ -644,15 +644,6 @@
       requestAnimationFrame(gameLoop);
     }
 
-    function startGame() {
-      if (running && !gameOver) {
-        paused = false;
-        setStatus('Game running');
-        return;
-      }
-      resetGame();
-    }
-
     function togglePause() {
       if (!running || gameOver) return;
       paused = !paused;
