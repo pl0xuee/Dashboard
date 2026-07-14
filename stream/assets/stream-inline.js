@@ -27,6 +27,21 @@
     let focusedSlot = 0;
     // How many tile slots the "Streams" menu currently shows (1-4).
     let desiredSlotCount = 1;
+    // Slot indices in display order. The first `desiredSlotCount` of them are
+    // on screen; the rest are hidden but keep their embeds mounted. Shrinking
+    // the layout demotes slots to the back of this list rather than destroying
+    // them, so a stream that's already playing survives a 2 -> 1 -> 2 trip.
+    // Tiles are reordered with the CSS `order` property, never by moving DOM
+    // nodes — re-parenting an iframe would reload it.
+    let slotOrder = [0, 1, 2, 3];
+
+    function isSlotVisible(slotIndex) {
+      return slotOrder.indexOf(slotIndex) < desiredSlotCount;
+    }
+
+    function getVisibleSlotIndices() {
+      return slotOrder.slice(0, desiredSlotCount);
+    }
 
     function updateTheaterModeButton() {
       const toggleBtn = document.getElementById('toggleTheaterBtn');
@@ -220,6 +235,11 @@
           window.clearInterval(retryTimer);
           return;
         }
+        // A tile parked by a layout shrink is paused on purpose — don't fight it.
+        if (!isSlotVisible(slotIndex)) {
+          window.clearInterval(retryTimer);
+          return;
+        }
         retries += 1;
         if (isTwitchPlaybackActive(twitchPlayer)) {
           window.clearInterval(retryTimer);
@@ -339,6 +359,9 @@
 
     function canResumeTwitch(slotIndex, minHiddenMs = 0) {
       if (document.visibilityState !== 'visible') return false;
+      // A slot demoted out of the layout is meant to stay paused — don't let
+      // the resume machinery wake it up (or, worse, reload its embed).
+      if (!isSlotVisible(slotIndex)) return false;
       const slot = slots[slotIndex];
       if (!slot || slot.platform !== 'twitch' || !slot.id) return false;
       if (minHiddenMs && Date.now() - lastHiddenAt < minHiddenMs) return false;
@@ -402,6 +425,7 @@
 
     function scheduleTwitchResumeAll(reason) {
       for (let i = 0; i < MAX_SLOTS; i++) {
+        if (!isSlotVisible(i)) continue;
         if (slots[i] && slots[i].platform === 'twitch') scheduleTwitchResume(i, reason);
       }
     }
@@ -507,13 +531,14 @@
         const tile = document.getElementById(`streamTile${i}`);
         if (!tile) continue;
         const slot = slots[i];
-        const visible = i < desiredSlotCount;
+        const position = slotOrder.indexOf(i);
+        const visible = position < desiredSlotCount;
         const isEmpty = visible && !slot;
 
         tile.classList.toggle('is-visible', visible);
         tile.classList.toggle('is-empty', isEmpty);
         tile.classList.toggle('is-focused', visible && focusedSlot === i);
-        tile.style.order = String(i);
+        tile.style.order = String(position);
 
         if (slot) {
           tile.dataset.platform = slot.platform;
@@ -528,7 +553,7 @@
     }
 
     function setFocusedSlot(index) {
-      if (index < 0 || index >= desiredSlotCount) return;
+      if (index < 0 || index >= MAX_SLOTS || !isSlotVisible(index)) return;
       if (index === focusedSlot) return;
 
       const prevSlot = slots[focusedSlot];
@@ -566,8 +591,8 @@
       slots[index] = null;
 
       if (focusedSlot === index) {
-        const nextFilled = slots.findIndex((s, i) => s && i < desiredSlotCount);
-        focusedSlot = nextFilled !== -1 ? nextFilled : index;
+        const nextFilled = getVisibleSlotIndices().find(i => slots[i]);
+        focusedSlot = nextFilled !== undefined ? nextFilled : index;
         updateChatForFocusedSlot();
         syncStreamUrlInputToFocused();
       }
@@ -575,31 +600,104 @@
       renderGrid();
     }
 
+    // Park a slot that just dropped out of the layout: silence it and stop the
+    // stream, but leave the embed mounted so bringing it back is a play() call
+    // rather than a rebuild.
+    function parkSlot(slotIndex) {
+      const slot = slots[slotIndex];
+      if (!slot) return;
+
+      if (slot.platform === 'twitch') {
+        if (slot.resumeTimer) {
+          window.clearTimeout(slot.resumeTimer);
+          slot.resumeTimer = null;
+        }
+        clearSlotUnmuteHandler(slot);
+        const player = slot.twitchPlayer;
+        if (player) {
+          try { player.setMuted(true); } catch (_) {}
+          try { player.pause(); } catch (_) {}
+        }
+      } else if (slot.platform === 'youtube') {
+        ytMuteSlot(slotIndex);
+        const iframe = getYoutubeIframeForSlot(slotIndex);
+        if (iframe) ytCommand(iframe, 'pauseVideo');
+      }
+    }
+
+    // Bring a parked slot back on screen. Only the focused tile gets audio;
+    // the rest resume muted, same as any background tile.
+    function unparkSlot(slotIndex) {
+      const slot = slots[slotIndex];
+      if (!slot) return;
+
+      if (slot.platform === 'twitch') {
+        const player = slot.twitchPlayer;
+        if (player) {
+          try { player.setMuted(slotIndex !== focusedSlot); } catch (_) {}
+          try { player.play(); } catch (_) {}
+        }
+        // Backstop: if the player doesn't come back from the pause, the resume
+        // path retries and only then falls back to reloading the embed.
+        scheduleTwitchResume(slotIndex, 'layout');
+      } else if (slot.platform === 'youtube') {
+        const iframe = getYoutubeIframeForSlot(slotIndex);
+        if (iframe) ytCommand(iframe, 'playVideo');
+        if (slotIndex === focusedSlot) ytUnmuteSlot(slotIndex);
+        else ytMuteSlot(slotIndex);
+      }
+    }
+
     function setDesiredSlotCount(n) {
       n = Math.max(1, Math.min(MAX_SLOTS, Math.round(n) || 1));
-      if (n === desiredSlotCount) {
+      const previousCount = desiredSlotCount;
+      if (n === previousCount) {
         renderGrid();
         return;
       }
+
+      const previouslyVisible = getVisibleSlotIndices();
+      const previousFocus = focusedSlot;
       desiredSlotCount = n;
 
-      let removedFocused = false;
-      for (let i = MAX_SLOTS - 1; i >= desiredSlotCount; i--) {
-        if (slots[i]) {
-          teardownSlot(i);
-          slots[i] = null;
-          if (focusedSlot === i) removedFocused = true;
-        }
+      if (n < previousCount) {
+        // Decide which tiles lose their spot: empty ones go first, then
+        // unfocused streams. The focused stream is never demoted. Tiles that
+        // stay keep their relative positions so the layout doesn't shuffle.
+        const demotionRank = (slotIndex) => {
+          if (slotIndex === focusedSlot) return 0;
+          return slots[slotIndex] ? 1 : 2;
+        };
+        const ranked = previouslyVisible
+          .map((slotIndex, position) => ({ slotIndex, position }))
+          .sort((a, b) => (demotionRank(a.slotIndex) - demotionRank(b.slotIndex)) || (a.position - b.position));
+
+        const kept = ranked.slice(0, n)
+          .sort((a, b) => a.position - b.position)
+          .map(entry => entry.slotIndex);
+        const demoted = ranked.slice(n).map(entry => entry.slotIndex);
+
+        slotOrder = kept.concat(demoted, slotOrder.slice(previousCount));
+        demoted.forEach(parkSlot);
       }
 
-      if (focusedSlot >= desiredSlotCount || removedFocused) {
-        const nextFilled = slots.findIndex((s, i) => s && i < desiredSlotCount);
-        focusedSlot = nextFilled !== -1 ? nextFilled : 0;
+      if (!isSlotVisible(focusedSlot)) {
+        const visible = getVisibleSlotIndices();
+        const nextFilled = visible.find(i => slots[i]);
+        focusedSlot = nextFilled !== undefined ? nextFilled : visible[0];
+      }
+
+      renderGrid();
+
+      if (focusedSlot !== previousFocus) {
         updateChatForFocusedSlot();
         syncStreamUrlInputToFocused();
       }
 
-      renderGrid();
+      // Growing brings parked tiles back — restart them now that they have a box.
+      if (n > previousCount) {
+        slotOrder.slice(previousCount, n).forEach(unparkSlot);
+      }
     }
 
     function loadIntoSlot(slotIndex, rawInput) {
