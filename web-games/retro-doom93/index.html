@@ -379,17 +379,40 @@ function initSector93() {
   const ENEMY_STEP_HEIGHT = 0.5;
 
   // Enemy type definitions: hp, speed, damage, attackCooldown, attackRange, scaleX/Y, colour
+  // HP values are deliberately coarse-grained (not 1-8) so that the per-level HP
+  // multiplier lands on distinct integers instead of rounding whole level bands
+  // to the same value.
   const ETYPES = {
-    grunt:   { hp:1, spd:1.05, dmg:8,  acd:1.2,  ar:1.05, sx:0.88, sy:0.92, col:0x334422 },
-    soldier: { hp:2, spd:1.45, dmg:14, acd:0.9,  ar:1.1,  sx:0.98, sy:1.02, col:0x4a1818 },
-    brute:   { hp:4, spd:0.75, dmg:22, acd:1.6,  ar:1.2,  sx:1.16, sy:1.08, col:0x1a1028 },
-    spectre: { hp:2, spd:1.95, dmg:11, acd:0.7,  ar:1.0,  sx:0.94, sy:1.05, col:0x303850 },
-    fiend:   { hp:2, spd:1.6,  dmg:15, acd:0.95, ar:1.15, sx:1.08, sy:1.0,  col:0x5a1010 },
-    goliath: { hp:8, spd:0.52, dmg:38, acd:1.85, ar:1.3,  sx:1.25, sy:1.18, col:0x0a0a14 },
-    miniboss:{ hp:16,spd:0.68, dmg:52, acd:1.95, ar:1.4,  sx:1.22, sy:1.2,  col:0x2a0a2a },
+    grunt:   { hp:2, spd:1.05, dmg:9,  acd:1.2,  ar:1.05, sx:0.88, sy:0.92, col:0x334422 },
+    soldier: { hp:5, spd:1.45, dmg:14, acd:0.9,  ar:1.1,  sx:0.98, sy:1.02, col:0x4a1818 },
+    brute:   { hp:9, spd:0.75, dmg:21, acd:1.6,  ar:1.2,  sx:1.16, sy:1.08, col:0x1a1028 },
+    spectre: { hp:4, spd:1.95, dmg:12, acd:0.7,  ar:1.0,  sx:0.94, sy:1.05, col:0x303850 },
+    fiend:   { hp:6, spd:1.6,  dmg:16, acd:0.95, ar:1.15, sx:1.08, sy:1.0,  col:0x5a1010 },
+    goliath: { hp:16,spd:0.52, dmg:30, acd:1.85, ar:1.3,  sx:1.25, sy:1.18, col:0x0a0a14 },
+    miniboss:{ hp:19,spd:0.68, dmg:28, acd:1.95, ar:1.4,  sx:1.22, sy:1.2,  col:0x2a0a2a },
   };
 
-  const LEVEL_PACE = 20;
+  // Bow tiers. A volley's rays each seek a *different* enemy (see the `killed`
+  // set in shoot()), so extra rays buy extra targets, never extra damage on one
+  // of them. Single-target power therefore lives entirely in ARROW_DMG, and it
+  // must rise every tier -- when it did not, picking up the tier-2 and tier-4
+  // bows actually halved your damage against brutes, goliaths and guardians.
+  const ARROW_DMG = [2, 3, 5, 7, 10, 14, 19];
+  const SHOOT_CD  = [0.46, 0.40, 0.36, 0.32, 0.28, 0.25, 0.22];
+  const AMMO_PICKUP = 14;
+  const ARROW_RAYS = [
+    [{x:0,y:0}],
+    [{x:0,y:0}],
+    [{x:-0.07,y:0},{x:0,y:0},{x:0.07,y:0}],
+    [{x:-0.07,y:0},{x:0,y:0},{x:0.07,y:0}],
+    [{x:-0.10,y:0},{x:-0.05,y:0},{x:0,y:0},{x:0.05,y:0},{x:0.10,y:0},{x:-0.14,y:0},{x:0.14,y:0}],
+    [{x:-0.14,y:0},{x:-0.09,y:0.02},{x:-0.04,y:-0.01},{x:0,y:0},{x:0.04,y:0.01},{x:0.09,y:-0.02},{x:0.14,y:0}],
+    [{x:-0.18,y:0},{x:-0.13,y:0.02},{x:-0.08,y:-0.02},{x:-0.04,y:0.03},{x:0,y:0},{x:0.04,y:-0.03},{x:0.08,y:0.02},{x:0.13,y:-0.02},{x:0.18,y:0}],
+  ];
+  // The dagger stays a deliberate downgrade from the bow you are holding, but it
+  // has to track bow tier or it becomes literally unusable once mobs scale.
+  const meleeDamage = () => Math.max(1, Math.round(ARROW_DMG[Math.max(0,Math.min(player.gunTier,6))] * 0.55));
+
   const UPGRADE_MILESTONES = [
     { level: 4, gunTier: 1, armorTier: 0 },
     { level: 5, gunTier: 1, armorTier: 1 },
@@ -413,28 +436,72 @@ function initSector93() {
     return tier;
   }
 
-  // Difficulty ramps through the first 20 levels, then keeps climbing at a slower clip.
+  // Levels 1-15 (idx 0-14) are the designed campaign; everything past that is an
+  // endless victory lap that keeps climbing at a gentler clip.
+  //
+  // The curves are geometric rather than the old pressure/cycle blend, which
+  // stepped every 3 levels (LEVELS.length) and made difficulty saw-tooth: a
+  // level could land noticeably easier than the one before it.
+  //
+  // Bosses scale steeper than trash on purpose. Player DPS grows ~8x across the
+  // core band as bows tier up, so a shared curve would leave each successive
+  // guardian softer than the last.
+  const CORE_LEVELS = 14;
+
+  // ── Enemy budget ────────────────────────────────────────────────────────────
+  // ONE number owns how many enemies a level contains.
+  //
+  // Previously three independent systems each added their own enemies and none of
+  // them knew about the others: the generator spawned `rooms.length * 0.9` (and
+  // room count climbs to 16), the hallway placed up to 7 guards, and getDifficulty
+  // bolted on an `extra` pass. Stacked, that reached ~40 mobs by level 15 and ~56
+  // deep in the endless run -- and the only backstop was a cap of 40% of every
+  // walkable tile in the map, which is not a limit so much as a suggestion.
+  //
+  // Now every producer draws from this one budget, so the population is a designed
+  // curve instead of an emergent accident.
+  const ENEMY_BUDGET_CAP = 38;
+  function getEnemyBudget(level) {
+    const core=Math.min(level,CORE_LEVELS);
+    const beyond=Math.max(0,level-CORE_LEVELS);
+    // 10 mobs on level 1, ~28 by level 15, then a slow climb to the hard ceiling.
+    return Math.max(6, Math.min(Math.round(10 + core*1.25 + beyond*0.5), ENEMY_BUDGET_CAP));
+  }
+  // How the budget is divided. The hard pass spawns the nastier half of the pool,
+  // so it stays a fixed slice rather than a term that grows on its own.
+  const budgetHallwayGuards = level => Math.min(2+Math.floor(level/2), 7);
+  const budgetHardPass      = level => Math.round(getEnemyBudget(level)*0.30);
+  const budgetRoaming       = level =>
+    Math.max(0, getEnemyBudget(level) - budgetHallwayGuards(level) - budgetHardPass(level) - 1 /* guardian */);
+
   function getDifficulty(level) {
-    const softCap=LEVEL_PACE;
-    const pressure=Math.min(level,softCap)/softCap;
-    const lateRamp=Math.max(0,level-softCap);
-    const cycle=Math.floor(level/LEVELS.length);
+    const core=Math.min(level,CORE_LEVELS);
+    const beyond=Math.max(0,level-CORE_LEVELS);
     return {
-      hpMult:  1 + Math.pow(pressure,1.18)*1.18 + Math.min(cycle*0.06,0.24) + lateRamp*0.06,
-      spdMult: 1 + Math.pow(pressure,1.08)*0.34 + Math.min(cycle*0.025,0.1) + lateRamp*0.018,
-      dmgMult: 1 + Math.pow(pressure,1.24)*0.78 + Math.min(cycle*0.04,0.18) + lateRamp*0.04,
-      extra:   Math.min(level<4 ? 2 + level : 3 + Math.floor(pressure*7.5) + Math.floor(cycle*1.1) + Math.floor(lateRamp*0.5), 18),
-      ammoBonus: Math.max(1, Math.floor(1 + pressure*1.2 + cycle*0.2 - lateRamp*0.1)),
+      hpMult:     Math.pow(1.145,core) * Math.pow(1.06,beyond),
+      bossHpMult: Math.pow(1.190,core) * Math.pow(1.07,beyond),
+      spdMult:    1 + (core/CORE_LEVELS)*0.28 + beyond*0.012,
+      dmgMult:    Math.pow(1.028,core) * Math.pow(1.02,beyond),
+      extra:      budgetHardPass(level),
+      ammoBonus:  Math.max(2, Math.round(2 + (core/CORE_LEVELS)*3)),
     };
   }
 
+  // Variants rotate by level, so a wide HP spread here reads as difficulty noise
+  // rather than flavour -- the old 13..28 range meant which guardian you drew
+  // mattered more than which level you were on. Keep the spread tight and let
+  // speed / attack cadence / reach carry each one's identity instead.
+  // Order matters: variants rotate by level, so index 0 is the level-1 guardian.
+  // The Colossus sits last so it first appears on level 5 with a tier-1 bow in
+  // hand rather than on level 3 against the starter bow, and it lands again on
+  // level 15 as the capstone of the core campaign.
   function getMinibossVariant(level) {
     const variants=[
-      {name:'The Warden',tint:0xc15dff,stats:{hp:16,spd:0.68,dmg:52,acd:1.95,ar:1.4,sx:1.22,sy:1.2}},
-      {name:'The Reaper',tint:0x65b7ff,stats:{hp:13,spd:0.92,dmg:44,acd:1.35,ar:1.5,sx:1.12,sy:1.28}},
-      {name:'The Colossus',tint:0xff7a32,stats:{hp:28,spd:0.42,dmg:68,acd:2.3,ar:1.55,sx:1.48,sy:1.38}},
-      {name:'The Hexer',tint:0x75e69b,stats:{hp:18,spd:0.62,dmg:46,acd:1.05,ar:1.35,sx:1.2,sy:1.24}},
-      {name:'The Dread Knight',tint:0xff4d70,stats:{hp:24,spd:0.76,dmg:62,acd:1.55,ar:1.55,sx:1.34,sy:1.3}},
+      {name:'The Warden',tint:0xc15dff,stats:{hp:19,spd:0.68,dmg:28,acd:1.95,ar:1.4,sx:1.22,sy:1.2}},
+      {name:'The Reaper',tint:0x65b7ff,stats:{hp:17,spd:0.92,dmg:24,acd:1.35,ar:1.5,sx:1.12,sy:1.28}},
+      {name:'The Hexer',tint:0x75e69b,stats:{hp:19,spd:0.62,dmg:26,acd:1.05,ar:1.35,sx:1.2,sy:1.24}},
+      {name:'The Dread Knight',tint:0xff4d70,stats:{hp:21,spd:0.76,dmg:33,acd:1.55,ar:1.55,sx:1.34,sy:1.3}},
+      {name:'The Colossus',tint:0xff7a32,stats:{hp:22,spd:0.42,dmg:36,acd:2.3,ar:1.55,sx:1.48,sy:1.38}},
     ];
     return variants[level%variants.length];
   }
@@ -652,7 +719,7 @@ function initSector93() {
   const player = {
     x:1.5, z:1.5, yaw:0, pitch:0,
     speed:3.2, radius:0.22,
-    health:100, ammo:24, maxAmmo:48,
+    health:100, ammo:30, maxAmmo:64,
     hasKey:false, levelKills:0, campaignKills:0,
     recoil:0, bobPhase:0, shootCd:0, meleeCd:0, weaponMode:2, moving:false, gunTier:0,
     armorTier:0, upgrades:0,
@@ -1303,27 +1370,72 @@ function initSector93() {
   }
 
   // ── Audio system (Web Audio API) ──────────────────────────────────────────
-  let AC=null, _noiseBuf=null, _masterGain=null, _sfxGain=null, _ambGain=null;
+  //
+  // Mix hierarchy. The old mix was inverted: the bow -- the sound you hear most
+  // often, several times a second -- was the loudest thing in the game at 0.5,
+  // while pickups and the level-clear fanfare sat near 0.05. That is fatiguing,
+  // it buries every reward, and it pinned the master compressor so the music
+  // pumped on every shot.
+  //
+  // Levels below are pre-bus peaks, grouped by how often you hear them. The rule
+  // is simply: the more often a sound fires, the quieter it has to sit.
+  //
+  //   rare + important (gate, level clear, death, key)  0.30 - 0.50
+  //   combat feedback  (kill, take a hit, enemy swing)  0.18 - 0.30
+  //   every-shot       (bow, hit confirm, melee)        0.08 - 0.16
+  //   locomotion       (footsteps, landing)             0.04 - 0.08
+  //   idle texture     (mob mutters, drips, wind)       0.03 - 0.06
+  //
+  let AC=null, _noiseBuf=null, _masterGain=null, _sfxGain=null, _ambGain=null, _duckGain=null;
   let _musicGain=null, _musicFilter=null, _melodyTimer=null, _musicActive=false;
+  let _tensionGain=null, _tensionOscs=[];
   const _musicSources=new Set(), _ambientTimers=new Set();
-  const AUDIO_MASTER_GAIN=1.08, MUSIC_GAIN_BOOST=2.0, SFX_GAIN_BOOST=1.35, AMBIENT_GAIN_BOOST=1.45;
+  // Bus trims, measured rather than guessed. The score is a bed: it must sit
+  // clearly UNDER the gameplay bus, or the bow -- the sound carrying all of your
+  // moment-to-moment feedback -- disappears beneath it.
+  const AUDIO_MASTER_GAIN=1.9, MUSIC_GAIN_BOOST=0.55, SFX_GAIN_BOOST=1.6, AMBIENT_GAIN_BOOST=1.0;
+  const MUSIC_FILTER_BASE=1800, MUSIC_FILTER_RANGE=1500;
   const boostedAudioGain=(value,boost)=>Math.min(1.6,Math.max(0,value*boost));
 
   function initAudio(){
     if(AC) { if(AC.state==='suspended') AC.resume(); _startMusic(); return; }
     try{ AC=new(window.AudioContext||window.webkitAudioContext)(); }
     catch(e){ return; }
+    // A safety limiter, not a compressor. The old -12dB/5:1 setting sat below the
+    // level of ordinary gameplay, so it was gain-riding the whole mix constantly.
+    // Now it only catches genuine peaks.
     const limiter=AC.createDynamicsCompressor();
-    limiter.threshold.value=-12; limiter.knee.value=12; limiter.ratio.value=5; limiter.attack.value=0.004; limiter.release.value=0.18;
+    limiter.threshold.value=-2; limiter.knee.value=2; limiter.ratio.value=12; limiter.attack.value=0.002; limiter.release.value=0.14;
     _masterGain=AC.createGain(); _masterGain.gain.value=AUDIO_MASTER_GAIN; _masterGain.connect(limiter); limiter.connect(AC.destination);
+
+    // Music and ambience share a duck bus. Loud one-shots dip it briefly so combat
+    // punches through, instead of letting the master limiter squash everything.
+    _duckGain=AC.createGain(); _duckGain.gain.value=1; _duckGain.connect(_masterGain);
+
     _sfxGain=AC.createGain(); _sfxGain.gain.value=boostedAudioGain(settings.sfx,SFX_GAIN_BOOST); _sfxGain.connect(_masterGain);
-    _ambGain=AC.createGain(); _ambGain.gain.value=boostedAudioGain(settings.ambient,AMBIENT_GAIN_BOOST); _ambGain.connect(_masterGain);
-    const echo=AC.createDelay(1); echo.delayTime.value=0.19;
-    const echoFilter=AC.createBiquadFilter(); echoFilter.type='lowpass'; echoFilter.frequency.value=1250;
-    const echoGain=AC.createGain(); echoGain.gain.value=0.2;
-    _ambGain.connect(echo); echo.connect(echoFilter); echoFilter.connect(echoGain); echoGain.connect(_masterGain);
+    _ambGain=AC.createGain(); _ambGain.gain.value=boostedAudioGain(settings.ambient,AMBIENT_GAIN_BOOST); _ambGain.connect(_duckGain);
+
+    // Long, dark stone-hall slap-back on the ambience bus.
+    const echo=AC.createDelay(1); echo.delayTime.value=0.23;
+    const echoFilter=AC.createBiquadFilter(); echoFilter.type='lowpass'; echoFilter.frequency.value=1100;
+    const echoGain=AC.createGain(); echoGain.gain.value=0.26;
+    const echoFb=AC.createGain(); echoFb.gain.value=0.22;
+    _ambGain.connect(echo); echo.connect(echoFilter); echoFilter.connect(echoGain); echoGain.connect(_duckGain);
+    echoFilter.connect(echoFb); echoFb.connect(echo);
+
     if(AC.state==='suspended') AC.resume();
     _startMusic();
+  }
+
+  // Sidechain: dip music + ambience under a loud hit, then let them breathe back.
+  function _duck(amount=0.62,hold=0.05,release=0.30){
+    if(!_duckGain) return;
+    const t=AC.currentTime, g=_duckGain.gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value,t);
+    g.linearRampToValueAtTime(amount,t+0.015);
+    g.setValueAtTime(amount,t+0.015+hold);
+    g.linearRampToValueAtTime(1,t+0.015+hold+release);
   }
 
   function _trackMusicSource(source){
@@ -1344,6 +1456,9 @@ function initSector93() {
     _ambientTimers.clear();
     for(const source of _musicSources){try{source.stop();}catch(_){} source.disconnect();}
     _musicSources.clear();
+    for(const o of _tensionOscs){try{o.stop();}catch(_){} o.disconnect();}
+    _tensionOscs=[];
+    if(_tensionGain){_tensionGain.disconnect();_tensionGain=null;}
     if(_musicGain){_musicGain.disconnect();_musicGain=null;}
     if(_musicFilter){_musicFilter.disconnect();_musicFilter=null;}
   }
@@ -1360,39 +1475,113 @@ function initSector93() {
     g.connect(_sfxGain); return g;
   }
 
+  // Positional bus: pan by world offset, and roll off both level and brightness
+  // with distance so a goliath bellowing across the keep sits behind the one
+  // chewing on your face.
+  function _oAt(vol,worldX=null,worldZ=null){
+    const g=AC.createGain();
+    let level=vol;
+    if(worldX!=null&&worldZ!=null){
+      const dist=Math.hypot(worldX-player.x,worldZ-player.z);
+      level=vol*Math.max(0.16,1/(1+dist*0.16));
+      const lp=AC.createBiquadFilter(); lp.type='lowpass';
+      lp.frequency.value=Math.max(700,5200-dist*280);
+      g.gain.value=level; g.connect(lp);
+      _connectSfx(lp,worldX);
+      return g;
+    }
+    g.gain.value=level;
+    _connectSfx(g,worldX);
+    return g;
+  }
+
   function _connectSfx(node,worldX=null){
     if(worldX!=null&&AC.createStereoPanner){
-      const pan=AC.createStereoPanner(); pan.pan.value=Math.max(-0.75,Math.min(0.75,(worldX-player.x)/7));
+      const pan=AC.createStereoPanner(); pan.pan.value=Math.max(-0.8,Math.min(0.8,(worldX-player.x)/6));
       node.connect(pan); pan.connect(_sfxGain); return;
     }
     node.connect(_sfxGain);
   }
 
+  // A volley can land up to 9 arrows at once (one per ray). Without this, every
+  // one of them would fire a full-volume hit sound on the same frame.
+  let _lastHitT=-1, _hitStack=0;
+
   const sfx={
+    // Fires several times a second, so it has to be short and modest. The old one
+    // was the loudest sound in the game with a 0.42s tail -- at tier 6 (a shot
+    // every 0.22s) the tails overlapped into a permanent whistle.
     shoot(tier=0){
       if(!AC) return;
       const t=AC.currentTime;
-      // Bowstring twang
+      const mg=_o(0.26);
+      // Woody limb thock -- the body of the bow, gives the shot weight.
+      const bo=AC.createOscillator(); bo.type='triangle';
+      const bf=AC.createBiquadFilter(); bf.type='lowpass'; bf.frequency.value=420;
+      const bg=AC.createGain(); bg.gain.setValueAtTime(0.55,t); bg.gain.exponentialRampToValueAtTime(0.001,t+0.09);
+      bo.frequency.setValueAtTime(150+tier*10,t); bo.frequency.exponentialRampToValueAtTime(62,t+0.09);
+      bo.connect(bf); bf.connect(bg); bg.connect(mg); bo.start(t); bo.stop(t+0.10);
+      // String snap -- the transient that makes it read as a release.
       const ns=AC.createBufferSource(); ns.buffer=_nb();
-      const nf=AC.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=1000; nf.Q.value=2;
-      const ng=AC.createGain(); ng.gain.setValueAtTime(0.5,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.09);
-      ns.connect(nf); nf.connect(ng); ng.connect(_sfxGain); ns.start(t); ns.stop(t+0.10);
-      // Arrow whistle — descending
+      const nf=AC.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=1500+tier*120; nf.Q.value=3.2;
+      const ng=AC.createGain(); ng.gain.setValueAtTime(0.62,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.055);
+      ns.connect(nf); nf.connect(ng); ng.connect(mg); ns.start(t); ns.stop(t+0.06);
+      // Fletching hiss, cut short so rapid fire stays crisp.
       const wo=AC.createOscillator(); wo.type='sawtooth';
-      const wf=AC.createBiquadFilter(); wf.type='bandpass'; wf.frequency.value=1800; wf.Q.value=10;
-      const wg=AC.createGain(); wg.gain.setValueAtTime(0.10,t+0.02); wg.gain.exponentialRampToValueAtTime(0.001,t+0.42);
-      wo.frequency.setValueAtTime(1500+tier*85,t+0.02); wo.frequency.exponentialRampToValueAtTime(480+tier*25,t+0.42);
-      wo.connect(wf); wf.connect(wg); wg.connect(_sfxGain); wo.start(t+0.02); wo.stop(t+0.44);
+      const wf=AC.createBiquadFilter(); wf.type='bandpass'; wf.frequency.value=2200; wf.Q.value=9;
+      const wg=AC.createGain(); wg.gain.setValueAtTime(0.20,t+0.015); wg.gain.exponentialRampToValueAtTime(0.001,t+0.17);
+      wo.frequency.setValueAtTime(1700+tier*90,t+0.015); wo.frequency.exponentialRampToValueAtTime(620+tier*30,t+0.17);
+      wo.connect(wf); wf.connect(wg); wg.connect(mg); wo.start(t+0.015); wo.stop(t+0.18);
+      // Enchanted bows get a bright shimmer on top so tiering up sounds like power.
       if(tier>=3){
         const ch=AC.createOscillator(); ch.type='sine';
-        const cg=AC.createGain(); cg.gain.setValueAtTime(0.055,t); cg.gain.exponentialRampToValueAtTime(0.001,t+0.24);
-        ch.frequency.setValueAtTime(520+tier*90,t); ch.frequency.exponentialRampToValueAtTime(980+tier*120,t+0.2);
-        ch.connect(cg); cg.connect(_sfxGain); ch.start(t); ch.stop(t+0.25);
+        const cg=AC.createGain(); cg.gain.setValueAtTime(0.22,t); cg.gain.exponentialRampToValueAtTime(0.001,t+0.20);
+        ch.frequency.setValueAtTime(680+tier*110,t); ch.frequency.exponentialRampToValueAtTime(1500+tier*160,t+0.17);
+        ch.connect(cg); cg.connect(mg); ch.start(t); ch.stop(t+0.21);
       }
+    },
+    // The single biggest feel gap: arrows landing used to be completely silent,
+    // so you could not tell a hit from a miss until something finally died.
+    hit(worldX=null,worldZ=null,tier=0){
+      if(!AC) return;
+      const t=AC.currentTime;
+      // Stacked hits from one volley collapse toward a single thud.
+      if(t-_lastHitT<0.06) _hitStack++; else _hitStack=0;
+      _lastHitT=t;
+      const atten=1/(1+_hitStack*0.85);
+      if(atten<0.22) return;
+      const mg=_oAt(0.38*atten,worldX,worldZ);
+      // Wet impact body.
+      const o=AC.createOscillator(); o.type='triangle';
+      const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=520;
+      const g=AC.createGain(); g.gain.setValueAtTime(0.7,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.11);
+      o.frequency.setValueAtTime(190,t); o.frequency.exponentialRampToValueAtTime(78,t+0.11);
+      o.connect(f); f.connect(g); g.connect(mg); o.start(t); o.stop(t+0.12);
+      // Sharp leather/flesh transient -- this is what reads as "connected".
+      const ns=AC.createBufferSource(); ns.buffer=_nb();
+      const nf=AC.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=900; nf.Q.value=1.4;
+      const ng=AC.createGain(); ng.gain.setValueAtTime(0.8,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.07);
+      ns.connect(nf); nf.connect(ng); ng.connect(mg); ns.start(t); ns.stop(t+0.08);
+      if(tier>=3){
+        const z=AC.createOscillator(); z.type='sine';
+        const zg=AC.createGain(); zg.gain.setValueAtTime(0.25,t); zg.gain.exponentialRampToValueAtTime(0.001,t+0.14);
+        z.frequency.setValueAtTime(1400,t); z.frequency.exponentialRampToValueAtTime(500,t+0.13);
+        z.connect(zg); zg.connect(mg); z.start(t); z.stop(t+0.15);
+      }
+    },
+    melee(){
+      if(!AC) return;
+      const t=AC.currentTime, mg=_o(0.13);
+      const ns=AC.createBufferSource(); ns.buffer=_nb();
+      const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=1900; f.Q.value=1.1;
+      f.frequency.setValueAtTime(2600,t); f.frequency.exponentialRampToValueAtTime(700,t+0.16);
+      const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.75,t+0.03); g.gain.exponentialRampToValueAtTime(0.001,t+0.17);
+      ns.connect(f); f.connect(g); g.connect(mg); ns.start(t); ns.stop(t+0.18);
     },
     hurt(){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.44);
+      _duck(0.55,0.06,0.34);
+      const t=AC.currentTime, mg=_o(0.40);
       // Painful crunch noise
       const ns=AC.createBufferSource(); ns.buffer=_nb();
       const nf=AC.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=700;
@@ -1404,10 +1593,67 @@ function initSector93() {
       const og=AC.createGain(); og.gain.setValueAtTime(0.5,t+0.02); og.gain.exponentialRampToValueAtTime(0.001,t+0.28);
       o.frequency.setValueAtTime(160,t+0.02); o.frequency.exponentialRampToValueAtTime(70,t+0.28);
       o.connect(of2); of2.connect(og); og.connect(mg); o.start(t+0.02); o.stop(t+0.30);
+      // Dissonant stinger -- a tritone stab that makes damage register emotionally.
+      [233,330].forEach((freq,i)=>{
+        const s=AC.createOscillator(); s.type='triangle'; s.frequency.value=freq;
+        const sf=AC.createBiquadFilter(); sf.type='lowpass'; sf.frequency.value=1200;
+        const sg=AC.createGain(); sg.gain.setValueAtTime(0.16-i*0.04,t); sg.gain.exponentialRampToValueAtTime(0.001,t+0.34);
+        s.connect(sf); sf.connect(sg); sg.connect(mg); s.start(t); s.stop(t+0.36);
+      });
     },
-    enemyDie(type='grunt'){
+    // Enemy winding up a swing. Telegraphs the hit that is about to land on you.
+    enemyAttack(type='grunt',worldX=null,worldZ=null){
       if(!AC) return;
+      const t=AC.currentTime;
+      const heavy=type==='brute'||type==='goliath'||type==='miniboss';
+      const mg=_oAt(heavy?0.30:0.20,worldX,worldZ);
+      const ns=AC.createBufferSource(); ns.buffer=_nb();
+      const f=AC.createBiquadFilter(); f.type='bandpass'; f.Q.value=0.9;
+      const dur=heavy?0.30:0.18;
+      f.frequency.setValueAtTime(heavy?1100:2000,t);
+      f.frequency.exponentialRampToValueAtTime(heavy?260:600,t+dur);
+      const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.8,t+dur*0.3); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+      ns.connect(f); f.connect(g); g.connect(mg); ns.start(t); ns.stop(t+dur+0.02);
+      if(heavy){
+        const o=AC.createOscillator(); o.type='sawtooth';
+        const of2=AC.createBiquadFilter(); of2.type='lowpass'; of2.frequency.value=180;
+        const og=AC.createGain(); og.gain.setValueAtTime(0.5,t); og.gain.exponentialRampToValueAtTime(0.001,t+0.34);
+        o.frequency.setValueAtTime(70,t); o.frequency.exponentialRampToValueAtTime(38,t+0.34);
+        o.connect(of2); of2.connect(og); og.connect(mg); o.start(t); o.stop(t+0.36);
+      }
+    },
+    spellCast(worldX=null,worldZ=null){
+      if(!AC) return;
+      const t=AC.currentTime, mg=_oAt(0.24,worldX,worldZ);
+      const o=AC.createOscillator(); o.type='sawtooth';
+      const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=800; f.Q.value=4;
+      const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.6,t+0.06); g.gain.exponentialRampToValueAtTime(0.001,t+0.42);
+      o.frequency.setValueAtTime(180,t); o.frequency.exponentialRampToValueAtTime(720,t+0.30);
+      o.connect(f); f.connect(g); g.connect(mg); o.start(t); o.stop(t+0.44);
+      const ns=AC.createBufferSource(); ns.buffer=_nb();
+      const nf=AC.createBiquadFilter(); nf.type='highpass'; nf.frequency.value=1800;
+      const ng=AC.createGain(); ng.gain.setValueAtTime(0.22,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.36);
+      ns.connect(nf); nf.connect(ng); ng.connect(mg); ns.start(t); ns.stop(t+0.38);
+    },
+    spellHit(){
+      if(!AC) return;
+      _duck(0.6,0.04,0.26);
       const t=AC.currentTime, mg=_o(0.34);
+      const ns=AC.createBufferSource(); ns.buffer=_nb();
+      const nf=AC.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=1600;
+      nf.frequency.exponentialRampToValueAtTime(300,t+0.30);
+      const ng=AC.createGain(); ng.gain.setValueAtTime(0.9,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.32);
+      ns.connect(nf); nf.connect(ng); ng.connect(mg); ns.start(t); ns.stop(t+0.34);
+      const o=AC.createOscillator(); o.type='triangle';
+      const g=AC.createGain(); g.gain.setValueAtTime(0.5,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.26);
+      o.frequency.setValueAtTime(240,t); o.frequency.exponentialRampToValueAtTime(58,t+0.26);
+      o.connect(g); g.connect(mg); o.start(t); o.stop(t+0.28);
+    },
+    enemyDie(type='grunt',worldX=null,worldZ=null){
+      if(!AC) return;
+      const boss=type==='miniboss';
+      if(boss||type==='goliath') _duck(0.55,0.10,0.5);
+      const t=AC.currentTime, mg=_oAt(boss?0.46:0.30,worldX,worldZ);
       // Death screech
       const o=AC.createOscillator(); o.type='square';
       const of2=AC.createBiquadFilter(); of2.type='bandpass'; of2.frequency.value=700; of2.Q.value=2;
@@ -1420,25 +1666,63 @@ function initSector93() {
       const nf=AC.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=1400;
       const ng2=AC.createGain(); ng2.gain.setValueAtTime(0.85,t); ng2.gain.exponentialRampToValueAtTime(0.001,t+0.4);
       ns.connect(nf); nf.connect(ng2); ng2.connect(mg); ns.start(t); ns.stop(t+0.42);
+      // A guardian falling deserves more than a louder grunt.
+      if(boss){
+        [98,73.4,49].forEach((freq,i)=>{
+          const b=AC.createOscillator(); b.type='triangle'; b.frequency.value=freq;
+          const bf=AC.createBiquadFilter(); bf.type='lowpass'; bf.frequency.value=520;
+          const bg=AC.createGain(); const d=i*0.16;
+          bg.gain.setValueAtTime(0,t+d); bg.gain.linearRampToValueAtTime(0.34,t+d+0.05); bg.gain.exponentialRampToValueAtTime(0.001,t+d+1.3);
+          b.connect(bf); bf.connect(bg); bg.connect(mg); b.start(t+d); b.stop(t+d+1.35);
+        });
+      }
     },
+    // Rewards were the quietest sounds in the game. They are now the clearest,
+    // and each pickup gets its own recognisable motif.
     pickup(type){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.22);
-      const freqs=type==='ammo'?[220,330]
+      const t=AC.currentTime;
+      const loud=type==='key'||type==='upgrade'||type==='armor';
+      if(loud) _duck(0.66,0.08,0.45);
+      const mg=_o(loud?0.44:0.30);
+      const freqs=type==='ammo'?[294,392]
         :type==='key'?[440,554,659,880]
-        :type==='upgrade'?[330,494,659]
-        :type==='armor'?[196,294,392]
-        :[330,440];
+        :type==='upgrade'?[330,494,659,988]
+        :type==='armor'?[196,294,392,587]
+        :[349,523];
       freqs.forEach((freq,i)=>{
-        const o=AC.createOscillator(); o.type='sine'; o.frequency.value=freq;
-        const g=AC.createGain(); const d=i*0.06;
-        g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(0.28,t+d+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+d+0.32);
-        o.connect(g); g.connect(mg); o.start(t+d); o.stop(t+d+0.34);
+        const d=i*0.065;
+        const o=AC.createOscillator(); o.type=loud?'triangle':'sine'; o.frequency.value=freq;
+        const g=AC.createGain();
+        g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(loud?0.42:0.34,t+d+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+d+(loud?0.55:0.32));
+        o.connect(g); g.connect(mg); o.start(t+d); o.stop(t+d+(loud?0.58:0.34));
+        // A shimmering octave above keeps the fanfare from sounding like a beep.
+        if(loud){
+          const h=AC.createOscillator(); h.type='sine'; h.frequency.value=freq*2;
+          const hg=AC.createGain();
+          hg.gain.setValueAtTime(0,t+d); hg.gain.linearRampToValueAtTime(0.13,t+d+0.03); hg.gain.exponentialRampToValueAtTime(0.001,t+d+0.5);
+          h.connect(hg); hg.connect(mg); h.start(t+d); h.stop(t+d+0.52);
+        }
+      });
+    },
+    // Pulses under the HUD when you are nearly dead. Cheap, and it does more for
+    // tension than any amount of music.
+    heartbeat(intensity=1){
+      if(!AC) return;
+      const t=AC.currentTime, mg=_o(0.30*intensity);
+      [0,0.17].forEach((d,i)=>{
+        const o=AC.createOscillator(); o.type='sine';
+        const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=120;
+        const g=AC.createGain();
+        g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(i?0.6:0.9,t+d+0.02); g.gain.exponentialRampToValueAtTime(0.001,t+d+0.20);
+        o.frequency.setValueAtTime(62,t+d); o.frequency.exponentialRampToValueAtTime(34,t+d+0.20);
+        o.connect(f); f.connect(g); g.connect(mg); o.start(t+d); o.stop(t+d+0.22);
       });
     },
     gate(){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.52);
+      _duck(0.6,0.15,0.7);
+      const t=AC.currentTime, mg=_o(0.50);
       // Heavy iron gate creak
       const ns=AC.createBufferSource(); ns.buffer=_nb();
       const nf=AC.createBiquadFilter(); nf.type='bandpass'; nf.frequency.value=160; nf.Q.value=0.7;
@@ -1454,19 +1738,27 @@ function initSector93() {
     },
     levelClear(){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.28);
-      // Eerie minor chord rise
+      _duck(0.45,0.3,1.1);
+      const t=AC.currentTime, mg=_o(0.46);
+      // Eerie minor chord rise, now with an octave layer so it lands as a payoff
+      // rather than a muffled hum under the music.
       [220,261,311,392].forEach((freq,i)=>{
+        const d=i*0.13;
         const o=AC.createOscillator(); o.type='triangle'; o.frequency.value=freq;
-        const g=AC.createGain(); const d=i*0.13;
-        g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(0.20,t+d+0.07); g.gain.exponentialRampToValueAtTime(0.001,t+d+1.0);
-        const f2=AC.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=1000;
-        o.connect(f2); f2.connect(g); g.connect(mg); o.start(t+d); o.stop(t+d+1.05);
+        const g=AC.createGain();
+        g.gain.setValueAtTime(0,t+d); g.gain.linearRampToValueAtTime(0.34,t+d+0.07); g.gain.exponentialRampToValueAtTime(0.001,t+d+1.2);
+        const f2=AC.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=2200;
+        o.connect(f2); f2.connect(g); g.connect(mg); o.start(t+d); o.stop(t+d+1.25);
+        const h=AC.createOscillator(); h.type='sine'; h.frequency.value=freq*2;
+        const hg=AC.createGain();
+        hg.gain.setValueAtTime(0,t+d); hg.gain.linearRampToValueAtTime(0.12,t+d+0.09); hg.gain.exponentialRampToValueAtTime(0.001,t+d+1.0);
+        h.connect(hg); hg.connect(mg); h.start(t+d); h.stop(t+d+1.05);
       });
     },
     gameOver(){
       if(!AC) return;
-      const t=AC.currentTime, mg=_o(0.44);
+      _duck(0.25,0.6,1.8);
+      const t=AC.currentTime, mg=_o(0.52);
       // Death toll — deep descending minor
       [110,98,82,65].forEach((freq,i)=>{
         const o=AC.createOscillator(); o.type='triangle'; o.frequency.value=freq;
@@ -1481,63 +1773,91 @@ function initSector93() {
       const ng=AC.createGain(); ng.gain.setValueAtTime(0,t); ng.gain.linearRampToValueAtTime(0.28,t+0.35); ng.gain.exponentialRampToValueAtTime(0.001,t+2.0);
       ns.connect(nf); nf.connect(ng); ng.connect(mg); ns.start(t); ns.stop(t+2.1);
     },
+    // Twice a second, forever -- so it sits low and textural. The old version was
+    // a bare lowpassed thud at nearly the level of an enemy death.
     footstep(){
       if(!AC) return;
-      const t=AC.currentTime;
+      const t=AC.currentTime, mg=_o(0.075);
+      // Boot body on stone.
       const ns=AC.createBufferSource(); ns.buffer=_nb();
-      const nf=AC.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=130+Math.random()*95;
-      const ng=AC.createGain(); ng.gain.setValueAtTime(0.11+Math.random()*0.045,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.075);
-      ns.connect(nf); nf.connect(ng); ng.connect(_sfxGain); ns.start(t); ns.stop(t+0.08);
+      const nf=AC.createBiquadFilter(); nf.type='lowpass'; nf.frequency.value=150+Math.random()*90;
+      const ng=AC.createGain(); ng.gain.setValueAtTime(0.85+Math.random()*0.25,t); ng.gain.exponentialRampToValueAtTime(0.001,t+0.08);
+      ns.connect(nf); nf.connect(ng); ng.connect(mg); ns.start(t); ns.stop(t+0.09);
+      // Grit scuff on top -- this is what makes it read as stone rather than a thud.
+      const gs=AC.createBufferSource(); gs.buffer=_nb();
+      const gf=AC.createBiquadFilter(); gf.type='bandpass'; gf.frequency.value=2400+Math.random()*1600; gf.Q.value=0.8;
+      const gg=AC.createGain(); gg.gain.setValueAtTime(0.30+Math.random()*0.16,t); gg.gain.exponentialRampToValueAtTime(0.001,t+0.055);
+      gs.connect(gf); gf.connect(gg); gg.connect(mg); gs.start(t); gs.stop(t+0.06);
     },
     land(){
       if(!AC) return;
-      const t=AC.currentTime;
+      const t=AC.currentTime, mg=_o(0.13);
       const ns=AC.createBufferSource(); ns.buffer=_nb();
-      const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=125;
-      const g=AC.createGain(); g.gain.setValueAtTime(0.16,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.11);
-      ns.connect(f); f.connect(g); g.connect(_sfxGain); ns.start(t); ns.stop(t+0.12);
+      const f=AC.createBiquadFilter(); f.type='lowpass'; f.frequency.value=135;
+      const g=AC.createGain(); g.gain.setValueAtTime(0.9,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.13);
+      ns.connect(f); f.connect(g); g.connect(mg); ns.start(t); ns.stop(t+0.14);
+      const gs=AC.createBufferSource(); gs.buffer=_nb();
+      const gf=AC.createBiquadFilter(); gf.type='bandpass'; gf.frequency.value=2100; gf.Q.value=0.7;
+      const gg=AC.createGain(); gg.gain.setValueAtTime(0.42,t); gg.gain.exponentialRampToValueAtTime(0.001,t+0.08);
+      gs.connect(gf); gf.connect(gg); gg.connect(mg); gs.start(t); gs.stop(t+0.09);
     },
-    mobAlert(type,worldX=null){
+    // Alerts now attenuate with distance, so a goliath waking up across the keep
+    // reads as far away instead of bellowing directly into your ear.
+    mobAlert(type,worldX=null,worldZ=null){
       if(!AC) return;
       const t=AC.currentTime;
       if(type==='grunt'||type==='soldier'){
+        const mg=_oAt(0.24,worldX,worldZ);
         const o=AC.createOscillator(); o.type='sawtooth';
         const f2=AC.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=300; f2.Q.value=6;
-        const g=AC.createGain(); g.gain.setValueAtTime(0.20,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.48);
+        const g=AC.createGain(); g.gain.setValueAtTime(0.85,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.48);
         o.frequency.setValueAtTime(type==='grunt'?85:120,t); o.frequency.exponentialRampToValueAtTime(type==='grunt'?38:62,t+0.48);
-        o.connect(f2); f2.connect(g); _connectSfx(g,worldX); o.start(t); o.stop(t+0.50);
+        o.connect(f2); f2.connect(g); g.connect(mg); o.start(t); o.stop(t+0.50);
       } else if(type==='brute'||type==='goliath'){
         const dur=type==='goliath'?0.9:0.6;
+        const mg=_oAt(0.34,worldX,worldZ);
         const o=AC.createOscillator(); o.type='sawtooth';
         const f2=AC.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=140; f2.Q.value=10;
-        const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.38,t+0.07); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
+        const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.95,t+0.07); g.gain.exponentialRampToValueAtTime(0.001,t+dur);
         o.frequency.setValueAtTime(type==='goliath'?22:42,t);
-        o.connect(f2); f2.connect(g); _connectSfx(g,worldX); o.start(t); o.stop(t+dur+0.02);
+        o.connect(f2); f2.connect(g); g.connect(mg); o.start(t); o.stop(t+dur+0.02);
       } else if(type==='spectre'){
+        const mg=_oAt(0.22,worldX,worldZ);
         const o=AC.createOscillator(); o.type='sine';
         const lfo=AC.createOscillator(); lfo.type='sine'; lfo.frequency.value=6+Math.random()*3;
         const lfoG=AC.createGain(); lfoG.gain.value=14; lfo.connect(lfoG); lfoG.connect(o.frequency);
         const f2=AC.createBiquadFilter(); f2.type='bandpass'; f2.frequency.value=620; f2.Q.value=1.5;
-        const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.16,t+0.14); g.gain.exponentialRampToValueAtTime(0.001,t+1.0);
+        const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.8,t+0.14); g.gain.exponentialRampToValueAtTime(0.001,t+1.0);
         o.frequency.setValueAtTime(560,t); o.frequency.exponentialRampToValueAtTime(240,t+1.0);
-        o.connect(f2); f2.connect(g); _connectSfx(g,worldX);
+        o.connect(f2); f2.connect(g); g.connect(mg);
         o.start(t); o.stop(t+1.02); lfo.start(t); lfo.stop(t+1.02);
       } else if(type==='fiend'){
+        const mg=_oAt(0.22,worldX,worldZ);
         const o=AC.createOscillator(); o.type='square';
         const f2=AC.createBiquadFilter(); f2.type='bandpass'; f2.frequency.value=1100; f2.Q.value=3;
-        const g=AC.createGain(); g.gain.setValueAtTime(0.16,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.38);
+        const g=AC.createGain(); g.gain.setValueAtTime(0.8,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.38);
         o.frequency.setValueAtTime(800,t); o.frequency.exponentialRampToValueAtTime(1500,t+0.12); o.frequency.exponentialRampToValueAtTime(340,t+0.38);
-        o.connect(f2); f2.connect(g); _connectSfx(g,worldX); o.start(t); o.stop(t+0.40);
+        o.connect(f2); f2.connect(g); g.connect(mg); o.start(t); o.stop(t+0.40);
+      } else if(type==='miniboss'){
+        const mg=_oAt(0.40,worldX,worldZ);
+        const o=AC.createOscillator(); o.type='sawtooth';
+        const o2=AC.createOscillator(); o2.type='square'; o2.detune.value=-18;
+        const f2=AC.createBiquadFilter(); f2.type='lowpass'; f2.frequency.value=220; f2.Q.value=7;
+        const g=AC.createGain(); g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.95,t+0.10); g.gain.exponentialRampToValueAtTime(0.001,t+1.25);
+        o.frequency.setValueAtTime(58,t); o.frequency.exponentialRampToValueAtTime(30,t+1.2);
+        o2.frequency.setValueAtTime(58,t); o2.frequency.exponentialRampToValueAtTime(30,t+1.2);
+        o.connect(f2); o2.connect(f2); f2.connect(g); g.connect(mg);
+        o.start(t); o.stop(t+1.28); o2.start(t); o2.stop(t+1.28);
       }
     },
-    mobIdle(type,worldX=null){
+    mobIdle(type,worldX=null,worldZ=null){
       if(!AC||Math.random()>0.35) return;
-      const t=AC.currentTime;
+      const t=AC.currentTime, mg=_oAt(0.09,worldX,worldZ);
       const ns=AC.createBufferSource(); ns.buffer=_nb();
       const f2=AC.createBiquadFilter(); f2.type='lowpass';
       f2.frequency.value=type==='spectre'?450:type==='fiend'?750:140;
-      const g=AC.createGain(); g.gain.setValueAtTime(0.07,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.30);
-      ns.connect(f2); f2.connect(g); _connectSfx(g,worldX); ns.start(t); ns.stop(t+0.32);
+      const g=AC.createGain(); g.gain.setValueAtTime(0.8,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.30);
+      ns.connect(f2); f2.connect(g); g.connect(mg); ns.start(t); ns.stop(t+0.32);
     },
   };
 
@@ -1545,60 +1865,100 @@ function initSector93() {
     if(!AC||_musicActive) return;
     _musicActive=true;
     _musicGain=AC.createGain(); _musicGain.gain.value=boostedAudioGain(settings.music,MUSIC_GAIN_BOOST);
-    _musicFilter=AC.createBiquadFilter(); _musicFilter.type='lowpass'; _musicFilter.frequency.value=720;
-    _musicGain.connect(_musicFilter); _musicFilter.connect(_masterGain);
-    // Use finite musical phrases instead of a continuously running low drone.
-    // This keeps the dungeon atmosphere tense while avoiding the old monotone tone.
+    // The old 720Hz ceiling sat *below* the lead's own register, so the entire
+    // score collapsed into a low hum. Open it up and let the mood system sweep it.
+    _musicFilter=AC.createBiquadFilter(); _musicFilter.type='lowpass'; _musicFilter.frequency.value=MUSIC_FILTER_BASE; _musicFilter.Q.value=0.6;
+    _musicGain.connect(_musicFilter); _musicFilter.connect(_duckGain);
+
+    // A dread drone that swells only when enemies are actually closing on you.
+    // Silent the rest of the time -- it is the "something is coming" layer.
+    _tensionGain=AC.createGain(); _tensionGain.gain.value=0;
+    const tFilt=AC.createBiquadFilter(); tFilt.type='lowpass'; tFilt.frequency.value=340;
+    _tensionGain.connect(tFilt); tFilt.connect(_duckGain);
+    _tensionOscs=[];
+    [36.7,55,73.4].forEach((freq,i)=>{
+      const o=AC.createOscillator(); o.type=i===2?'sawtooth':'triangle'; o.frequency.value=freq;
+      o.detune.value=i===1?8:i===2?-11:0;
+      const g=AC.createGain(); g.gain.value=i===0?0.5:i===1?0.28:0.12;
+      o.connect(g); g.connect(_tensionGain); o.start();
+      _tensionOscs.push(o);
+    });
+
     _scheduleMelody(AC.currentTime+1.2);
     _scheduleAmbient();
   }
 
   function _scheduleMelody(start){
     if(!_musicActive||!AC) return;
-    // Minor-key dungeon-crawler arrangement: pulse, bass, short chord swells,
-    // and a sparse lead. Every part is made of finite phrases, never a drone.
+    // Minor-key dungeon-crawler arrangement in A phrygian-dominant. Every part is
+    // a finite phrase, never a drone.
+    //
+    // The parts are now deliberately separated by register. Previously the bass,
+    // the chords AND the lead all lived under 200Hz, stacked on top of each other
+    // and then lowpassed at 720 -- which is why the score read as an undifferentiated
+    // rumble. Now: sub-bass / low-mid pad / mid lead / high ticks.
     const scale=[55,58.3,65.4,69.3,77.8,92.5]; // A1 Bb1 C2 Db2 Eb2 F#2
     const pat=[0,null,1,null,3,null,2,null,4,null,3,null,1,null,0,null,5,null,3,null,2,null,1,null];
     const bl=0.42;
-    const chords=[[55,58.3,82.4],[46.2,55,73.4],[49,58.3,92.5],[41.2,55,77.8]];
+
+    // Pad: chord swells, held up in the low-mids where they can be heard as harmony.
+    const chords=[[110,116.6,164.8],[92.4,110,146.8],[98,116.6,185],[82.4,110,155.6]];
     chords.forEach((chord,bar)=>chord.forEach((freq,n)=>{
       const t=start+bar*6*bl;
       const o=_trackMusicSource(AC.createOscillator()); o.type=n===0?'triangle':'sine'; o.frequency.value=freq;
+      o.detune.value=n===1?6:n===2?-5:0;
       const g=AC.createGain();
-      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(n===0?0.045:0.028,t+0.28);
-      g.gain.setValueAtTime(n===0?0.045:0.028,t+4.0*bl); g.gain.exponentialRampToValueAtTime(0.001,t+5.6*bl);
-      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=n===0?420:760; filt.Q.value=0.7;
+      const peak=n===0?0.050:0.032;
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(peak,t+0.45);
+      g.gain.setValueAtTime(peak,t+4.0*bl); g.gain.exponentialRampToValueAtTime(0.001,t+5.6*bl);
+      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=900; filt.Q.value=0.7;
       o.connect(filt); filt.connect(g); g.connect(_musicGain); o.start(t); o.stop(t+5.8*bl);
     }));
+
+    // Sub-bass: owns everything below ~120Hz on its own.
     const bass=[55,null,55,null,46.2,null,46.2,null,49,null,49,null,41.2,null,41.2,null,55,null,55,null,46.2,null,49,null];
     bass.forEach((freq,i)=>{
       if(freq===null) return;
       const t=start+i*bl;
       const o=_trackMusicSource(AC.createOscillator()); o.type='triangle'; o.frequency.value=freq;
       const g=AC.createGain();
-      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.16,t+0.035); g.gain.exponentialRampToValueAtTime(0.001,t+bl*0.82);
-      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=260; filt.Q.value=0.8;
+      // Kept under the gameplay bus on purpose -- the score is a bed, and it used
+      // to be the single loudest element in the entire mix.
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.13,t+0.035); g.gain.exponentialRampToValueAtTime(0.001,t+bl*0.82);
+      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=200; filt.Q.value=0.8;
       o.connect(filt); filt.connect(g); g.connect(_musicGain); o.start(t); o.stop(t+bl*0.9);
     });
+
+    // Percussion: a dry stick tick, loud enough to actually be heard now (it was
+    // at 0.018, which is inaudible under anything).
     for(let i=0;i<pat.length;i+=2){
       const t=start+i*bl;
       const ns=_trackMusicSource(AC.createBufferSource()); ns.buffer=_nb();
-      const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=i%4===0?1150:1750; f.Q.value=2.2;
-      const g=AC.createGain(); g.gain.setValueAtTime(0.018,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.075);
-      ns.connect(f); f.connect(g); g.connect(_musicGain); ns.start(t); ns.stop(t+0.09);
+      const f=AC.createBiquadFilter(); f.type='bandpass'; f.frequency.value=i%4===0?2200:3400; f.Q.value=1.8;
+      const g=AC.createGain(); g.gain.setValueAtTime(i%4===0?0.055:0.030,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.06);
+      ns.connect(f); f.connect(g); g.connect(_musicGain); ns.start(t); ns.stop(t+0.07);
     }
+
+    // Lead: two octaves up from where it used to sit, so it is finally a melody
+    // rather than mud competing with the bass.
     pat.forEach((n,i)=>{
       if(n===null) return;
       const t=start+i*bl;
       if(t<AC.currentTime+0.05) return;
-      const o=_trackMusicSource(AC.createOscillator()); o.type=i%4===1?'square':'triangle'; o.frequency.value=scale[n]*2;
+      const o=_trackMusicSource(AC.createOscillator()); o.type=i%4===1?'square':'triangle'; o.frequency.value=scale[n]*8;
       o.detune.value=i%3===0?-7:i%3===1?5:0;
       const g=AC.createGain();
-      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(0.12,t+0.09); g.gain.exponentialRampToValueAtTime(0.001,t+bl*1.3);
-      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=700;
+      g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(i%4===1?0.055:0.075,t+0.05); g.gain.exponentialRampToValueAtTime(0.001,t+bl*1.15);
+      const filt=AC.createBiquadFilter(); filt.type='lowpass'; filt.frequency.value=2600; filt.Q.value=1.0;
       o.connect(filt); filt.connect(g); g.connect(_musicGain);
-      o.start(t); o.stop(t+bl*1.4);
+      o.start(t); o.stop(t+bl*1.25);
+      // Ghost octave below, quiet -- glues the lead to the pad.
+      const u=_trackMusicSource(AC.createOscillator()); u.type='sine'; u.frequency.value=scale[n]*4;
+      const ug=AC.createGain();
+      ug.gain.setValueAtTime(0,t); ug.gain.linearRampToValueAtTime(0.030,t+0.06); ug.gain.exponentialRampToValueAtTime(0.001,t+bl*1.0);
+      u.connect(ug); ug.connect(_musicGain); u.start(t); u.stop(t+bl*1.1);
     });
+
     const total=pat.length*bl;
     _melodyTimer=setTimeout(()=>_scheduleMelody(start+total),Math.max(50,(start+total-AC.currentTime)*1000-100));
   }
@@ -1656,7 +2016,7 @@ function initSector93() {
     _ambientTimeout(chains,11000+Math.random()*15000);
   }
 
-  let _stepAccum=0, _nextStep=0.36, _audioMoodAccum=0;
+  let _stepAccum=0, _nextStep=0.36, _audioMoodAccum=0, _heartAccum=0;
 
   document.addEventListener('visibilitychange',()=>{
     if(!AC) return;
@@ -1937,7 +2297,7 @@ function initSector93() {
       s.mesh.position.y+=Math.sin(elapsed*10+i)*0.002;
       const hitPlayer=Math.hypot(s.mesh.position.x-player.x,s.mesh.position.z-player.z)<0.42 && Math.abs(s.mesh.position.y-CAM_Y)<0.65;
       if(hitPlayer){
-        if (player.health>0) applyPlayerDamage(s.damage);
+        if (player.health>0) { sfx.spellHit(); applyPlayerDamage(s.damage); }
         disposeTransientObject(s.mesh); enemySpells.splice(i,1);
         continue;
       }
@@ -1999,7 +2359,7 @@ function initSector93() {
     if(Math.abs(xAxis.dot(fwd))<0.9999) ag.quaternion.setFromUnitVectors(xAxis,fwd);
     ag.position.copy(arrowOrigin).addScaledVector(fwd,0.04);
     scene.add(ag);
-    const arrow={mesh:ag,vel:fwd.clone().multiplyScalar(22),life:1.35,hitLife:0.55,hit:false,damage:[1,2,1,2,1,2,3][T]};
+    const arrow={mesh:ag,vel:fwd.clone().multiplyScalar(22),life:1.35,hitLife:0.55,hit:false,damage:ARROW_DMG[T]};
     arrows.push(arrow);
     if(arrows.length>72){
       const old=arrows.shift();
@@ -2359,27 +2719,57 @@ function initSector93() {
       if(currentMap[z][x]===2){spawnX=x+0.5;spawnZ=z+0.5;}
       if(currentMap[z][x]===3){exitX=x+0.5;exitZ=z+0.5;}
     }
+    // Debris obeys the architecture instead of being sprinkled uniformly. The old
+    // pass cluttered 70% of every walkable tile at random, which left no clean
+    // floor anywhere and read as visual noise rather than as a place. Rubble
+    // actually collects along walls and packs into corners, and gets kicked clear
+    // of the open ground people walk over -- so that is where we put it.
+    const solidAt=(x,z)=>isSolid(currentMap[z]?.[x] ?? 1);
     const rocks=[],splinters=[],bones=[],tufts=[],stains=[];
     for(let z=1;z<worldH-1;z++) for(let x=1;x<worldW-1;x++){
       if(isSolid(currentMap[z][x])) continue;
       const px=x+0.5,pz=z+0.5;
       if(Math.hypot(px-spawnX,pz-spawnZ)<2.2||Math.hypot(px-exitX,pz-exitZ)<1.6) continue;
-      const density=rng(x*17+z*31+6000);
-      if(density<0.30) continue;
-      const pieces=1+(density>0.82?2:0)+(density>0.94?1:0);
+
+      // How enclosed is this tile? Orthogonal walls dominate; diagonals sharpen corners.
+      const orth=[[1,0],[-1,0],[0,1],[0,-1]].filter(([dx,dz])=>solidAt(x+dx,z+dz)).length;
+      const diag=[[1,1],[1,-1],[-1,1],[-1,-1]].filter(([dx,dz])=>solidAt(x+dx,z+dz)).length;
+      const enclosure=orth+diag*0.3;
+      // Open floor stays mostly clear; edges get grubby; corners silt up.
+      const chance=0.04+Math.min(0.60,enclosure*0.24);
+      const roll=rng(x*17+z*31+6000);
+      if(roll>chance) continue;
+
+      // Bias each piece toward whichever wall it settled against.
+      let bx=0,bz=0;
+      for(const [dx,dz] of [[1,0],[-1,0],[0,1],[0,-1]]) if(solidAt(x+dx,z+dz)){ bx+=dx; bz+=dz; }
+      const blen=Math.hypot(bx,bz)||1;
+      const drift=orth?0.24:0;
+
+      const pieces=1+(orth>=2?1:0)+(orth>=3&&roll<chance*0.35?1:0);
       for(let j=0;j<pieces;j++){
         const n=x*101+z*67+j*19;
-        const ox=(rng(n)-0.5)*0.72,oz=(rng(n+1)-0.5)*0.72;
+        const ox=(rng(n)-0.5)*0.52+(bx/blen)*drift;
+        const oz=(rng(n+1)-0.5)*0.52+(bz/blen)*drift;
         if(isWallAt(px+ox,pz+oz)) continue;
-        const kind=Math.floor(rng(n+2)*10);
+        const kind=Math.floor(rng(n+2)*20);
         const item={x:px+ox,z:pz+oz,r:rng(n+3)*Math.PI*2,s:rng(n+4)};
-        if(kind<4) rocks.push(item);
-        else if(kind<6) splinters.push(item);
-        else if(kind<8) bones.push(item);
-        else if(kind===8) tufts.push(item);
-        else stains.push(item);
+        // Stone dominates a stone keep. Moss only creeps in where it is enclosed
+        // and damp, and bloodstains stay rare enough to still mean something.
+        if(kind<8) rocks.push(item);
+        else if(kind<12) splinters.push(item);
+        else if(kind<17) bones.push(item);
+        else if(kind===17&&orth>=2) tufts.push(item);
+        else if(kind>=18&&orth>=1) stains.push(item);
       }
     }
+    // Shuffle before the instance caps slice. Items are collected in map scan
+    // order, so truncation would drop whole bands off the bottom of the level
+    // rather than thinning evenly. Current maps stay under the caps, but this
+    // keeps the failure graceful if the density or map size is ever raised.
+    sShuf(rocks,currentLevel*7+11); sShuf(splinters,currentLevel*7+23);
+    sShuf(bones,currentLevel*7+37); sShuf(tufts,currentLevel*7+41); sShuf(stains,currentLevel*7+53);
+
     const dummy=new THREE.Object3D();
     const addInstances=(items,geo,mat,limit,write)=>{
       const count=Math.min(limit,items.length);
@@ -2400,12 +2790,13 @@ function initSector93() {
       new THREE.MeshStandardMaterial({color:0xb9aa80,roughness:0.88,metalness:0}),220,(d,p)=>{
         d.position.set(p.x,0.025,p.z); d.rotation.set(0,p.r,Math.PI/2+(p.s-0.5)*0.7); d.scale.set(0.8+p.s*0.7,0.8+p.s*0.7,0.8+p.s*0.7); d.updateMatrix();
       });
-    addInstances(tufts,new THREE.ConeGeometry(0.085,0.16,4),
-      new THREE.MeshStandardMaterial({color:0x39583a,roughness:0.98,metalness:0}),180,(d,p)=>{
-        d.position.set(p.x,0.08,p.z); d.rotation.y=p.r; d.scale.set(0.65+p.s,0.7+p.s*1.2,0.65+p.s); d.updateMatrix();
+    // Damp moss, not lawn grass -- desaturated and kept low against the stone.
+    addInstances(tufts,new THREE.ConeGeometry(0.075,0.11,4),
+      new THREE.MeshStandardMaterial({color:0x2e4230,roughness:0.99,metalness:0}),110,(d,p)=>{
+        d.position.set(p.x,0.055,p.z); d.rotation.y=p.r; d.scale.set(0.6+p.s*0.8,0.55+p.s*0.9,0.6+p.s*0.8); d.updateMatrix();
       });
     addInstances(stains,new THREE.CircleGeometry(0.15,7),
-      new THREE.MeshBasicMaterial({color:0x321414,transparent:true,opacity:0.46,depthWrite:false}),150,(d,p)=>{
+      new THREE.MeshBasicMaterial({color:0x321414,transparent:true,opacity:0.40,depthWrite:false}),120,(d,p)=>{
         d.position.set(p.x,0.006,p.z); d.rotation.set(-Math.PI/2,p.r,0); d.scale.set(0.45+p.s*1.4,0.35+p.s*1.1,1); d.updateMatrix();
       });
   }
@@ -3584,19 +3975,21 @@ function initSector93() {
     // Spawn enemies at randomized positions
     const enemies = [];
     
-    // Calculate total enemy count
-    const progress=Math.min(idx, LEVEL_PACE) / LEVEL_PACE;
-    const latePush=Math.max(0, idx-LEVEL_PACE);
-    const levelScale=Math.pow(progress, 1.12);
-    let totalEnemies=Math.min(3+Math.floor(levelScale*5)+Math.floor(rooms.length*0.9)+Math.floor(latePush*0.3), Math.floor(floorCells.length*0.4));
+    // The roaming population is whatever the level's enemy budget has left after
+    // the hallway guards, the hard pass and the guardian have taken their share --
+    // it is no longer driven by however many rooms the generator happened to pack.
+    // The density cap is a genuine floor-area limit now (roughly one enemy per ten
+    // walkable tiles) rather than the old 40%-of-the-map non-limit.
+    const densityCap=Math.floor(floorCells.length*0.10);
+    let totalEnemies=Math.min(budgetRoaming(idx), densityCap);
     let cellIdx=0;
     for(let e=0;e<totalEnemies&&cellIdx<floorCells.length;e++) {
       const cell=floorCells[cellIdx++];
       enemies.push({x:cell.x+0.5, z:cell.z+0.5, type:pickMobType(idx, mapSlot, e+1337)});
     }
-    
+
     // Hallway guardians — block the path to the iron gate
-    const guardCount = Math.min(2+Math.floor(idx/2), 7);
+    const guardCount = budgetHallwayGuards(idx);
     for(let g=0;g<guardCount;g++) {
       const ex=ezX1+1+Math.floor(rng(g+900)*Math.max(1,ezX2-ezX1-3));
       const ez=hallZ1+Math.floor(rng(g+950)*Math.max(1,hallZ2-hallZ1+1));
@@ -3883,7 +4276,7 @@ function initSector93() {
     player.x=spawnX; player.z=spawnZ; player.pitch=0; player.yaw=sy;
     player.hasKey=false; player.levelKills=0;
     player.y=0; player.vy=0; player.grounded=true;
-    if (!keepStats) { player.health=100; player.ammo=24; player.campaignKills=0; player.gunTier=0; player.armorTier=0; }
+    if (!keepStats) { player.health=100; player.ammo=30; player.campaignKills=0; player.gunTier=0; player.armorTier=0; }
     else { player.ammo=Math.min(player.maxAmmo, player.ammo + diff.ammoBonus); }
     statusEl.textContent=`${lvl.name} — Find the key and defeat ${levelMinibossVariant.name}.`;
     updateHud(); updateCamera();
@@ -3891,7 +4284,7 @@ function initSector93() {
 
   // ── Enemies ──────────────────────────────────────────────────────────────────
   function spawnEnemies(list, diff, spawnX, spawnZ) {
-    const D=diff||{hpMult:1,spdMult:1,dmgMult:1};
+    const D=diff||{hpMult:1,bossHpMult:1,spdMult:1,dmgMult:1};
     const geo=new THREE.PlaneGeometry(0.96,1.24);
     const shadowGeo=new THREE.CircleGeometry(0.34,12);
     const occupied=[];
@@ -3924,9 +4317,13 @@ function initSector93() {
       shadow.position.set(sp.x,0.012,sp.z);
       shadow.scale.set(et.sx*(type==='goliath'||type==='miniboss'?1.35:1),et.sx*0.65,1);
       shadow.renderOrder=1;
+      const spawnHp=Math.max(1,Math.round(
+        et.hp * (type==='miniboss' ? (D.bossHpMult ?? D.hpMult) : D.hpMult)
+      ));
       mesh.userData={
         alive:true,dying:0,deathT:0,type,bossVariant:variant?.name||null,bossAcd:et.acd,
-        hp:   Math.max(1,Math.round(et.hp   * D.hpMult * (type==='miniboss'?0.75:1))),
+        hp:   spawnHp,
+        maxHp:spawnHp,
         spd:  et.spd  * D.spdMult,
         dmg:  Math.max(1,Math.round(et.dmg  * D.dmgMult)),
         acd:  et.acd*0.5+Math.random()*et.acd*0.5,
@@ -4057,7 +4454,10 @@ function initSector93() {
       // Low HP threshold: below 25% of max HP triggers flee for non-boss enemies
       const fleeable=d.type!=='miniboss'&&d.type!=='goliath';
       const fleeHpRatio=0.25;
-      const maxHp=ETYPES[d.type]?ETYPES[d.type].hp:10;
+      // Must compare against the HP this enemy actually spawned with. Reading the
+      // unscaled ETYPES base made the ratio exceed 1 on every level past the
+      // first, so nothing ever fled.
+      const maxHp=d.maxHp||ETYPES[d.type]?.hp||10;
       if (fleeable && d.hp>0 && d.hp/maxHp<fleeHpRatio && d.state!=='flee') {
         d.state='flee';
         d.fleeDest=findFleeSpot(e,er);
@@ -4206,13 +4606,14 @@ function initSector93() {
       d.soundT=(d.soundT==null?1.5+Math.random()*3:d.soundT)-dt;
       if(d.soundT<=0){
         d.soundT=2.2+Math.random()*4.5;
-        if(sees&&d.state==='chase'&&Math.random()<0.5) sfx.mobAlert(d.type,e.position.x);
-        else if(Math.random()<0.12) sfx.mobIdle(d.type,e.position.x);
+        if(sees&&d.state==='chase'&&Math.random()<0.5) sfx.mobAlert(d.type,e.position.x,e.position.z);
+        else if(Math.random()<0.12) sfx.mobIdle(d.type,e.position.x,e.position.z);
       }
       d.acd=Math.max(0,d.acd-dt);
         if (d.type==='miniboss'&&sees&&dist>2.2&&dist<9.5&&d.acd<=0&&player.health>0
           &&hasClearAttackPath(e.position.x,e.position.z,player.x,player.z)) {
         d.attackFlash=0.32;
+        sfx.spellCast(e.position.x,e.position.z);
         spawnEnemySpell(e);
         d.acd=(d.bossAcd||ETYPES[d.type].acd)*0.8+Math.random()*0.35;
         return;
@@ -4220,6 +4621,7 @@ function initSector93() {
         if (dist<d.ar&&d.acd<=0&&player.health>0
           &&hasClearAttackPath(e.position.x,e.position.z,player.x,player.z)) {
         d.attackFlash=0.24;
+        sfx.enemyAttack(d.type,e.position.x,e.position.z);
         applyPlayerDamage(d.dmg+Math.floor(Math.random()*4)-1);
         const attackCooldown=d.bossAcd||ETYPES[d.type].acd;
         d.acd=attackCooldown*0.7+Math.random()*attackCooldown*0.5;
@@ -4350,8 +4752,8 @@ function initSector93() {
         player.health=Math.min(100,player.health+25);
         pkFlash.style.background='rgba(80,220,130,0.22)'; statusEl.textContent='Medkit — +25 HP';
       } else if (p.type==='ammo') {
-        player.ammo=Math.min(player.maxAmmo,player.ammo+8);
-        pkFlash.style.background='rgba(185,132,54,0.22)'; statusEl.textContent='Quiver — +20 arrows';
+        player.ammo=Math.min(player.maxAmmo,player.ammo+AMMO_PICKUP);
+        pkFlash.style.background='rgba(185,132,54,0.22)'; statusEl.textContent=`Quiver — +${AMMO_PICKUP} arrows`;
       } else if (p.type==='upgrade') {
         player.gunTier=Math.min(player.gunTier+1,6);
         player.upgrades++;
@@ -4574,6 +4976,8 @@ function initSector93() {
     const d=e.userData;
     if(!d.alive) return;
     d.hp-=damage;
+    // Hit confirm. Without this you cannot tell a landed arrow from a miss.
+    if(d.hp>0) sfx.hit(e.position.x,e.position.z,Math.min(player.gunTier,6));
     if(!d.origColor) d.origColor=e.material.color.clone();
     d.hitFlash=0.18;
     e.material.color.setHex(0xffffff);
@@ -4581,7 +4985,7 @@ function initSector93() {
     d.state='chase'; d.alertT=6;
     if(d.hp<=0) {
       d.alive=false; d.dying=1.0;
-      sfx.enemyDie(d.type);
+      sfx.enemyDie(d.type,e.position.x,e.position.z);
       e.material.map=mkEnemyTex(d.type,true); e.material.needsUpdate=true;
       player.levelKills++; player.campaignKills++;
       if(d.type==='miniboss') {
@@ -4604,11 +5008,13 @@ function initSector93() {
     if(player.health<=0||gameState!=='playing'||player.meleeCd>0) return;
     player.meleeCd=0.30;
     meleeSwing=1;
+    sfx.melee();
     const camDir=new THREE.Vector3(); camera.getWorldDirection(camDir);
     const ray=new THREE.Raycaster(camera.position.clone(),camDir,0,2.15);
     const target=findArrowHit(ray,new Set());
-    // The sword is deliberately weaker than even a tier-I arrow.
-    if(target) damageEnemy(target,0.5);
+    // Weaker per-second than the bow of the same tier, and it makes you close to
+    // melee range to use it -- but it no longer rounds to nothing once mobs scale.
+    if(target) damageEnemy(target,meleeDamage());
     shake.sT=0.07; shake.sS=0.035;
     updateHud();
   }
@@ -4624,7 +5030,6 @@ function initSector93() {
     if (player.weaponMode!==2||player.ammo<=0||player.health<=0||gameState!=='playing'||player.shootCd>0) return;
     player.ammo--;
     const T=Math.max(0,Math.min(player.gunTier,6));
-    const SHOOT_CD=[0.46,0.38,0.38,0.32,0.28,0.24,0.2];
     player.shootCd=SHOOT_CD[T];
     player.recoil=0.28;
     crossbowKick=0.12+Math.min(0.04,T*0.006);
@@ -4634,16 +5039,8 @@ function initSector93() {
     else { muzzleLight.intensity=0; }
     if(T>=3){ sFlash.style.opacity='0.10'; setTimeout(()=>{sFlash.style.opacity='0';},35); }
     shake.sT=0.10; shake.sS=0.05;
-    // Ray spread offsets and damage per ray per tier
-    const RAYS=[
-      [{x:0,y:0}],
-      [{x:0,y:0}],
-      [{x:-0.07,y:0},{x:0,y:0},{x:0.07,y:0}],
-      [{x:-0.07,y:0},{x:0,y:0},{x:0.07,y:0}],
-      [{x:-0.10,y:0},{x:-0.05,y:0},{x:0,y:0},{x:0.05,y:0},{x:0.10,y:0},{x:-0.14,y:0},{x:0.14,y:0}],
-      [{x:-0.14,y:0},{x:-0.09,y:0.02},{x:-0.04,y:-0.01},{x:0,y:0},{x:0.04,y:0.01},{x:0.09,y:-0.02},{x:0.14,y:0}],
-      [{x:-0.18,y:0},{x:-0.13,y:0.02},{x:-0.08,y:-0.02},{x:-0.04,y:0.03},{x:0,y:0},{x:0.04,y:-0.03},{x:0.08,y:0.02},{x:0.13,y:-0.02},{x:0.18,y:0}],
-    ][T] || [{x:0,y:0}];
+    // Ray spread offsets per tier. Each ray seeks a different enemy.
+    const RAYS=ARROW_RAYS[T] || [{x:0,y:0}];
     const killed=new Set();
     for(const off of RAYS) {
       const camDir=new THREE.Vector3(); camera.getWorldDirection(camDir);
@@ -5021,7 +5418,7 @@ function initSector93() {
     if (advTimer){clearTimeout(advTimer);advTimer=null;}
     _stopMusic();
     currentLevel=0; pendingLock=false;
-    Object.assign(player,{x:1.5,z:1.5,yaw:0,pitch:0,health:100,ammo:24,hasKey:false,
+    Object.assign(player,{x:1.5,z:1.5,yaw:0,pitch:0,health:100,ammo:30,hasKey:false,
       levelKills:0,campaignKills:0,recoil:0,bobPhase:0,shootCd:0,meleeCd:0,weaponMode:2,dmgTimer:0,moving:false,gunTier:0,armorTier:0,upgrades:0,y:0,vy:0,grounded:true});
     muzzleLight.intensity=0; shake.sT=shake.hT=0;
     hFlash.style.opacity=sFlash.style.opacity=pkFlash.style.opacity='0';
@@ -5091,11 +5488,38 @@ function initSector93() {
     _audioMoodAccum+=dt;
     if(AC&&_musicFilter&&_audioMoodAccum>=0.25) {
       _audioMoodAccum=0;
-      let threat=0;
-      for(const e of enemies) if(e.userData.alive&&e.userData.state==='chase'&&Math.hypot(e.position.x-player.x,e.position.z-player.z)<9) threat++;
+      // Weight threat by what is actually hunting you: a guardian bearing down is
+      // not the same as three grunts, and the score should not pretend otherwise.
+      let threat=0, bossClose=false;
+      for(const e of enemies){
+        const d=e.userData;
+        if(!d.alive||d.state!=='chase') continue;
+        const dist=Math.hypot(e.position.x-player.x,e.position.z-player.z);
+        if(dist>=11) continue;
+        const near=1-dist/11;
+        const weight=d.type==='miniboss'?3.2:d.type==='goliath'?2.0:d.type==='brute'?1.4:1;
+        threat+=weight*near;
+        if(d.type==='miniboss'&&dist<9) bossClose=true;
+      }
       const intensity=Math.min(1,threat/5), now=AC.currentTime;
-      _musicFilter.frequency.setTargetAtTime(720+intensity*520,now,0.35);
-      _musicGain.gain.setTargetAtTime(Math.min(1.6,boostedAudioGain(settings.music,MUSIC_GAIN_BOOST)+intensity*0.05),now,0.4);
+      // Open the score up as things close in: muffled and distant when you are
+      // alone, bright and present when you are being hunted.
+      _musicFilter.frequency.setTargetAtTime(MUSIC_FILTER_BASE+intensity*MUSIC_FILTER_RANGE,now,0.4);
+      _musicGain.gain.setTargetAtTime(
+        Math.min(1.6,boostedAudioGain(settings.music,MUSIC_GAIN_BOOST)*(1+intensity*0.18)),now,0.5);
+      // Dread drone swells in under the arrangement, harder when a guardian is on you.
+      if(_tensionGain){
+        const target=(intensity<0.12?0:0.030+intensity*0.075)*(bossClose?1.5:1)
+          *Math.max(0,Math.min(1,settings.music*2));
+        _tensionGain.gain.setTargetAtTime(target,now,0.8);
+      }
+      // Heartbeat under low health.
+      if(player.health>0&&player.health<=35&&gameState==='playing'){
+        const urgency=1-(player.health-1)/34;
+        _heartAccum+=0.25;
+        const interval=1.15-urgency*0.45;
+        if(_heartAccum>=interval){ _heartAccum=0; sfx.heartbeat(0.55+urgency*0.65); }
+      } else _heartAccum=0;
     }
     renderer.render(scene,camera);
     requestAnimationFrame(animate);
