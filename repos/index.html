@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https://api.github.com; frame-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
+  <meta name="theme-color" content="#0a0d12" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Repos - Command Center</title>
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260713revert1" />
+  <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
+  <link rel="stylesheet" href="./assets/repos-inline.css?v=20260713repos1" />
+</head>
+<body class="home-page repos-page">
+  <div class="page">
+    <header>
+      <a href="../" class="brand" aria-label="Command Center home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 5 28 27H4Z" fill="url(#brandGrad)"/><defs><linearGradient id="brandGrad" x1="4" y1="27" x2="28" y2="5"><stop offset="0" stop-color="#6d8cff"/><stop offset="1" stop-color="#a4b8ff"/></linearGradient></defs></svg></span>
+        <span class="brand-name">Command Center</span>
+      </a>
+      <div class="header-left">
+        <a href="../" class="home-button">Home</a>
+        <a href="../dashboard/" class="home-button">Dashboard</a>
+        <a href="../stream/" class="home-button">Stream</a>
+        <a href="../media-portal/" class="home-button">Media</a>
+        <a href="../web-games/" class="home-button">Games</a>
+        <a href="../repos/" class="home-button" aria-current="page">Repos</a>
+      </div>
+    </header>
+
+    <main class="main repos-main">
+      <div class="repos-shell">
+
+        <!-- Profile / summary -->
+        <section class="card repos-profile" aria-label="GitHub profile summary">
+          <img id="gh-avatar" class="repos-avatar" alt="" width="72" height="72" />
+          <div class="repos-profile-copy">
+            <p class="repos-eyebrow">GitHub</p>
+            <h1 class="repos-title"><a id="gh-profile-link" href="https://github.com/pl0xuee" target="_blank" rel="noopener noreferrer">@pl0xuee</a></h1>
+            <p id="gh-bio" class="repos-bio">Loading profile…</p>
+          </div>
+          <dl class="repos-stats" aria-label="Account totals">
+            <div class="repos-stat"><dt>Repos</dt><dd id="gh-stat-repos">--</dd></div>
+            <div class="repos-stat"><dt>Stars</dt><dd id="gh-stat-stars">--</dd></div>
+            <div class="repos-stat"><dt>Followers</dt><dd id="gh-stat-followers">--</dd></div>
+            <div class="repos-stat"><dt>Languages</dt><dd id="gh-stat-langs">--</dd></div>
+          </dl>
+        </section>
+
+        <!-- Controls -->
+        <section class="repos-controls" aria-label="Filter and sort repositories">
+          <input id="repo-search" type="search" class="repos-search" placeholder="🔎 Filter repos by name, language, or topic…" autocomplete="off" />
+          <div class="repos-control-group">
+            <label class="repos-sort-label" for="repo-sort">Sort</label>
+            <select id="repo-sort" class="repos-select">
+              <option value="updated">Recently updated</option>
+              <option value="stars">Most stars</option>
+              <option value="name">Name (A–Z)</option>
+              <option value="created">Newest</option>
+            </select>
+            <button id="repo-refresh" type="button" class="home-button repos-refresh">↻ Refresh</button>
+          </div>
+        </section>
+
+        <p id="repo-meta" class="repos-meta" role="status">Loading repositories…</p>
+        <div id="repo-error" class="repos-error" hidden></div>
+
+        <!-- Cards -->
+        <div id="repo-grid" class="repos-grid" aria-live="polite"></div>
+      </div>
+    </main>
+  </div>
+  <script src="../assets/js/script.js"></script>
+  <script src="./assets/repos-inline.js?v=20260713repos1"></script>
+</body>
+</html>

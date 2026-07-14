@@ -1,4 +1,4 @@
-const CACHE_NAME = 'command-center-v73';
+const CACHE_NAME = 'command-center-v74';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
@@ -18,6 +18,10 @@ const APP_SHELL_FILES = [
   '/media-portal/',
   '/media-portal/index.html',
   '/media-portal/assets/media-inline.js?v=20260711media2',
+  '/repos/',
+  '/repos/index.html',
+  '/repos/assets/repos-inline.css?v=20260713repos1',
+  '/repos/assets/repos-inline.js?v=20260713repos1',
   '/web-games/',
   '/web-games/index.html',
   '/web-games/assets/web-games-inline.css?v=20260712refined1',
