@@ -1180,8 +1180,8 @@ if (!window.__dashboardWidgetsInitialized) {
     const chart = LightweightCharts.createChart(chartDiv, {
       width: chartDiv.clientWidth,
       height: chartDiv.clientHeight,
-      layout: { background: { type: 'solid', color: '#080d14' }, textColor: '#c7d5e8', attributionLogo: false },
-      grid: { vertLines: { color: '#1a2431' }, horzLines: { color: '#1a2431' } },
+      layout: { background: { type: 'solid', color: '#161a1d' }, textColor: '#c7d5e8', attributionLogo: false },
+      grid: { vertLines: { color: '#2a3339' }, horzLines: { color: '#2a3339' } },
       crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
       handleScroll: {
         mouseWheel: true,
