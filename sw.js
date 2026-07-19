@@ -1,10 +1,10 @@
-const CACHE_NAME = 'command-center-v74';
+const CACHE_NAME = 'command-center-v75';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
   '/assets/css/styles.css?v=20260713newswidth1',
   '/assets/js/script.js',
-  '/assets/js/index-inline.js?v=20260713newsfix1',
+  '/assets/js/index-inline.js?v=20260718gnews1',
   '/manifest.webmanifest',
   '/assets/icons/favicon.svg',
   '/dashboard/',

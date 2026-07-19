@@ -1,6 +1,6 @@
     let allNewsItems = [];
     const NEWS_MAX_ITEMS = 10;
-    const NEWS_CACHE_PREFIX = 'homeNewsCache:v2:';
+    const NEWS_CACHE_PREFIX = 'homeNewsCache:v3:';
     const NEWS_REQUEST_TIMEOUT_MS = 9000;
     const NEWS_LOADING_TIMEOUT_MS = 12000;
     const WEATHER_CACHE_TTL_MS = 15 * 60 * 1000;
@@ -78,20 +78,22 @@
       try {
         let feedUrl = '';
 
-        // Set RSS feeds based on category.
-        // Note: Google News RSS URLs are not used here because rss2json's
-        // fetcher is reliably blocked/rejected by Google (verified: 100%
-        // failure rate across repeated requests), which was causing the
-        // news list to fall back on nearly every load. These publisher
-        // feeds are fetched by rss2json consistently.
+        // Set RSS feeds based on category. Google News aggregates across
+        // publishers rather than pinning each category to a single outlet.
+        // Item titles arrive as "Headline - Publisher", which renderNews
+        // already splits to show the originating source.
+        const GNEWS_REGION = 'hl=en-US&gl=US&ceid=US:en';
+        const gnewsTopic = (topic) =>
+          `https://news.google.com/rss/headlines/section/topic/${topic}?${GNEWS_REGION}`;
+
         if (type === 'usa') {
-          feedUrl = 'https://feeds.npr.org/1001/rss.xml';
+          feedUrl = gnewsTopic('NATION');
         } else if (type === 'world') {
-          feedUrl = 'http://feeds.bbci.co.uk/news/world/rss.xml';
+          feedUrl = gnewsTopic('WORLD');
         } else if (type === 'finance') {
-          feedUrl = 'https://www.cnbc.com/id/10000664/device/rss/rss.html';
+          feedUrl = gnewsTopic('BUSINESS');
         } else {
-          feedUrl = 'https://feeds.bloomberg.com/markets/news.rss';
+          feedUrl = `https://news.google.com/rss?${GNEWS_REGION}`;
         }
 
         let data = await fetchNewsWithCache(feedUrl, type);
