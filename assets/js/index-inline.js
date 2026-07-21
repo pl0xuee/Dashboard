@@ -14,6 +14,10 @@
     const REVERSE_GEO_CACHE_PREFIX = 'homeReverseGeoCache:';
     const REVERSE_GEO_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
     let newsRequestSeq = 0;
+    let currentNewsType = 'usa';
+    // when the headlines currently on screen were actually fetched - the feed is
+    // cached for an hour, so this is not the same as "now"
+    let currentNewsFetchedAt = null;
 
     function debugLog(...args) {
       if (!DEBUG_LOGS) return;
@@ -61,9 +65,38 @@
     const newsCache = {};
     const CACHE_DURATION = 3600000; // 1 hour in milliseconds
 
+    function setNewsTabActive(type) {
+      [
+        { id: 'btn-usa', type: 'usa' },
+        { id: 'btn-world', type: 'world' },
+        { id: 'btn-finance', type: 'finance' }
+      ].forEach(({ id, type: buttonType }) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.toggle('active', buttonType === type);
+        el.setAttribute('aria-pressed', String(buttonType === type));
+      });
+    }
+
+    function renderNewsTimestamp() {
+      const el = document.getElementById('news-asof-text');
+      if (!el) return;
+
+      if (!Number.isFinite(currentNewsFetchedAt)) {
+        el.textContent = 'Refresh';
+        return;
+      }
+
+      const time = new Date(currentNewsFetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      el.textContent = `As of ${time}`;
+    }
+
     async function showNews(type) {
       const container = document.getElementById('news-container');
       if (!container) return;
+
+      currentNewsType = type;
+      setNewsTabActive(type);
 
       const requestId = ++newsRequestSeq;
       container.textContent = 'Loading...';
@@ -72,6 +105,8 @@
         if (requestId !== newsRequestSeq) return;
         if (String(container.textContent || '').trim() !== 'Loading...') return;
 
+        // fallback copy is not a fetch, so it gets no timestamp to stand behind
+        currentNewsFetchedAt = null;
         allNewsItems = Array.isArray(FALLBACK_NEWS.items) ? FALLBACK_NEWS.items : [];
         renderNews();
       }, NEWS_LOADING_TIMEOUT_MS);
@@ -105,6 +140,7 @@
       } catch (e) { 
         if (requestId !== newsRequestSeq) return;
         console.error('News error:', e);
+        currentNewsFetchedAt = null;
         allNewsItems = Array.isArray(FALLBACK_NEWS.items) ? FALLBACK_NEWS.items : [];
         renderNews();
       } finally {
@@ -128,6 +164,7 @@
         const now = Date.now();
         if (now - cached.timestamp < CACHE_DURATION) {
           debugLog(`Using cached news for ${cacheKey}`);
+          currentNewsFetchedAt = cached.timestamp;
           return cached.data;
         }
       }
@@ -136,6 +173,7 @@
       const persisted = readStorageJson(persistentCacheKey);
       if (persisted && isFreshTimestamp(persisted.timestamp, CACHE_DURATION) && persisted.data) {
         newsCache[cacheKey] = persisted;
+        currentNewsFetchedAt = persisted.timestamp;
         return persisted.data;
       }
 
@@ -148,7 +186,8 @@
         timestamp: Date.now()
       };
       writeStorageJson(persistentCacheKey, newsCache[cacheKey]);
-      
+      currentNewsFetchedAt = newsCache[cacheKey].timestamp;
+
       return data;
     }
 
@@ -256,6 +295,7 @@
 
       container.innerHTML = '';
       container.appendChild(list);
+      renderNewsTimestamp();
     }
     showNews('usa');
     const SENTIMENT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
@@ -263,6 +303,22 @@
     function applysentiment(el, valueText, color) {
       el.textContent = valueText;
       el.style.color = color;
+
+      // Read the score back off the rendered text rather than widening the cache
+      // payload: entries already in localStorage predate the gauge and carry no
+      // score field, and a failed parse should leave the mark hidden - an unlit
+      // gauge means "waiting on data", never "score is zero".
+      const mark = document.getElementById('sentiment-mark');
+      if (!mark) return;
+
+      const score = parseInt(String(valueText), 10);
+      if (!Number.isFinite(score)) {
+        mark.classList.remove('is-set');
+        return;
+      }
+
+      mark.style.left = `${Math.min(100, Math.max(0, score))}%`;
+      mark.classList.add('is-set');
     }
 
     async function fetchSentiment() {
@@ -717,25 +773,39 @@
 
       fetchSentiment();
     }
-    function formatDuration(secondsRemaining) {
+    // No seconds: the countdown lives in the page's top bezel, and a digit changing
+    // every second there reads as flicker rather than information.
+    function formatDurationShort(secondsRemaining) {
       const total = Math.max(0, Math.floor(secondsRemaining));
       const days = Math.floor(total / 86400);
       const hours = Math.floor((total % 86400) / 3600);
       const minutes = Math.floor((total % 3600) / 60);
-      const seconds = total % 60;
 
-      if (days > 0) return `${days}d ${hours}h ${minutes}m ${seconds}s`;
-      if (hours > 0) return `${hours}h ${minutes}m ${seconds}s`;
-      return `${minutes}m ${seconds}s`;
+      if (days > 0) return `${days}d ${hours}h`;
+      if (hours > 0) return `${hours}h ${minutes}m`;
+      return `${minutes}m`;
+    }
+
+    // The rail is the only place market state is reported. `note` carries the
+    // detail the chip has no room for - why it's shut, or that it shuts early -
+    // as a tooltip, so switching to the compact readout loses nothing.
+    function renderMarketRail(isOpen, secondsRemaining, note) {
+      const stateEl = document.getElementById('rail-market-state');
+      const countdownEl = document.getElementById('rail-market-countdown');
+      if (stateEl) {
+        stateEl.textContent = isOpen ? 'Open' : 'Closed';
+        stateEl.className = `market-index-state ${isOpen ? 'live' : 'last'}`;
+        stateEl.title = note || '';
+      }
+      if (countdownEl) {
+        countdownEl.textContent = `${isOpen ? 'closes' : 'opens'} ${formatDurationShort(secondsRemaining)}`;
+      }
     }
 
     function updateMarketStatus() {
       const now = new Date();
       // Adjust to EST for accurate market time
       const estTime = new Date(now.toLocaleString("en-US", { timeZone: "America/New_York" }));
-      const day = estTime.getDay(); // 0 is Sunday, 6 is Saturday
-      const marketStatus = document.getElementById('market-status');
-      if (!marketStatus) return;
 
       const totalSeconds = (estTime.getHours() * 3600) + (estTime.getMinutes() * 60) + estTime.getSeconds();
       const session = getUsMarketSession(estTime);
@@ -764,20 +834,14 @@
 
       if (session.isTradingDay && totalSeconds >= session.openSeconds && totalSeconds < session.closeSeconds) {
         const secondsLeft = session.closeSeconds - totalSeconds;
-        const closeLabel = session.isEarlyClose ? 'Early closes' : 'Closes';
-        marketStatus.textContent = `Market open · ${closeLabel} in ${formatDuration(secondsLeft)}`;
-        marketStatus.style.color = '#8df5b2';
-        marketStatus.style.fontWeight = '700';
+        renderMarketRail(true, secondsLeft, session.isEarlyClose ? 'Early close today' : '');
         return;
       }
 
-      const secondsUntilOpen = getSecondsUntilNextOpen();
-      const reasonLabel = session.reason === 'holiday'
-        ? `(${session.holidayName || 'Holiday'})`
-        : (session.reason === 'weekend' ? '(Weekend)' : '');
-      marketStatus.textContent = `Market closed ${reasonLabel} · Opens in ${formatDuration(secondsUntilOpen)}`.replace('  ', ' ').trim();
-      marketStatus.style.color = session.reason === 'weekend' ? '#9ab7db' : '#f0c77e';
-      marketStatus.style.fontWeight = '700';
+      const reason = session.reason === 'holiday'
+        ? (session.holidayName || 'Market holiday')
+        : (session.reason === 'weekend' ? 'Weekend' : '');
+      renderMarketRail(false, getSecondsUntilNextOpen(), reason);
     }
     function getUserTimeZone() {
       try {
@@ -809,9 +873,10 @@
 
     function updateClock() {
       const zone = getUserTimeZone();
+      // the rail eyebrow is a legend, so it carries the zone alone ("PDT"), not a sentence
       const titleEl = document.getElementById('clock-title');
       if (titleEl) {
-        titleEl.textContent = `Time (${formatTimeZoneLabel(zone)})`;
+        titleEl.textContent = formatTimeZoneLabel(zone);
       }
 
       const options = {
@@ -1249,6 +1314,35 @@
         button.addEventListener('click', () => showNews(type));
       }
     });
+
+    // Refresh clears both cache layers for the current feed, otherwise showNews
+    // would just re-serve the same hour-old payload it already had.
+    const newsRefreshButton = document.getElementById('news-refresh');
+    if (newsRefreshButton) {
+      newsRefreshButton.addEventListener('click', async () => {
+        if (newsRefreshButton.classList.contains('is-loading')) return;
+
+        delete newsCache[currentNewsType];
+        try {
+          localStorage.removeItem(`${NEWS_CACHE_PREFIX}${currentNewsType}`);
+        } catch (_) {
+          // storage unavailable: the in-memory delete above is enough to force a fetch
+        }
+
+        newsRefreshButton.classList.add('is-loading');
+        try {
+          await showNews(currentNewsType);
+        } finally {
+          newsRefreshButton.classList.remove('is-loading');
+        }
+      });
+    }
+
+    // A pointing device implies a keyboard, so focusing the search costs nothing;
+    // on touch it would throw up the on-screen keyboard over the page on arrival.
+    if (window.matchMedia('(pointer: fine)').matches) {
+      document.querySelector('.home-search-input')?.focus({ preventScroll: true });
+    }
 
     const nascarButtons = [
       { id: 'nascar-tab-cup', type: 'cup' },

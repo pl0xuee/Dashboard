@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Home - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260721annunciator2" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260721rail1" />
   <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
 </head>
 <body class="home-page">
@@ -27,13 +27,28 @@
         <a href="./web-games/" class="home-button">Games</a>
         <a href="./repos/" class="home-button">Repos</a>
       </div>
+      <!-- Status rail: readings etched into the header bezel. No annunciator lamp
+           here on purpose - a dark lamp means "waiting on data" everywhere else on
+           the site, and a lamp that went dark simply because the market closed
+           would corrupt that meaning. The market state reuses the .market-index-state
+           chip, which already encodes open/closed. -->
+      <div class="status-rail">
+        <div class="rail-cell">
+          <span id="clock-title" class="rail-legend">Local</span>
+          <span id="clock" class="rail-value"></span>
+        </div>
+        <div class="rail-cell">
+          <span class="rail-legend">Market</span>
+          <span class="rail-reading">
+            <span id="rail-market-state" class="market-index-state na">--</span>
+            <span id="rail-market-countdown" class="rail-value rail-countdown">--</span>
+          </span>
+        </div>
+      </div>
     </header>
     <main class="main home-main">
       <div class="welcome home-welcome">
         <div class="welcome-inner home-welcome-inner">
-          <div class="home-hero">
-            <h1 class="home-hero-title">Everything at hand, nothing in the way.</h1>
-          </div>
           <div class="home-search-wrap">
             <form action="https://search.brave.com/search" method="get" target="_blank" class="home-search-form">
               <input type="text" name="q" placeholder="🔎 Search Brave..." class="home-search-input">
@@ -46,7 +61,23 @@
               <section class="card info-card">
                 <h2 class="home-box-title">Market Sentiment</h2>
                 <p id="sentiment-val" class="info-value">Loading...</p>
-                <p id="market-status" class="info-subtext"></p>
+                <!-- Fear &amp; Greed scale. Zone hairlines sit at the same thresholds the
+                     script colours the number by (25/45/55/75). The track stays neutral:
+                     the number already carries the red-to-green reading, so colouring
+                     both would be the same job done twice. -->
+                <div class="sentiment-gauge">
+                  <div class="sentiment-track">
+                    <span class="sentiment-zone" style="left: 25%"></span>
+                    <span class="sentiment-zone" style="left: 45%"></span>
+                    <span class="sentiment-zone" style="left: 55%"></span>
+                    <span class="sentiment-zone" style="left: 75%"></span>
+                    <span id="sentiment-mark" class="sentiment-mark"></span>
+                  </div>
+                  <div class="sentiment-scale">
+                    <span>Fear</span>
+                    <span>Greed</span>
+                  </div>
+                </div>
                 <div class="market-index-list">
                   <div class="market-index-row">
                     <span class="market-index-name">Dow</span>
@@ -68,29 +99,28 @@
                   </div>
                 </div>
               </section>
+              <!-- One panel, three groups. The lists stay separate elements because the
+                   click-ranking script sorts within each .quick-links-list, so a link you
+                   reach for often rises inside its own group rather than jumping groups. -->
               <section class="card">
-            <h2 class="home-box-title">Entertainment</h2>
-            <ul class="quick-links-list">
-              <li><a href="https://youtube.com" target="_blank">YouTube</a></li>
-              <li><a href="https://tv.youtube.com" target="_blank">YouTube TV</a></li>
-              <li><a href="https://twitch.tv" target="_blank">Twitch</a></li>
-              <li><a href="https://netflix.com" target="_blank">Netflix</a></li>
-              <li><a href="https://primevideo.com" target="_blank">Amazon Video</a></li>
-              <li><a href="https://hbomax.com" target="_blank">Max</a></li>
-            </ul>
-          </section>
-
-              <section class="card">
-            <h2 class="home-box-title">AI & Research</h2>
-            <ul class="quick-links-list">
-              <li><a href="https://chatgpt.com" target="_blank">ChatGPT</a></li>
-              <li><a href="https://gemini.google.com" target="_blank">Gemini</a></li>
-              <li><a href="https://reddit.com" target="_blank">Reddit</a></li>
-              <li><a href="https://wikipedia.org" target="_blank">Wikipedia</a></li>
-            </ul>
-          </section>
-              <section class="card">
-                <h2 class="home-box-title">Work & Tools</h2>
+                <h2 class="home-box-title">Links</h2>
+                <h3 class="links-sublegend">Entertainment</h3>
+                <ul class="quick-links-list">
+                  <li><a href="https://youtube.com" target="_blank">YouTube</a></li>
+                  <li><a href="https://tv.youtube.com" target="_blank">YouTube TV</a></li>
+                  <li><a href="https://twitch.tv" target="_blank">Twitch</a></li>
+                  <li><a href="https://netflix.com" target="_blank">Netflix</a></li>
+                  <li><a href="https://primevideo.com" target="_blank">Amazon Video</a></li>
+                  <li><a href="https://hbomax.com" target="_blank">Max</a></li>
+                </ul>
+                <h3 class="links-sublegend">AI &amp; Research</h3>
+                <ul class="quick-links-list">
+                  <li><a href="https://chatgpt.com" target="_blank">ChatGPT</a></li>
+                  <li><a href="https://gemini.google.com" target="_blank">Gemini</a></li>
+                  <li><a href="https://reddit.com" target="_blank">Reddit</a></li>
+                  <li><a href="https://wikipedia.org" target="_blank">Wikipedia</a></li>
+                </ul>
+                <h3 class="links-sublegend">Work &amp; Tools</h3>
                 <ul class="quick-links-list">
                   <li><a href="https://tradingview.com" target="_blank">TradingView</a></li>
                   <li><a href="https://github.com" target="_blank">GitHub</a></li>
@@ -100,13 +130,17 @@
                   <li><a href="https://amazon.com" target="_blank">Amazon</a></li>
                 </ul>
               </section>
-
-              </section>
+            </section>
 
             <!-- Middle: News -->
             <section class="home-news-col">
               <div class="card news-card">
-                <h2 class="home-box-title center">📰 Live News Feed</h2>
+                <h2 class="home-box-title center">
+                  <span class="news-plate-label">📰 Live News Feed</span>
+                  <button id="news-refresh" type="button" class="news-asof" title="Refresh headlines">
+                    <span id="news-asof-text">As of --:--</span>
+                  </button>
+                </h2>
                 <div class="news-controls">
                   <button id="btn-usa" class="home-button" title="United States news">🇺🇸 United States</button>
                   <button id="btn-world" class="home-button" title="World news">🌍 World</button>
@@ -120,10 +154,6 @@
 
             <!-- Right Side: Stats -->
             <section class="home-stats-col">
-              <section class="card info-card">
-                <h2 id="clock-title" class="home-box-title">Time</h2>
-                <p id="clock" class="info-value clock-value"></p>
-              </section>
               <section class="card info-card">
                 <h2 class="home-box-title">Weather</h2>
                 <div id="weather" class="weather-box">
@@ -162,12 +192,13 @@
                 </div>
               </section>
             </section>
-      </div>
+          </div>
+        </div>
       </div>
     </main>
   </div>
   <script src="assets/js/script.js"></script>
-  <script src="assets/js/index-inline.js?v=20260721hourly1"></script>
+  <script src="assets/js/index-inline.js?v=20260721rail1"></script>
 </body>
 </html>
 
