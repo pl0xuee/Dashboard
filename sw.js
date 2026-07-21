@@ -1,10 +1,10 @@
-const CACHE_NAME = 'command-center-v75';
+const CACHE_NAME = 'command-center-v79';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
-  '/assets/css/styles.css?v=20260713newswidth1',
+  '/assets/css/styles.css?v=20260721annunciator2',
   '/assets/js/script.js',
-  '/assets/js/index-inline.js?v=20260718gnews1',
+  '/assets/js/index-inline.js?v=20260721hourly1',
   '/manifest.webmanifest',
   '/assets/icons/favicon.svg',
   '/dashboard/',
@@ -24,7 +24,7 @@ const APP_SHELL_FILES = [
   '/repos/assets/repos-inline.js?v=20260713repos1',
   '/web-games/',
   '/web-games/index.html',
-  '/web-games/assets/web-games-inline.css?v=20260712refined1',
+  '/web-games/assets/web-games-inline.css?v=20260721annunciator1',
   '/web-games/assets/web-games-inline.js?v=20260712dedupe1',
   '/web-games/middle-earth-rpg/',
   '/web-games/middle-earth-rpg/index.html',

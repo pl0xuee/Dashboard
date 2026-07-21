@@ -5,7 +5,8 @@
     const NEWS_LOADING_TIMEOUT_MS = 12000;
     const WEATHER_CACHE_TTL_MS = 15 * 60 * 1000;
     const WEATHER_LOCATION_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
-    const WEATHER_LAST_SNAPSHOT_KEY = 'homeWeatherLastSnapshot';
+    // v2: snapshots now carry an hourly strip, so older cached shapes are ignored
+    const WEATHER_LAST_SNAPSHOT_KEY = 'homeWeatherLastSnapshot:v2';
     const WEATHER_APPROX_LOCATION_KEY = 'homeWeatherApproxLocation';
     const NASCAR_CACHE_PREFIX = 'homeNascarSchedule:';
     const NASCAR_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
@@ -932,6 +933,9 @@
         descEl.textContent = snapshot.condition;
         rangeEl.textContent = `H: ${snapshot.max}° L: ${snapshot.min}°`;
         summaryEl.innerHTML = snapshot.weekHtml;
+
+        const hourlyEl = document.getElementById('weather-hourly');
+        if (hourlyEl) hourlyEl.innerHTML = snapshot.hourlyHtml || '';
         if (cityEl && locationLabel) cityEl.textContent = `Location: ${locationLabel}`;
       }
 
@@ -962,7 +966,43 @@
                       </div>`;
         }
 
-        return { temp, max, min, condition, icon, weekHtml };
+        // Next six hours.
+        //
+        // open-meteo with timezone=auto returns wall-clock stamps in the *forecast
+        // location's* zone and no offset ("2026-07-21T14:00"). Passing those to
+        // new Date() would parse them in the *browser's* zone, which is only right
+        // while the two happen to agree — a VPN or a trip abroad would silently
+        // select the wrong hour. So shift "now" into the forecast zone using the
+        // offset the API reports, and read each stamp as UTC to match.
+        const hourlyTimes = (data.hourly && data.hourly.time) || [];
+        const hourlyTemps = (data.hourly && data.hourly.temperature_2m) || [];
+        const hourlyCodes = (data.hourly && data.hourly.weather_code) || [];
+        let hourlyHtml = '';
+        if (hourlyTimes.length) {
+          const offsetMs = (Number(data.utc_offset_seconds) || 0) * 1000;
+          const nowAtLocation = Date.now() + offsetMs;
+          const stampMs = (stamp) => Date.parse(`${stamp}Z`);
+
+          let start = hourlyTimes.findIndex((stamp) => stampMs(stamp) > nowAtLocation);
+          if (start < 0) start = Math.max(0, hourlyTimes.length - 6);
+          const end = Math.min(start + 6, hourlyTimes.length);
+
+          for (let i = start; i < end; i++) {
+            // read the hour off the string so the label cannot be shifted either
+            const hour24 = Number(String(hourlyTimes[i]).slice(11, 13));
+            const hour12 = hour24 % 12 || 12;
+            const meridiem = hour24 >= 12 ? 'PM' : 'AM';
+            const hourIcon = icons[hourlyCodes[i]] || '🌡️';
+            const hourTemp = Math.round(hourlyTemps[i]);
+            hourlyHtml += `<div class="weather-hour">
+                            <div class="weather-hour-time">${Number.isFinite(hour24) ? `${hour12}${meridiem}` : '--'}</div>
+                            <div class="weather-hour-icon" aria-hidden="true">${hourIcon}</div>
+                            <div class="weather-hour-temp">${Number.isFinite(hourTemp) ? hourTemp : '--'}°</div>
+                           </div>`;
+          }
+        }
+
+        return { temp, max, min, condition, icon, weekHtml, hourlyHtml };
       }
 
       function getWeatherCacheKey(latitude, longitude) {
@@ -996,7 +1036,7 @@
           renderWeatherSnapshot(cached.snapshot, locationLabel || cached.locationLabel);
         }
 
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&timezone=auto`);
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&timezone=auto&forecast_days=7`);
         const data = await res.json();
         const snapshot = buildWeatherSnapshot(data);
 
@@ -1221,3 +1261,53 @@
         button.addEventListener('click', () => showNascarSeries(type));
       }
     });
+
+    // ---------- quick links ranked by use ----------
+    // Counts clicks per destination and floats the ones you actually reach for to
+    // the top of their own group. Ordering is settled once per load so links never
+    // move under the cursor, and ties keep the order authored in the HTML.
+    (() => {
+      const QUICK_LINK_CLICKS_KEY = 'homeQuickLinkClicks';
+
+      function loadCounts() {
+        const raw = readStorageJson(QUICK_LINK_CLICKS_KEY);
+        return raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+      }
+
+      let counts = loadCounts();
+
+      function hrefOf(item) {
+        const link = item.querySelector('a');
+        return link ? link.getAttribute('href') : '';
+      }
+
+      document.querySelectorAll('.quick-links-list').forEach((list) => {
+        const items = Array.from(list.children);
+        items.forEach((item, index) => { item.dataset.baseOrder = String(index); });
+
+        items
+          .slice()
+          .sort((a, b) => {
+            const used = (counts[hrefOf(b)] || 0) - (counts[hrefOf(a)] || 0);
+            if (used !== 0) return used;
+            return Number(a.dataset.baseOrder) - Number(b.dataset.baseOrder);
+          })
+          .forEach((item) => list.appendChild(item));
+      });
+
+      function recordUse(event) {
+        // middle-click opens in a background tab and still counts as a use
+        if (event.type === 'auxclick' && event.button !== 1) return;
+        const link = event.target.closest && event.target.closest('.quick-links-list a');
+        if (!link) return;
+        const href = link.getAttribute('href');
+        if (!href) return;
+        // re-read first: another tab may have recorded uses since this page loaded
+        counts = loadCounts();
+        counts[href] = (counts[href] || 0) + 1;
+        writeStorageJson(QUICK_LINK_CLICKS_KEY, counts);
+      }
+
+      document.addEventListener('click', recordUse);
+      document.addEventListener('auxclick', recordUse);
+    })();

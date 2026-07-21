@@ -2263,3 +2263,123 @@
 .games-page .memory-card.is-matched:hover {
   transform: none !important;
 }
+
+/* ---------- Annunciator reconciliation ----------
+   Brings the arcade chrome onto the shared instrument language: machined edges,
+   flat panel faces, recessed data wells, etched legends. No lift-on-hover — panels
+   are bolted to the chassis, so hover lights an edge instead of floating the card. */
+
+.games-page .games-card,
+.games-page .game-panel,
+.games-page .games-toolbar-copy,
+.games-page .welcome-inner,
+.games-page .game-picker-btn {
+  border-radius: var(--r-lg);
+  border-color: var(--border);
+  background: var(--surface);
+  box-shadow: var(--bezel), var(--shadow-sm);
+}
+
+.games-page .game-picker-btn {
+  min-height: 102px;
+  transition: border-color 0.16s var(--ease), background 0.16s var(--ease), box-shadow 0.16s var(--ease);
+}
+/* drop the glassy diagonal sheen — panels are matte, not glazed */
+.games-page .game-picker-btn::before { display: none; }
+
+/* the picker's coloured tint survives as a left edge marker, not a wash.
+   The RPG tile is excluded: its ::after is the scrim that keeps the label
+   legible over the banner photo, and must not be replaced. */
+.games-page .game-picker-btn:not(.game-picker-btn-rpg)::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  right: auto;
+  width: 3px;
+  height: auto;
+  background: var(--accent);
+  opacity: 0.35;
+  transition: opacity 0.16s ease;
+  z-index: 1;
+}
+.games-page .game-picker-btn:hover,
+.games-page .game-picker-btn:not(.game-picker-btn-rpg):hover {
+  transform: none;
+  border-color: var(--border-strong);
+  background: var(--surface-hover);
+  box-shadow: var(--bezel), var(--shadow-sm);
+  filter: none;
+}
+.games-page .game-picker-btn:not(.game-picker-btn-rpg):hover::after { opacity: 0.8; }
+.games-page .game-picker-btn[aria-pressed='true'],
+.games-page .game-picker-btn.active {
+  border-color: var(--accent-border);
+  background: var(--surface-raised);
+}
+.games-page .game-picker-btn:not(.game-picker-btn-rpg)[aria-pressed='true']::after,
+.games-page .game-picker-btn:not(.game-picker-btn-rpg).active::after {
+  opacity: 1;
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+
+.games-page .game-toolbar-actions .home-button { border-radius: var(--r-md); }
+.games-page .game-toolbar-actions .home-button:hover { transform: none; }
+
+/* kickers read as etched legends, not pills */
+.games-page .game-picker-kicker,
+.games-page .game-toolbar-hint-kicker {
+  border-radius: var(--r-sm);
+  font-family: var(--font-legend);
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  box-shadow: none;
+}
+.games-page .game-toolbar-hint {
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  border-color: var(--border);
+}
+.games-page .game-picker-art { border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4); }
+.games-page .game-picker-label { font-family: var(--font-legend); letter-spacing: 0.04em; }
+
+/* scoreboards are instrument readouts: recessed wells, mono tabular figures */
+.games-page .stat {
+  border-radius: var(--r-sm);
+  background: var(--well);
+  border-color: var(--border);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+.games-page .stat-label {
+  font-family: var(--font-legend);
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: var(--text-faint);
+}
+.games-page .stat-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--accent-strong);
+  font-weight: 700;
+}
+/* game panel titles: sized explicitly so h1 (Tetris) and h2 (Snake, Pong…)
+   render identically instead of inheriting wildly different element defaults */
+.games-page .games-title {
+  font-family: var(--font-legend);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--text);
+  margin: 0 0 6px;
+  text-shadow: none;
+}
+/* the side rails ("Next", "Status") stay etched legends */
+.games-page .games-side-title {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+}
