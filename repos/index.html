@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Repos - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260721rail1" />
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260721regroup1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
   <link rel="stylesheet" href="./assets/repos-inline.css?v=20260713repos1" />
 </head>
@@ -71,6 +71,21 @@
         <div id="repo-grid" class="repos-grid" aria-live="polite"></div>
       </div>
     </main>
+    <!-- Bottom bezel. No test control: this page carries no annunciator lamp, and
+         a control that lit nothing would break the contract it exists to prove. -->
+    <footer class="site-footer">
+      <a href="../" class="footer-plate" aria-label="Command Center home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 5 28 27H4Z" fill="#a9762a"/></svg></span>
+        <span class="footer-plate-text">
+          <span class="footer-plate-name">Command Center</span>
+          <span class="footer-plate-stamp">pl0xuee.com</span>
+        </span>
+      </a>
+      <nav class="footer-nav" aria-label="Site information">
+        <a href="../griddown/privacy/">GridDown privacy</a>
+        <a href="https://github.com/pl0xuee/Dashboard" target="_blank">Source</a>
+      </nav>
+    </footer>
   </div>
   <script src="../assets/js/script.js"></script>
   <script src="./assets/repos-inline.js?v=20260713repos1"></script>

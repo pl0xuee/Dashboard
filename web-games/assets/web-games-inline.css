@@ -1429,6 +1429,7 @@
     }
 
     body.rpg-active-mode.rpg-theater-mode > .page > header,
+    body.rpg-active-mode.rpg-theater-mode > .page > .site-footer,
     body.rpg-active-mode.rpg-theater-mode .games-shell > section:first-child {
       display: none;
     }
@@ -1516,6 +1517,7 @@
     }
 
     body.retrodoom-active-mode.retrodoom-theater-mode > .page > header,
+    body.retrodoom-active-mode.retrodoom-theater-mode > .page > .site-footer,
     body.retrodoom-active-mode.retrodoom-theater-mode .games-shell > section:first-child {
       display: none;
     }
