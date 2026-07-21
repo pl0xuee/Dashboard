@@ -210,7 +210,10 @@ body.home-page {
 }
 body.home-page .page {
   height: auto;
-  min-height: 0;
+  /* tall enough to reach the bottom of the viewport so the footer seats there on
+     short pages (the media portal) instead of floating mid-screen; .main takes
+     the slack via flex: 1. Pages with real content just scroll past it. */
+  min-height: calc(100vh - 36px);
 }
 
 /* dashboard: fixed viewport, preserved 82% width */
@@ -468,7 +471,10 @@ tv-ticker-tape { width: 100%; height: 100%; }
    "waiting on data" and never "nothing here". */
 .card:has(.market-index-list) > .home-box-title:first-child::before,
 .card:has(.news-container) > .home-box-title:first-child::before,
-.card:has(.weather-box) > .home-box-title:first-child::before {
+.card:has(.weather-box) > .home-box-title:first-child::before,
+.card:has(.spacewx-scale) > .home-box-title:first-child::before,
+.card:has(.hn-container) > .home-box-title:first-child::before,
+.card:has(.quake-container) > .home-box-title:first-child::before {
   content: '';
   flex: 0 0 7px;
   width: 7px;
@@ -479,9 +485,15 @@ tv-ticker-tape { width: 100%; height: 100%; }
   opacity: 0.5;
 }
 /* lit: the panel is holding real, current data */
+/* `.quake-empty` counts as arrived data on purpose: "nothing above M4.5 today" is
+   a reading the feed actually returned, so the panel is reporting, not waiting. */
 .card:has(.market-index-state.live) > .home-box-title:first-child::before,
 .card:has(.news-list) > .home-box-title:first-child::before,
-.card:has(.weather-day) > .home-box-title:first-child::before {
+.card:has(.weather-day) > .home-box-title:first-child::before,
+.card:has(.spacewx-scale.is-set) > .home-box-title:first-child::before,
+.card:has(.quake-list) > .home-box-title:first-child::before,
+.card:has(.hn-list) > .home-box-title:first-child::before,
+.card:has(.quake-empty) > .home-box-title:first-child::before {
   background: var(--accent);
   opacity: 1;
   box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent);
@@ -492,6 +504,19 @@ tv-ticker-tape { width: 100%; height: 100%; }
 @keyframes lamp-breathe {
   0%, 100% { box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent); }
   50% { box-shadow: 0 0 12px var(--accent-glow), 0 0 3px var(--accent); }
+}
+
+/* lamp test: every lamp on the panel strikes at once, held for a beat by the
+   footer control. Must stay below the unlit rules it overrides. Only real lamps
+   respond — a plate with no lamp never gets `content`, so no pseudo-element
+   exists to light. The media portal's status lamp is listed too; it is the same
+   signature element, just reporting a server instead of a panel. */
+body.lamp-test .card > .home-box-title:first-child::before,
+body.lamp-test .media-eyebrow::before {
+  background: var(--accent);
+  opacity: 1;
+  box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent);
+  animation: lamp-strike 0.55s var(--ease) both;
 }
 
 /* ---------- boot sequence ----------
@@ -519,11 +544,18 @@ body.home-page .status-rail { animation: boot-in 0.42s var(--ease) 0.08s both; }
 body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s both; }
 
 .home-main .card { animation: boot-in 0.45s var(--ease) both; }
-.home-news-col .card { animation-delay: 0.18s; }
+.home-news-col .card:nth-child(1) { animation-delay: 0.18s; }
+.home-news-col .card:nth-child(2) { animation-delay: 0.24s; }
 .home-links-col .card:nth-child(1) { animation-delay: 0.22s; }
 .home-links-col .card:nth-child(2) { animation-delay: 0.28s; }
+.home-links-col .card:nth-child(3) { animation-delay: 0.34s; }
 .home-stats-col .card:nth-child(1) { animation-delay: 0.26s; }
 .home-stats-col .card:nth-child(2) { animation-delay: 0.32s; }
+.home-stats-col .card:nth-child(3) { animation-delay: 0.38s; }
+/* the bottom bezel seats last, closing the chassis. It waits out the home page's
+   panel cascade; on pages with no cascade it follows straight after the header. */
+.site-footer { animation: boot-in 0.42s var(--ease) 0.14s both; }
+.home-main ~ .site-footer { animation-delay: 0.38s; }
 
 /* ---------- home search ---------- */
 /* the search field is the hero: a wide machined slot, set to the news column's
@@ -570,7 +602,9 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   margin-bottom: 40px;
 }
 .home-links-col, .home-stats-col { flex: 1; display: flex; flex-direction: column; gap: 16px; max-width: 300px; }
-.home-news-col { flex: 0 0 730px; width: 730px; max-width: 730px; display: flex; flex-direction: column; min-height: 0; align-self: flex-start; }
+/* width is fixed by design - see the layout note; the gap only matters now that the
+   column carries a second panel under the news card */
+.home-news-col { flex: 0 0 730px; width: 730px; max-width: 730px; display: flex; flex-direction: column; gap: 16px; min-height: 0; align-self: flex-start; }
 
 .home-box-title { margin: 0 0 12px; }
 
@@ -762,6 +796,194 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--text-faint);
+}
+
+/* ---------- shared panel well ----------
+   Label/value rows recessed into a panel face. The NASCAR card predates this and
+   keeps its own copy of the shape; anything new uses these. */
+.panel-well { display: grid; gap: 1px; margin-top: 12px; background: var(--border); border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
+.panel-line { display: grid; grid-template-columns: 1fr auto; align-items: baseline; gap: 8px; padding: 8px 10px; background: var(--well); text-align: left; }
+.panel-label { font-family: var(--font-legend); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); font-weight: 700; }
+.panel-value { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; justify-self: end; white-space: nowrap; }
+
+/* ---------- space weather ----------
+   The Kp reading and its condition share a baseline: the number is the instrument,
+   the chip is the legend under it. */
+.spacewx-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.spacewx-state {
+  flex: 0 0 auto;
+  padding: 2px 7px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  font-family: var(--font-legend);
+  font-size: 0.6rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.spacewx-state.calm { color: var(--success); border-color: color-mix(in srgb, var(--success) 45%, transparent); background: color-mix(in srgb, var(--success) 12%, transparent); }
+.spacewx-state.active { color: var(--warn); border-color: color-mix(in srgb, var(--warn) 40%, transparent); background: color-mix(in srgb, var(--warn) 12%, transparent); }
+.spacewx-state.storm { color: var(--danger); border-color: color-mix(in srgb, var(--danger) 45%, transparent); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+.spacewx-state.na { color: var(--text-faint); border-color: var(--border-strong); background: transparent; }
+
+/* Segmented, not round: the circular lamp is the site's one signature and stays
+   unique to panel legends. These are machined cells in a recessed track. */
+.spacewx-scale {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 1px;
+  height: 14px;
+  margin-top: 2px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+}
+.spacewx-cell { background: var(--well); transition: background 0.3s var(--ease); }
+.spacewx-cell.lit { background: var(--accent); }
+/* Kp 5 is the G1 threshold - storm cells fill red, and the boundary is scored */
+.spacewx-cell.lit.storm { background: var(--danger); }
+.spacewx-cell:nth-child(5) { box-shadow: inset 1px 0 0 var(--accent-dim); }
+.spacewx-legend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+  font-family: var(--font-legend);
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-faint);
+}
+
+/* ---------- tech pulse ----------
+   Two-up cells, deliberately not the news list's full-width rows: this panel sits
+   directly beneath that list and needs to read as a different instrument. */
+.hn-card { padding: 14px; }
+.hn-card > .home-box-title:first-child { margin: 0 -14px 12px; padding: 10px 14px; }
+.hn-plate-label { flex: 1 1 auto; min-width: 0; }
+.hn-scope {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.hn-status-note { margin: 0; padding: 2px 0; font-size: 0.78rem; color: var(--text-faint); text-align: left; }
+.hn-list {
+  list-style: none; margin: 0; padding: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.hn-list li { margin: 0; padding: 0; display: flex; }
+.hn-cell {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  padding: 9px 11px;
+  background: var(--well);
+  /* opts out of the page's centred text - see the note on .quake-link */
+  text-align: left;
+  text-decoration: none;
+  transition: background 0.14s ease;
+}
+.hn-cell:hover { background: var(--surface-raised); }
+/* score reads as a gauge, so it keeps the mono/tabular treatment numbers get
+   everywhere else on the site */
+.hn-score {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.hn-score.hot { color: var(--accent-strong); }
+.hn-title {
+  display: block;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  color: var(--text);
+  /* two lines, then clip - every cell in the grid stays the same height */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.hn-cell:hover .hn-title { color: var(--accent-strong); }
+.hn-meta {
+  display: block;
+  margin-top: 4px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- seismic watch ---------- */
+/* the threshold rides the legend plate: a short list only reads as "quiet" if you
+   know what was being watched for */
+.quake-plate-label { flex: 1 1 auto; min-width: 0; }
+.quake-scope {
+  flex: 0 0 auto;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+.quake-status, .quake-empty { margin: 0; padding: 2px 0; font-size: 0.76rem; line-height: 1.4; color: var(--text-faint); text-align: left; }
+.quake-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; background: var(--border); border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
+.quake-list li { margin: 0; padding: 0; }
+.quake-link {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  align-items: start;
+  gap: 10px;
+  padding: 8px 10px;
+  background: var(--well);
+  text-decoration: none;
+  /* .welcome sets text-align:center for the page; any panel holding a list has to
+     opt back out or its columns stop sharing a left edge */
+  text-align: left;
+  transition: background 0.14s ease;
+}
+.quake-link:hover { background: var(--surface-raised); }
+.quake-mag {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+.quake-mag.moderate { color: var(--warn); }
+.quake-mag.major { color: var(--danger); }
+.quake-place { display: block; font-size: 0.74rem; line-height: 1.3; color: var(--text); }
+.quake-link:hover .quake-place { color: var(--accent-strong); }
+.quake-time {
+  display: block;
+  margin-top: 3px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
 }
 
 /* data wells: readings sit recessed into the panel */
@@ -1131,6 +1353,138 @@ body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
 .dropdown-content a { display: block; padding: 9px 11px; text-decoration: none; color: var(--text); border-radius: var(--r-sm); font-size: 13px; }
 .dropdown-content a:hover { background: var(--accent-soft); color: var(--accent-strong); }
 
+/* ---------- footer: the bottom bezel of the chassis ----------
+   Same plate construction as the header, lit from the same source above (180deg),
+   with its amber filament on the top edge so the two hairlines face each other and
+   bracket the console. */
+.site-footer {
+  display: flex;
+  align-items: center;
+  gap: 16px 22px;
+  flex-wrap: wrap;
+  min-height: 54px;
+  margin-top: 28px;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--surface-raised), var(--surface));
+  box-shadow: var(--bezel), var(--shadow-md);
+  position: relative;
+  flex: 0 0 auto;
+}
+.site-footer::before {
+  content: '';
+  position: absolute;
+  left: 12px; right: 12px; top: -1px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent-border), transparent);
+  opacity: 0.7;
+}
+
+/* the nameplate: stamped into the chassis rather than backlit, so it reads a stop
+   dimmer than the live legends in the header and never competes with them */
+.footer-plate {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  padding-right: 20px;
+  border-right: 1px solid var(--border);
+  color: var(--text-muted);
+}
+.footer-plate:hover { color: var(--text); }
+.footer-plate .brand-mark { width: 16px; height: 16px; flex: 0 0 16px; }
+.footer-plate-text { display: flex; flex-direction: column; gap: 1px; line-height: 1.15; }
+.footer-plate-name {
+  font-family: var(--font-legend);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+.footer-plate-stamp {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-faint);
+  letter-spacing: 0.04em;
+}
+
+/* only the destinations the top nav does not carry */
+.footer-nav {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  min-width: 0;
+}
+.footer-nav a {
+  font-family: var(--font-legend);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  padding: 3px 0;
+  border-bottom: 1px solid transparent;
+  transition: color 0.16s ease, border-color 0.16s ease;
+}
+.footer-nav a:hover { color: var(--accent-strong); border-bottom-color: var(--accent-border); }
+/* Pages with no lamps carry no test control — pressing one that lights nothing
+   would break the very contract the control exists to prove. With the right zone
+   empty, the links take it so the bezel still reads as a balanced plate. */
+.site-footer:not(:has(.footer-test)) .footer-nav { margin-left: auto; }
+/* the divider separates two adjacent zones; with the links pushed to the far
+   edge it would hang off the plate with nothing beside it, so it goes */
+.site-footer:not(:has(.footer-test)) .footer-plate { padding-right: 0; border-right: 0; }
+
+/* press-to-test: a recessed panel control, not a link */
+.footer-test {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+  flex: 0 0 auto;
+  height: 30px;
+  padding: 0 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--well);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+  color: var(--text-muted);
+  font-family: var(--font-legend);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: color 0.16s ease, border-color 0.16s ease;
+}
+.footer-test:hover { color: var(--text); border-color: var(--border-strong); }
+.footer-test:active { box-shadow: inset 0 3px 7px rgba(0, 0, 0, 0.6); }
+/* the control carries a lamp of its own — it is the one panel that always has
+   something to report, because pressing it is the report */
+.footer-test-lamp {
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
+  border-radius: 50%;
+  background: var(--accent-dim);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.55);
+  opacity: 0.5;
+}
+.footer-test[aria-pressed="true"] {
+  color: var(--accent-strong);
+  border-color: var(--accent-border);
+}
+.footer-test[aria-pressed="true"] .footer-test-lamp {
+  background: var(--accent);
+  opacity: 1;
+  box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent);
+  animation: lamp-strike 0.55s var(--ease) both;
+}
+
 /* ---------- responsive ---------- */
 @media (max-width: 1200px) {
   .home-columns { flex-direction: column; }
@@ -1161,6 +1515,20 @@ body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
   .dashboard-header .ticker-container { height: 52px; margin-left: 0; width: 100%; }
   .quick-links-list { grid-template-columns: 1fr; }
   .weather-summary { grid-template-columns: 1fr; }
+  /* one story per row once the column is phone-width */
+  .hn-list { grid-template-columns: 1fr; }
+  /* the bezel stacks into rows; the plate's divider becomes the rule under it */
+  .site-footer { flex-direction: column; align-items: stretch; text-align: center; gap: 12px; }
+  .footer-plate {
+    justify-content: center;
+    padding-right: 0;
+    padding-bottom: 10px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .footer-plate-text { align-items: center; }
+  .footer-nav { justify-content: center; }
+  .footer-test { margin-left: auto; margin-right: auto; }
 }
 
 /* Brand + six nav buttons + the rail need roughly 900px on one line. Below that,
@@ -1187,6 +1555,8 @@ body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
   body.home-page .status-rail,
   body.home-page .home-search-wrap,
   .home-main .card,
+  .site-footer,
+  .footer-test-lamp,
   .card > .home-box-title:first-child::before { animation: none !important; }
   .sentiment-mark { transition: none !important; }
 }

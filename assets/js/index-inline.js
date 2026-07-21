@@ -1,5 +1,7 @@
     let allNewsItems = [];
-    const NEWS_MAX_ITEMS = 10;
+    // Tuned so the news column plus the tech pulse panel lands level with the side
+    // columns - the feed itself carries 30-60 items, so this is the only limit.
+    const NEWS_MAX_ITEMS = 12;
     const NEWS_CACHE_PREFIX = 'homeNewsCache:v3:';
     const NEWS_REQUEST_TIMEOUT_MS = 9000;
     const NEWS_LOADING_TIMEOUT_MS = 12000;
@@ -11,6 +13,8 @@
     const NASCAR_CACHE_PREFIX = 'homeNascarSchedule:';
     const NASCAR_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
     const DEBUG_LOGS = false;
+    // every distance and speed on this page is shown imperial; the feeds are metric
+    const KM_TO_MILES = 0.621371;
     const REVERSE_GEO_CACHE_PREFIX = 'homeReverseGeoCache:';
     const REVERSE_GEO_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
     let newsRequestSeq = 0;
@@ -178,7 +182,9 @@
       }
 
       // Cache miss or expired - fetch fresh data
-      const data = await fetchNewsWithRetry(feedUrl);
+      // cacheKey is the tab name, which the direct-publisher transport needs to pick
+      // the right section feeds
+      const data = await fetchNewsWithRetry(feedUrl, cacheKey);
       
       // Store in cache
       newsCache[cacheKey] = {
@@ -191,7 +197,127 @@
       return data;
     }
 
-    async function fetchNewsWithRetry(feedUrl, maxRetries = 3) {
+    // Publishers that serve RSS with an open CORS header, so the browser can read
+    // them with no proxy and no converter in the way. This is the transport of last
+    // resort, and the reason the panel no longer has to fall back to invented copy.
+    const DIRECT_NEWS_FEEDS = {
+      usa: [
+        { url: 'https://rss.nytimes.com/services/xml/rss/nyt/US.xml', source: 'The New York Times' },
+        { url: 'https://moxie.foxnews.com/google-publisher/us.xml', source: 'Fox News' }
+      ],
+      world: [
+        { url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml', source: 'The New York Times' },
+        { url: 'https://moxie.foxnews.com/google-publisher/world.xml', source: 'Fox News' }
+      ],
+      finance: [
+        { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml', source: 'The New York Times' },
+        { url: 'https://moxie.foxnews.com/google-publisher/business.xml', source: 'Fox News' }
+      ]
+    };
+
+    function parseRssItems(xmlText, sourceLabel) {
+      const doc = new DOMParser().parseFromString(xmlText, 'application/xml');
+      // a parse failure yields a document *containing* <parsererror>, not a throw
+      if (doc.querySelector('parsererror')) throw new Error('Feed was not parseable XML');
+
+      return Array.from(doc.querySelectorAll('item')).map((item) => {
+        const text = (tag) => {
+          const node = item.querySelector(tag);
+          return node && node.textContent ? node.textContent.trim() : '';
+        };
+
+        // Google names the publisher in <source> and repeats it as a " - Publisher"
+        // suffix on the headline; direct feeds carry neither and take the label we
+        // already know. Either way the suffix is removed exactly once.
+        const source = text('source') || sourceLabel || '';
+        let title = text('title');
+        if (source && title.endsWith(` - ${source}`)) {
+          title = title.slice(0, -(source.length + 3)).trim();
+        }
+
+        return {
+          title,
+          link: text('link'),
+          pubDate: text('pubDate'),
+          author: source,
+          // tells renderNews the publisher is already known, so it must not go
+          // hunting for one by splitting the headline on " - "
+          sourceKnown: Boolean(source)
+        };
+      }).filter((item) => item.title);
+    }
+
+    // Read the feed's own XML rather than a JSON conversion of it.
+    //
+    // rss2json caps free callers at 10 items (`count` needs a paid key) and keeps
+    // failing to follow the redirect Google puts in front of its topic feeds,
+    // answering 422 or "not a valid RSS feed". Google sends no CORS header, so this
+    // still needs a proxy; allorigins is the one the sentiment fetch already uses.
+    async function fetchNewsAsXml(feedUrl) {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), NEWS_REQUEST_TIMEOUT_MS);
+
+      try {
+        const response = await fetch(
+          'https://api.allorigins.win/raw?url=' + encodeURIComponent(feedUrl),
+          { signal: controller.signal }
+        );
+        if (!response.ok) throw new Error(`Feed proxy answered ${response.status}`);
+
+        const items = parseRssItems(await response.text());
+        if (items.length === 0) throw new Error('Feed carried no items');
+        debugLog(`Parsed ${items.length} news items from XML`);
+        return { items };
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
+    // Every publisher is fetched concurrently and one going dark just thins the
+    // list, so this only fails when none of them answer.
+    async function fetchNewsDirect(newsType) {
+      const feeds = DIRECT_NEWS_FEEDS[newsType] || DIRECT_NEWS_FEEDS.usa;
+
+      const perFeed = await Promise.all(feeds.map(async (feed) => {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort(), NEWS_REQUEST_TIMEOUT_MS);
+        try {
+          const response = await fetch(feed.url, { signal: controller.signal });
+          if (!response.ok) throw new Error(`${feed.source} answered ${response.status}`);
+          return parseRssItems(await response.text(), feed.source);
+        } catch (_) {
+          return [];
+        } finally {
+          clearTimeout(timeoutId);
+        }
+      }));
+
+      // merge by recency so no single publisher owns the top of the column
+      const merged = perFeed.flat().sort((a, b) => (Date.parse(b.pubDate) || 0) - (Date.parse(a.pubDate) || 0));
+
+      const seen = new Set();
+      const items = merged.filter((item) => {
+        const key = item.title.toLowerCase();
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      if (items.length === 0) throw new Error('No direct publisher feed answered');
+      debugLog(`Merged ${items.length} news items from ${feeds.length} publishers`);
+      return { items };
+    }
+
+    async function fetchNewsWithRetry(feedUrl, newsType, maxRetries = 3) {
+      // Preferred: the whole Google News feed, aggregated across publishers and
+      // uncapped. Needs the proxy, which has been unreliable, so it is only the
+      // first of three transports rather than the only one.
+      try {
+        return await fetchNewsAsXml(feedUrl);
+      } catch (e) {
+        console.warn('Proxied feed read failed:', e.message);
+      }
+
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
           // Use RSS2JSON API to convert RSS to JSON
@@ -230,16 +356,16 @@
           
           throw new Error('No items in response');
         } catch (e) {
-          console.error(`Attempt ${attempt + 1} failed:`, e.message);
-          if (attempt === maxRetries - 1) {
-            // Throw (rather than returning FALLBACK_NEWS) so the caller's
-            // catch block shows the fallback without persisting it to the
-            // news cache - a cached fallback would otherwise get served
-            // for CACHE_DURATION even after the underlying feed recovers.
-            throw e;
-          }
+          console.warn(`rss2json attempt ${attempt + 1} failed:`, e.message);
+          if (attempt === maxRetries - 1) break;
         }
       }
+
+      // Last resort: publishers that need neither proxy nor converter. This still
+      // throws if they all fail, so the caller shows FALLBACK_NEWS without letting
+      // it reach the cache - a cached fallback would be served for CACHE_DURATION
+      // even after the real feed recovered.
+      return fetchNewsDirect(newsType);
     }
 
     function renderNews() {
@@ -268,7 +394,10 @@
         let displayTitle = String(item.title || 'Untitled');
         let displaySource = String(item.author || 'News Feed');
 
-        if (displayTitle.includes(' - ')) {
+        // Only go hunting for a publisher in the headline when the feed did not name
+        // one. Headlines contain dashes of their own, and splitting a title we have
+        // already cleaned would eat the last few words of it.
+        if (!item.sourceKnown && displayTitle.includes(' - ')) {
           const parts = displayTitle.split(' - ');
           displaySource = String(parts.pop() || displaySource);
           displayTitle = parts.join(' - ');
@@ -1405,3 +1534,413 @@
       document.addEventListener('click', recordUse);
       document.addEventListener('auxclick', recordUse);
     })();
+
+    // ---------- space weather ----------
+    // NOAA SWPC. Kp is the headline reading; solar wind speed and Bz are the drivers
+    // behind it. Kp is published every three hours and the wind summaries every
+    // minute, so a quarter-hour cache sits well inside both.
+    const SPACEWX_CACHE_KEY = 'homeSpaceWeather:v1';
+    const SPACEWX_CACHE_TTL_MS = 15 * 60 * 1000;
+
+    function describeKp(kp) {
+      if (kp >= 9) return { label: 'G5 Extreme', tone: 'storm' };
+      if (kp >= 8) return { label: 'G4 Severe', tone: 'storm' };
+      if (kp >= 7) return { label: 'G3 Strong', tone: 'storm' };
+      if (kp >= 6) return { label: 'G2 Moderate', tone: 'storm' };
+      if (kp >= 5) return { label: 'G1 Minor', tone: 'storm' };
+      if (kp >= 4) return { label: 'Active', tone: 'active' };
+      if (kp >= 3) return { label: 'Unsettled', tone: 'active' };
+      return { label: 'Quiet', tone: 'calm' };
+    }
+
+    function renderSpaceWeather(reading) {
+      const kpEl = document.getElementById('spacewx-kp');
+      const stateEl = document.getElementById('spacewx-state');
+      const scaleEl = document.getElementById('spacewx-scale');
+      const windEl = document.getElementById('spacewx-wind');
+      const bzEl = document.getElementById('spacewx-bz');
+      if (!kpEl || !stateEl || !scaleEl || !windEl || !bzEl) return;
+
+      // not `Number(reading && reading.kp)`: that coerces a missing reading to 0,
+      // which is a perfectly valid Kp - the panel would report a confident "Quiet"
+      // for a feed that never answered.
+      const kp = reading ? Number(reading.kp) : NaN;
+      if (!Number.isFinite(kp)) {
+        kpEl.textContent = 'Unavailable';
+        stateEl.textContent = '--';
+        stateEl.className = 'spacewx-state na';
+        // the scale stays unset, so the panel lamp keeps reading "waiting on data"
+        return;
+      }
+
+      const { label, tone } = describeKp(kp);
+      kpEl.textContent = `Kp ${kp.toFixed(2)}`;
+      stateEl.textContent = label;
+      stateEl.className = `spacewx-state ${tone}`;
+
+      Array.from(scaleEl.children).forEach((cell, index) => {
+        const step = index + 1;
+        cell.classList.toggle('lit', kp >= step);
+        cell.classList.toggle('storm', step >= 5);
+      });
+      scaleEl.classList.add('is-set');
+      scaleEl.setAttribute('aria-label', `Planetary K-index ${kp.toFixed(2)} of 9 - ${label}`);
+
+      // SWPC publishes proton speed in km/s. Miles per second rather than mph keeps
+      // the reading three digits wide like the source, where mph would put it near
+      // a million and swamp the panel for no extra precision.
+      const wind = Number(reading.wind);
+      windEl.textContent = Number.isFinite(wind) ? `${Math.round(wind * KM_TO_MILES)} mi/s` : '--';
+
+      // Bz is signed and the sign is the story: southward (negative) is what opens
+      // the magnetosphere, so a leading + is spelled out rather than implied.
+      const bz = Number(reading.bz);
+      bzEl.textContent = Number.isFinite(bz) ? `${bz > 0 ? '+' : ''}${bz.toFixed(1)} nT` : '--';
+    }
+
+    // SWPC serves this feed as objects today, and served header-plus-rows arrays for
+    // years before that, switching without notice. Read either shape.
+    function readLatestKp(payload) {
+      if (!Array.isArray(payload) || payload.length === 0) return NaN;
+
+      const last = payload[payload.length - 1];
+      if (last && typeof last === 'object' && !Array.isArray(last)) {
+        return Number(last.Kp !== undefined ? last.Kp : last.kp_index);
+      }
+
+      if (Array.isArray(last) && Array.isArray(payload[0])) {
+        const column = payload[0].indexOf('Kp');
+        if (column >= 0) return Number(last[column]);
+      }
+
+      return NaN;
+    }
+
+    async function fetchSpaceWeather() {
+      const cached = readStorageJson(SPACEWX_CACHE_KEY);
+      if (cached && cached.reading) {
+        renderSpaceWeather(cached.reading);
+        if (isFreshTimestamp(cached.updatedAt, SPACEWX_CACHE_TTL_MS)) return;
+      }
+
+      try {
+        // Kp is required - without it the panel has no headline. The two wind
+        // summaries are supporting detail, so they degrade to "--" on their own.
+        const [kpSeries, windSummary, magSummary] = await Promise.all([
+          fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json').then((res) => {
+            if (!res.ok) throw new Error(`SWPC Kp feed failed with ${res.status}`);
+            return res.json();
+          }),
+          fetch('https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json')
+            .then((res) => (res.ok ? res.json() : null)).catch(() => null),
+          fetch('https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json')
+            .then((res) => (res.ok ? res.json() : null)).catch(() => null)
+        ]);
+
+        const kp = readLatestKp(kpSeries);
+        if (!Number.isFinite(kp)) throw new Error('SWPC Kp feed carried no usable reading');
+
+        const reading = {
+          kp,
+          wind: Number(windSummary && windSummary[0] && windSummary[0].proton_speed),
+          bz: Number(magSummary && magSummary[0] && magSummary[0].bz_gsm)
+        };
+
+        renderSpaceWeather(reading);
+        writeStorageJson(SPACEWX_CACHE_KEY, { reading, updatedAt: Date.now() });
+      } catch (e) {
+        // a stale reading already on screen beats replacing it with an error
+        if (!(cached && cached.reading)) renderSpaceWeather(null);
+      }
+    }
+
+    fetchSpaceWeather();
+
+    // ---------- seismic watch ----------
+    // USGS M2.5+ over the trailing day, filtered to North America by coordinate.
+    // The scope is the panel's whole premise: worldwide at this threshold the feed
+    // runs to hundreds of events a day and stops being a watch.
+    const QUAKE_CACHE_KEY = 'homeSeismicWatch:v3';
+    const QUAKE_CACHE_TTL_MS = 15 * 60 * 1000;
+    const QUAKE_MAX_ROWS = 5;
+
+    function formatTimeAgo(timestamp) {
+      // an unparseable date yields no age rather than "NaNm ago"; callers drop the blank
+      if (!Number.isFinite(timestamp)) return '';
+
+      const minutes = Math.max(0, Math.round((Date.now() - timestamp) / 60000));
+      if (minutes < 60) return `${minutes}m ago`;
+
+      const hours = Math.round(minutes / 60);
+      if (hours < 24) return `${hours}h ago`;
+
+      return `${Math.round(hours / 24)}d ago`;
+    }
+
+    // Calibrated to this panel's scope, not to global seismicity. The feed is
+    // regional and starts at M2.5, where a 5 is already the largest thing on the
+    // continent in a normal week - the old 5.5/6.5 cuts came from a worldwide M4.5+
+    // feed and left every row on this list rendering the same grey.
+    function magnitudeBand(mag) {
+      if (mag >= 5) return 'major';
+      if (mag >= 4) return 'moderate';
+      return 'minor';
+    }
+
+    // USGS bakes a metric distance into the place string ("112 km NNE of Adak").
+    // Rewrite that prefix and leave the rest of the string alone. Done at render
+    // rather than on fetch so the cache keeps the feed's own text and an older
+    // cached list still reads in miles.
+    function toImperialPlace(place) {
+      return String(place).replace(
+        /^(\d+(?:\.\d+)?)\s*km\b/i,
+        (_, km) => `${Math.round(Number(km) * KM_TO_MILES)} mi`
+      );
+    }
+
+    // North America by coordinates rather than by guessing at the place string.
+    // USGS ships [longitude, latitude, depth]. Three rules: the mainland run from
+    // the isthmus to Greenland, the western Aleutians where the chain crosses the
+    // antimeridian into positive longitude, and a carve-out at the bottom corner
+    // so northern Colombia and Venezuela do not read as North American.
+    function isNorthAmerican(longitude, latitude) {
+      if (!Number.isFinite(longitude) || !Number.isFinite(latitude)) return false;
+      if (latitude >= 48 && latitude <= 60 && longitude >= 172) return true;
+      if (latitude < 7 || latitude > 84) return false;
+      if (longitude < -170 || longitude > -50) return false;
+      // below Panama, anything east of the Darién is South America
+      if (latitude < 13 && longitude > -77) return false;
+      return true;
+    }
+
+    function renderQuakes(events) {
+      const container = document.getElementById('quake-container');
+      if (!container) return;
+
+      container.innerHTML = '';
+
+      if (!Array.isArray(events)) {
+        const status = document.createElement('p');
+        status.className = 'quake-status';
+        status.textContent = 'Feed unavailable. Reload to try again.';
+        container.appendChild(status);
+        return;
+      }
+
+      if (events.length === 0) {
+        // A quiet day is a reading, not an empty state, so this element lights the
+        // panel lamp exactly as a populated list does.
+        const empty = document.createElement('p');
+        empty.className = 'quake-empty';
+        empty.textContent = 'Nothing above magnitude 2.5 in North America in the last 24 hours.';
+        container.appendChild(empty);
+        return;
+      }
+
+      const list = document.createElement('ul');
+      list.className = 'quake-list';
+
+      events.slice(0, QUAKE_MAX_ROWS).forEach((event) => {
+        const item = document.createElement('li');
+
+        const link = document.createElement('a');
+        link.className = 'quake-link';
+        link.href = event.url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+
+        const mag = document.createElement('span');
+        mag.className = `quake-mag ${magnitudeBand(event.mag)}`;
+        mag.textContent = event.mag.toFixed(1);
+
+        const body = document.createElement('span');
+
+        const place = document.createElement('span');
+        place.className = 'quake-place';
+        place.textContent = toImperialPlace(event.place);
+
+        const time = document.createElement('span');
+        time.className = 'quake-time';
+        time.textContent = formatTimeAgo(event.time);
+
+        body.appendChild(place);
+        body.appendChild(time);
+        link.appendChild(mag);
+        link.appendChild(body);
+        item.appendChild(link);
+        list.appendChild(item);
+      });
+
+      container.appendChild(list);
+    }
+
+    async function fetchQuakes() {
+      const cached = readStorageJson(QUAKE_CACHE_KEY);
+      if (cached && Array.isArray(cached.events)) {
+        // timestamps are absolute, so a stale list ages honestly on screen
+        renderQuakes(cached.events);
+        if (isFreshTimestamp(cached.updatedAt, QUAKE_CACHE_TTL_MS)) return;
+      }
+
+      try {
+        const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson');
+        if (!res.ok) throw new Error(`USGS feed failed with ${res.status}`);
+
+        const data = await res.json();
+        const features = Array.isArray(data && data.features) ? data.features : [];
+
+        const events = features
+          .filter((feature) => {
+            const coords = (feature && feature.geometry && feature.geometry.coordinates) || [];
+            return isNorthAmerican(Number(coords[0]), Number(coords[1]));
+          })
+          .map((feature) => {
+            const props = (feature && feature.properties) || {};
+            const url = String(props.url || '');
+            return {
+              mag: Number(props.mag),
+              place: String(props.place || 'Location pending review'),
+              time: Number(props.time),
+              // only ever link back to the event page on the feed's own origin
+              url: url.startsWith('https://earthquake.usgs.gov/') ? url : ''
+            };
+          })
+          .filter((event) => Number.isFinite(event.mag) && Number.isFinite(event.time) && event.url)
+          .sort((a, b) => b.time - a.time)
+          .slice(0, QUAKE_MAX_ROWS);
+
+        renderQuakes(events);
+        writeStorageJson(QUAKE_CACHE_KEY, { events, updatedAt: Date.now() });
+      } catch (e) {
+        if (!(cached && Array.isArray(cached.events))) renderQuakes(null);
+      }
+    }
+
+    fetchQuakes();
+
+    // ---------- tech pulse ----------
+    // Hacker News' front page via Algolia. Eight stories, two-up, so the panel reads
+    // as a different instrument from the news list it sits under.
+    const HN_CACHE_KEY = 'homeTechPulse:v1';
+    const HN_CACHE_TTL_MS = 15 * 60 * 1000;
+    const HN_MAX_ROWS = 8;
+    // the front page turns over slowly; this is roughly where a story is doing well
+    const HN_HOT_SCORE = 300;
+
+    function hnItemUrl(objectId) {
+      return `https://news.ycombinator.com/item?id=${encodeURIComponent(objectId)}`;
+    }
+
+    function hnDomain(url) {
+      try {
+        return new URL(url).hostname.replace(/^www\./, '');
+      } catch (_) {
+        return '';
+      }
+    }
+
+    function renderTechPulse(stories) {
+      const container = document.getElementById('hn-container');
+      if (!container) return;
+
+      container.innerHTML = '';
+
+      if (!Array.isArray(stories)) {
+        const note = document.createElement('p');
+        note.className = 'hn-status-note';
+        note.textContent = 'Feed unavailable. Reload to try again.';
+        container.appendChild(note);
+        return;
+      }
+
+      if (stories.length === 0) {
+        const note = document.createElement('p');
+        note.className = 'hn-status-note';
+        note.textContent = 'No stories on the front page right now.';
+        container.appendChild(note);
+        return;
+      }
+
+      const list = document.createElement('ul');
+      list.className = 'hn-list';
+
+      stories.slice(0, HN_MAX_ROWS).forEach((story) => {
+        const item = document.createElement('li');
+
+        const cell = document.createElement('a');
+        cell.className = 'hn-cell';
+        // text posts carry no external link, so those open the discussion instead
+        cell.href = story.url || hnItemUrl(story.id);
+        cell.target = '_blank';
+        cell.rel = 'noopener noreferrer';
+        cell.title = story.title;
+
+        const score = document.createElement('span');
+        score.className = `hn-score ${story.points >= HN_HOT_SCORE ? 'hot' : ''}`.trim();
+        score.textContent = `${story.points} ▲`;
+
+        const body = document.createElement('span');
+
+        const title = document.createElement('span');
+        title.className = 'hn-title';
+        title.textContent = story.title;
+
+        // domain first: on HN it is most of what tells you what you are about to open
+        const meta = document.createElement('span');
+        meta.className = 'hn-meta';
+        meta.textContent = [
+          story.domain,
+          `${story.comments} comments`,
+          formatTimeAgo(story.createdAt)
+        ].filter(Boolean).join(' · ');
+
+        body.appendChild(title);
+        body.appendChild(meta);
+        cell.appendChild(score);
+        cell.appendChild(body);
+        item.appendChild(cell);
+        list.appendChild(item);
+      });
+
+      container.appendChild(list);
+    }
+
+    async function fetchTechPulse() {
+      const cached = readStorageJson(HN_CACHE_KEY);
+      if (cached && Array.isArray(cached.stories)) {
+        renderTechPulse(cached.stories);
+        if (isFreshTimestamp(cached.updatedAt, HN_CACHE_TTL_MS)) return;
+      }
+
+      try {
+        const res = await fetch(`https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=${HN_MAX_ROWS}`);
+        if (!res.ok) throw new Error(`Hacker News feed failed with ${res.status}`);
+
+        const data = await res.json();
+        const hits = Array.isArray(data && data.hits) ? data.hits : [];
+
+        const stories = hits
+          .map((hit) => {
+            const url = String((hit && hit.url) || '');
+            return {
+              id: String((hit && hit.objectID) || ''),
+              title: String((hit && hit.title) || '').trim(),
+              // only http(s) is ever put in an href
+              url: /^https?:\/\//i.test(url) ? url : '',
+              domain: hnDomain(url),
+              points: Number((hit && hit.points) || 0),
+              comments: Number((hit && hit.num_comments) || 0),
+              createdAt: Date.parse((hit && hit.created_at) || '')
+            };
+          })
+          .filter((story) => story.title && story.id)
+          .sort((a, b) => b.points - a.points);
+
+        renderTechPulse(stories);
+        writeStorageJson(HN_CACHE_KEY, { stories, updatedAt: Date.now() });
+      } catch (e) {
+        if (!(cached && Array.isArray(cached.stories))) renderTechPulse(null);
+      }
+    }
+
+    fetchTechPulse();

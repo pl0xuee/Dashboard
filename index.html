@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Home - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260721rail1" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260721regroup1" />
   <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
 </head>
 <body class="home-page">
@@ -99,6 +99,32 @@
                   </div>
                 </div>
               </section>
+              <!-- A schedule, not telemetry: it reports one fixed future event, so it
+                   sits with the markets and shortcuts rather than with the live
+                   environmental readouts on the right. -->
+              <section class="card info-card">
+                <h2 class="home-box-title">🏁 Next NASCAR Race</h2>
+                <div class="nascar-tabs">
+                  <button id="nascar-tab-cup" type="button" class="home-button nascar-tab-btn active">Cup</button>
+                  <button id="nascar-tab-truck" type="button" class="home-button nascar-tab-btn">Truck</button>
+                  <button id="nascar-tab-oreilly" type="button" class="home-button nascar-tab-btn">O'Reilly Series</button>
+                </div>
+                <p id="nascar-race" class="info-value nascar-race-name">Loading...</p>
+                <div class="nascar-meta">
+                  <div class="nascar-line">
+                    <span class="nascar-label">Track</span>
+                    <span id="nascar-track" class="nascar-value">--</span>
+                  </div>
+                  <div class="nascar-line">
+                    <span class="nascar-label">When</span>
+                    <span id="nascar-when" class="nascar-value">--</span>
+                  </div>
+                  <div class="nascar-line">
+                    <span class="nascar-label">Broadcast</span>
+                    <span id="nascar-broadcast" class="nascar-value">--</span>
+                  </div>
+                </div>
+              </section>
               <!-- One panel, three groups. The lists stay separate elements because the
                    click-ranking script sorts within each .quick-links-list, so a link you
                    reach for often rises inside its own group rather than jumping groups. -->
@@ -150,6 +176,18 @@
                 <p>Loading headlines...</p>
       </div>
               </div>
+              <!-- Tech pulse. Laid out two-up rather than as another full-width list:
+                   it sits directly under the news feed, and repeating that shape would
+                   read as more of the same story rather than a different instrument. -->
+              <section class="card hn-card">
+                <h2 class="home-box-title">
+                  <span class="hn-plate-label">Tech Pulse</span>
+                  <span class="hn-scope">Hacker News · Top</span>
+                </h2>
+                <div id="hn-container" class="hn-container">
+                  <p class="hn-status-note">Loading stories...</p>
+                </div>
+              </section>
             </section>
 
             <!-- Right Side: Stats -->
@@ -168,27 +206,56 @@
                   <div id="weather-summary" class="weather-summary"></div>
                 </div>
               </section>
+              <!-- Space weather. Kp is the headline because it is the reading that
+                   carries both aurora and grid disturbance; solar wind speed and Bz are
+                   the drivers behind it, so they sit recessed in a well rather than
+                   competing with it. -->
               <section class="card info-card">
-                <h2 class="home-box-title">🏁 Next NASCAR Race</h2>
-                <div class="nascar-tabs">
-                  <button id="nascar-tab-cup" type="button" class="home-button nascar-tab-btn active">Cup</button>
-                  <button id="nascar-tab-truck" type="button" class="home-button nascar-tab-btn">Truck</button>
-                  <button id="nascar-tab-oreilly" type="button" class="home-button nascar-tab-btn">O'Reilly Series</button>
+                <h2 class="home-box-title">Space Weather</h2>
+                <div class="spacewx-head">
+                  <p id="spacewx-kp" class="info-value">Loading...</p>
+                  <span id="spacewx-state" class="spacewx-state na">--</span>
                 </div>
-                <p id="nascar-race" class="info-value nascar-race-name">Loading...</p>
-                <div class="nascar-meta">
-                  <div class="nascar-line">
-                    <span class="nascar-label">Track</span>
-                    <span id="nascar-track" class="nascar-value">--</span>
+                <!-- Kp 1-9 as a segmented scale. Cells 5-9 are the storm band and fill
+                     red rather than amber, so a storm is readable without parsing the
+                     number. The scale only carries .is-set once a real Kp lands - the
+                     same contract the sentiment mark and the annunciator lamps keep, so
+                     an unlit scale always means "waiting on data", never "Kp 0". -->
+                <div id="spacewx-scale" class="spacewx-scale" role="img" aria-label="Planetary K-index: waiting on data">
+                  <span class="spacewx-cell"></span>
+                  <span class="spacewx-cell"></span>
+                  <span class="spacewx-cell"></span>
+                  <span class="spacewx-cell"></span>
+                  <span class="spacewx-cell"></span>
+                  <span class="spacewx-cell"></span>
+                  <span class="spacewx-cell"></span>
+                  <span class="spacewx-cell"></span>
+                  <span class="spacewx-cell"></span>
+                </div>
+                <div class="spacewx-legend">
+                  <span>Quiet</span>
+                  <span>Storm</span>
+                </div>
+                <div class="panel-well">
+                  <div class="panel-line">
+                    <span class="panel-label">Solar wind</span>
+                    <span id="spacewx-wind" class="panel-value">--</span>
                   </div>
-                  <div class="nascar-line">
-                    <span class="nascar-label">When</span>
-                    <span id="nascar-when" class="nascar-value">--</span>
+                  <div class="panel-line">
+                    <span class="panel-label">Bz</span>
+                    <span id="spacewx-bz" class="panel-value">--</span>
                   </div>
-                  <div class="nascar-line">
-                    <span class="nascar-label">Broadcast</span>
-                    <span id="nascar-broadcast" class="nascar-value">--</span>
-                  </div>
+                </div>
+              </section>
+              <!-- USGS, last day. Closes the environmental column, which reads top to
+                   bottom as sky then ground: weather, space weather, seismic. -->
+              <section class="card info-card">
+                <h2 class="home-box-title">
+                  <span class="quake-plate-label">Seismic Watch</span>
+                  <span class="quake-scope">N. America · M2.5+ · 24h</span>
+                </h2>
+                <div id="quake-container" class="quake-container">
+                  <p class="quake-status">Loading events...</p>
                 </div>
               </section>
             </section>
@@ -196,9 +263,34 @@
         </div>
       </div>
     </main>
+    <!-- Bottom bezel. Mirrors the header's three zones with the emphasis inverted:
+         a stamped nameplate on the left (etched metal, so it sits at --text-faint
+         and never competes with the backlit readings above), the destinations that
+         did not earn a slot in the top nav, and the panel control on the right —
+         under the header's status rail, because it is what tests those readings. -->
+    <footer class="site-footer">
+      <a href="./" class="footer-plate" aria-label="Command Center home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 5 28 27H4Z" fill="#a9762a"/></svg></span>
+        <span class="footer-plate-text">
+          <span class="footer-plate-name">Command Center</span>
+          <span class="footer-plate-stamp">pl0xuee.com</span>
+        </span>
+      </a>
+      <nav class="footer-nav" aria-label="Site information">
+        <a href="./griddown/privacy/">GridDown privacy</a>
+        <a href="https://github.com/pl0xuee/Dashboard" target="_blank">Source</a>
+      </nav>
+      <!-- Press-to-test: the control every annunciator panel carries. It force-lights
+           each lamp for a moment so a dark lamp can be trusted to mean "waiting on
+           data" rather than "broken" — the contract the rest of the site depends on. -->
+      <button id="lamp-test" type="button" class="footer-test" aria-pressed="false">
+        <span class="footer-test-lamp" aria-hidden="true"></span>
+        <span>Press to test</span>
+      </button>
+    </footer>
   </div>
   <script src="assets/js/script.js"></script>
-  <script src="assets/js/index-inline.js?v=20260721rail1"></script>
+  <script src="assets/js/index-inline.js?v=20260721regroup1"></script>
 </body>
 </html>
 
