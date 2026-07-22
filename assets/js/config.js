@@ -3,21 +3,16 @@ export const YOUTUBE_CLIENT_ID = '743961588451-0du4kputk1qd54iilbsanqfoe9t0n2c1.
 export const TWITCH_REDIRECT_URI = 'https://pl0xuee.com/stream/';
 export const YOUTUBE_REDIRECT_URI = 'https://pl0xuee.com/stream/';
 
-// Reads public data only: a channel's uploads playlist. Everything private —
-// which channels you subscribe to — goes through OAuth above and never touches
-// this key.
+// The YouTube API key is not here, and not anywhere else in this repository.
 //
-// It is served to every visitor and cannot be otherwise on a static site, so
-// secrecy is not the control. The HTTP-referrer restriction is, and it has been
-// checked against the live API rather than assumed: requests from pl0xuee.com
-// are answered, requests from another origin and requests with no referrer at
-// all are refused.
+// A key in a static site is a key every visitor can read — there is no hiding it
+// once the browser needs it. It now lives as an encrypted secret in a Cloudflare
+// Worker, which is the only thing that talks to Google with it. The page calls
+// the Worker instead. See worker/README.md.
 //
-// GitHub's secret scanner flags this, correctly — it is a real key in a public
-// repo. The alert is accepted rather than a false positive: the worst a taker
-// can do is spend the daily quota, at which point the feed stops loading until
-// this is regenerated. Nothing about the account is reachable with it.
-export const YOUTUBE_API_KEY = 'AIzaSyB8fSLKN41rjFhbWR5LluY-7cpfTZaTCbw';
+// No trailing slash. Empty means the media page has no way to read uploads and
+// will say so rather than failing quietly.
+export const YOUTUBE_PROXY_URL = 'https://yt-proxy.pl0xuee.workers.dev';
 
 // The subscription import returns here. Google rejects any redirect_uri not
 // listed on the OAuth client, so this exact URL has to be registered alongside

@@ -1,0 +1,16 @@
+name = "yt-proxy"
+main = "yt-proxy.js"
+compatibility_date = "2026-07-22"
+
+# Every deployment otherwise gets its own permanent preview URL, and each one
+# serves this Worker with the same key behind it. One address to reason about is
+# enough for something whose job is holding a secret.
+preview_urls = false
+
+# The API key is deliberately not here. Committing it to this file would put it
+# back in the repository, which is the whole thing this Worker exists to avoid.
+# It is set once as an encrypted secret:
+#
+#   wrangler secret put YOUTUBE_API_KEY
+#
+# See README.md in this directory.

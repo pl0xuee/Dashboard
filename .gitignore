@@ -1,1 +1,5 @@
 backup.sh
+
+# wrangler's local cache — holds the Cloudflare account id and the account's
+# email address. Local state, not source, and this repo is public.
+.wrangler/

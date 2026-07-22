@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://www.googleapis.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; media-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'self'" />
+  <!-- connect-src covers both halves of the page: googleapis.com for the OAuth
+       subscription import, and the one Worker that holds the API key. Named
+       exactly rather than as *.workers.dev, so a compromised script on this page
+       cannot quietly talk to somebody else's Worker. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://www.googleapis.com https://yt-proxy.pl0xuee.workers.dev; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; media-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'self'" />
   <meta name="theme-color" content="#0d1116" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
@@ -11,7 +15,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="../assets/css/styles.css?v=20260722shell1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
-  <link rel="stylesheet" href="./assets/media.css?v=20260722key3" />
+  <link rel="stylesheet" href="./assets/media.css?v=20260722proxy1" />
 </head>
 <body class="site-page media-page">
   <div class="page">
@@ -95,6 +99,6 @@
     </footer>
   </div>
   <script src="../assets/js/script.js"></script>
-  <script type="module" src="./assets/media-inline.js?v=20260722key3"></script>
+  <script type="module" src="./assets/media-inline.js?v=20260722proxy1"></script>
 </body>
 </html>

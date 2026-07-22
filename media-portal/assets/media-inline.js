@@ -6,14 +6,15 @@
 //   once. The channel list is kept locally and the token is thrown away the
 //   moment the import finishes — nothing here holds a live Google session.
 //
-//   What those channels have uploaded is public, so it needs no session at all.
-//   Every visit reads it with an API key restricted by HTTP referrer, shipped in
-//   config.js so the page works on arrival with nothing to set up.
+//   What those channels have uploaded is public, but Google still wants a key
+//   naming the caller — and a key in a static page is a key anyone can copy. So
+//   this half goes through a Cloudflare Worker that holds the key as a secret
+//   and exposes only the two reads below. Nothing here ever sees it.
 //
 // The alternative was asking for a Google sign-in on every visit, because the
 // implicit flow this site uses issues no refresh token and Google's access
 // tokens last about an hour.
-import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '../../assets/js/config.js';
+import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from '../../assets/js/config.js';
 
 (() => {
   const SUBS_KEY = 'ccSubsChannels:v1';
@@ -168,8 +169,19 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
 
   /* ---------------- YouTube API ---------------- */
 
-  async function apiGet(path, params) {
-    const url = new URL(`https://www.googleapis.com/youtube/v3/${path}`);
+  // Private reads. Straight to Google with the reader's own OAuth token — the
+  // proxy is not in this path and never sees a token.
+  const apiGet = (path, params) =>
+    request(new URL(`https://www.googleapis.com/youtube/v3/${path}`), params);
+
+  // Public reads. Through the Worker, which adds the key at its end. The
+  // operation names are the Worker's, not Google's: /uploads and /videos.
+  function proxyGet(operation, params) {
+    if (!YOUTUBE_PROXY_URL) throw Object.assign(new Error('No proxy configured'), { noProxy: true });
+    return request(new URL(`${String(YOUTUBE_PROXY_URL).replace(/\/+$/, '')}/${operation}`), params);
+  }
+
+  async function request(url, params) {
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, v);
     });
@@ -355,11 +367,9 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
     const playlistId = uploadsPlaylistId(channel.id);
     if (!playlistId) return [];
 
-    const data = await apiGet('playlistItems', {
-      part: 'snippet,contentDetails',
+    const data = await proxyGet('uploads', {
       playlistId,
-      maxResults: String(PER_CHANNEL),
-      key: YOUTUBE_API_KEY
+      maxResults: String(PER_CHANNEL)
     });
 
     return (data.items || []).map((item) => ({
@@ -381,10 +391,8 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
 
     for (let i = 0; i < ids.length; i += 50) {
       const batch = ids.slice(i, i + 50);
-      const data = await apiGet('videos', {
-        part: 'contentDetails,snippet,liveStreamingDetails',
-        id: batch.join(','),
-        key: YOUTUBE_API_KEY
+      const data = await proxyGet('videos', {
+        id: batch.join(',')
       });
       (data.items || []).forEach((item) => {
         const video = byId.get(item.id);
@@ -412,11 +420,10 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
   async function loadVideos({ force = false } = {}) {
     if (!channels.length) return;
 
-    if (!YOUTUBE_API_KEY) {
+    if (!YOUTUBE_PROXY_URL) {
       showState(
-        'No API key configured',
-        'Uploads are public, but Google still wants a key naming who is asking. Set YOUTUBE_API_KEY in assets/js/config.js, restricted by HTTP referrer to this site.',
-        [{ label: 'Google Cloud credentials ↗', href: 'https://console.cloud.google.com/apis/credentials' }]
+        'No proxy configured',
+        'Uploads are public, but Google still wants a key naming who is asking, and this site does not carry one — it asks a Cloudflare Worker that holds the key instead. Deploy the Worker in worker/ and set YOUTUBE_PROXY_URL in assets/js/config.js.'
       );
       return;
     }
@@ -489,9 +496,16 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
 
     if (err.status === 403) {
       showState(
-        'API key rejected',
-        `YouTube refused the key${err.reason ? ` (${err.reason})` : ''}. If the referrer restriction does not list this exact origin, requests from here are denied.`,
-        [{ label: 'Google Cloud credentials ↗', href: 'https://console.cloud.google.com/apis/credentials' }]
+        'Request refused',
+        `The proxy or YouTube refused the request${err.reason ? ` (${err.reason})` : ''}. A 403 from the proxy means this origin is not in its allow-list; a 403 from YouTube means the key it holds was rejected.`
+      );
+      return;
+    }
+
+    if (err.status === 404) {
+      showState(
+        'Proxy did not recognise the request',
+        'The Worker answers only the two operations this page needs. A 404 usually means YOUTUBE_PROXY_URL points at something else, or the deployed Worker is an older version.'
       );
       return;
     }
