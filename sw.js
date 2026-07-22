@@ -1,4 +1,4 @@
-const CACHE_NAME = 'command-center-v91';
+const CACHE_NAME = 'command-center-v92';
 // These are cache keys, not file paths: the query string is part of the key, so an
 // entry whose ?v= does not match what the HTML actually requests is precached and
 // then never read. Offline, the request misses, the network leg fails, and
@@ -14,6 +14,9 @@ const APP_SHELL_FILES = [
   // an offline miss looks like here.
   '/assets/css/fonts.css?v=20260722shell1',
   '/assets/js/script.js',
+  // Imported as a module by the stream shim and the media page, so it is a real
+  // request that never appears as a <script src> in any HTML.
+  '/assets/js/config.js',
   '/assets/js/index-inline.js?v=20260722shell1',
   '/manifest.webmanifest',
   '/assets/icons/favicon.svg',
@@ -28,7 +31,8 @@ const APP_SHELL_FILES = [
   '/stream/assets/stream-inline.js?v=20260722shell1',
   '/media-portal/',
   '/media-portal/index.html',
-  '/media-portal/assets/media-inline.js?v=20260722shell1',
+  '/media-portal/assets/media-inline.js?v=20260722subs1',
+  '/media-portal/assets/media.css?v=20260722subs1',
   '/repos/',
   '/repos/index.html',
   '/repos/assets/repos-inline.css?v=20260722shell1',

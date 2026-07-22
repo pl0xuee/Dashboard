@@ -1,0 +1,279 @@
+/* Subscription feed — page-local styling, on the shared chassis tokens.
+   Organised the way stream/, repos/ and web-games/ are: the shared stylesheet
+   carries the chassis, each page carries only what is its own. */
+
+.subs-main { padding: 0 0 24px; display: flex; flex-direction: column; gap: 14px; }
+
+/* ---------- controls ---------- */
+
+.subs-scope { margin-bottom: 12px; }
+
+.subs-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.subs-control-btn {
+  height: 32px;
+  padding: 0 12px;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+/* Disconnect throws away an import that costs a sign-in to redo, so it does not
+   get to look like the two controls beside it that only cost a request. */
+.subs-control-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-faint);
+  box-shadow: none;
+}
+.subs-control-quiet:hover {
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+  background: transparent;
+  color: var(--danger);
+  box-shadow: none;
+}
+
+/* ---------- state notice ---------- */
+
+.subs-state {
+  padding: 16px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--r-md);
+  background: var(--well);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+.subs-state-title {
+  margin: 0 0 6px;
+  font-family: var(--font-legend);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent-strong);
+}
+.subs-state-note {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.6;
+  color: var(--text-muted);
+  max-width: 68ch;
+}
+.subs-state-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.subs-state-actions:empty { display: none; }
+.subs-state-btn { height: 34px; padding: 0 14px; font-size: 11px; letter-spacing: 0.1em; }
+
+.subs-note { margin: 0; padding: 8px 0; font-size: 0.82rem; color: var(--text-faint); }
+
+/* ---------- grid ---------- */
+
+/* auto-fill rather than a fixed count: the cards keep a readable width and the
+   row simply holds as many as fit, from six down to one. */
+.subs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+}
+.subs-grid:empty { display: none; }
+
+.subs-card {
+  /* It is a button, so the shared button styling has to be undone first — most
+     of all `white-space: nowrap` and `line-height: 1`, which between them stop
+     the title wrapping at all and leave it clipped mid-word by the next card. */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0;
+  height: auto;
+  padding: 0;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: normal;
+  line-height: inherit;
+  min-width: 0;
+}
+.subs-card:hover { background: transparent; box-shadow: none; transform: none; }
+
+.subs-card-shot {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 9;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--well);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+  transition: border-color 0.16s ease, box-shadow 0.16s ease;
+}
+.subs-card-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.subs-card:hover .subs-card-shot { border-color: var(--accent-border); }
+.subs-card:focus-visible { outline: none; }
+.subs-card:focus-visible .subs-card-shot {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.subs-card.is-playing .subs-card-shot {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-border);
+}
+
+/* a stamped readout over the art, so it stays legible on any thumbnail */
+.subs-card-duration {
+  position: absolute;
+  right: 5px;
+  bottom: 5px;
+  padding: 1px 5px;
+  border-radius: var(--r-sm);
+  background: rgba(8, 11, 16, 0.86);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+.subs-card-title {
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+  /* two lines, then ellipsis — a ragged card grid is worse than a clipped title */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.subs-card:hover .subs-card-title { color: var(--accent-strong); }
+
+.subs-card-channel {
+  margin-top: 4px;
+  font-family: var(--font-legend);
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.subs-card-age {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+
+/* ---------- player ---------- */
+
+/* Bounded by height rather than width. At full page width a 16:9 frame is about
+   750px tall, which puts every card below the fold — you would click a video and
+   lose the feed you were reading. Capping the width to whatever keeps the frame
+   under ~62vh holds a true 16:9 and leaves the first row of cards in view. */
+.subs-player {
+  padding: 0;
+  overflow: hidden;
+  width: 100%;
+  max-width: calc(62vh * 16 / 9);
+  margin-inline: auto;
+}
+.subs-player-frame {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  background: var(--well);
+}
+.subs-player-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+
+.subs-player-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  background: linear-gradient(180deg, var(--surface-raised), var(--surface));
+}
+.subs-player-meta { flex: 1 1 260px; min-width: 0; }
+.subs-player-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--text);
+}
+.subs-player-channel {
+  margin: 3px 0 0;
+  font-family: var(--font-legend);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.subs-player-actions { display: flex; gap: 8px; flex: 0 0 auto; }
+.subs-player-btn { height: 32px; padding: 0 12px; font-size: 11px; letter-spacing: 0.1em; }
+
+/* ---------- theater mode ----------
+   A class on the body and nothing else, so the iframe is never touched. Rebuilding
+   it to go fullscreen would restart the video from zero every time you toggled. */
+body.subs-theater-mode { background: #05070a; padding: 0; overflow: hidden; }
+body.subs-theater-mode > .page {
+  margin: 0;
+  padding: 0;
+  width: 100vw !important;
+  max-width: none !important;
+  min-height: 0;
+  height: 100dvh;
+}
+body.subs-theater-mode > .page > header,
+body.subs-theater-mode > .page > .site-footer,
+body.subs-theater-mode .subs-panel { display: none; }
+body.subs-theater-mode .subs-main { padding: 0; gap: 0; }
+
+body.subs-theater-mode .subs-player {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  width: 100vw;
+  max-width: none;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  border-radius: 0;
+  background: #05070a;
+  box-shadow: none;
+}
+/* Letterboxed rather than stretched: bounded by whichever of the two viewport
+   axes runs out first, so the frame keeps 16:9 on any window shape. */
+body.subs-theater-mode .subs-player-frame {
+  width: min(100vw, calc(100dvh * 16 / 9));
+  height: auto;
+  max-height: 100dvh;
+  background: transparent;
+}
+body.subs-theater-mode .subs-player-bar { display: none; }
+
+@media (max-width: 560px) {
+  /* 140 rather than 150: at a 390px viewport the grid is 308px wide, and two
+     150px tracks plus the gap need 312 — so the single most common phone width
+     was the one that dropped to a single column while 414px kept two. */
+  .subs-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  .subs-player-actions { width: 100%; }
+  .subs-player-actions > * { flex: 1 1 0; justify-content: center; }
+}

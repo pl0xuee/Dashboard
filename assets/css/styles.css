@@ -520,7 +520,8 @@ tv-ticker-tape { width: 100%; height: 100%; }
 .card:has(.weather-box) > .home-box-title:first-child::before,
 .card:has(.spacewx-scale) > .home-box-title:first-child::before,
 .card:has(.hn-container) > .home-box-title:first-child::before,
-.card:has(.quake-container) > .home-box-title:first-child::before {
+.card:has(.quake-container) > .home-box-title:first-child::before,
+.card:has(.subs-grid) > .home-box-title:first-child::before {
   content: '';
   flex: 0 0 7px;
   width: 7px;
@@ -546,7 +547,8 @@ tv-ticker-tape { width: 100%; height: 100%; }
 .card:has(.spacewx-scale.is-set) > .home-box-title:first-child::before,
 .card:has(.quake-list) > .home-box-title:first-child::before,
 .card:has(.hn-list) > .home-box-title:first-child::before,
-.card:has(.quake-empty) > .home-box-title:first-child::before {
+.card:has(.quake-empty) > .home-box-title:first-child::before,
+.card:has(.subs-card) > .home-box-title:first-child::before {
   background: var(--accent);
   opacity: 1;
   box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent);
@@ -1181,220 +1183,6 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 .home-welcome { width: 100%; padding: 0 0 24px; }
 .home-welcome-inner { max-width: none; width: 100%; }
 
-/* ---------- media portal ----------
-   The page reports exactly one thing: whether a machine on the LAN is answering.
-   It used to say so in a centred hero card that could have fronted any product;
-   it now says so as an instrument, in the same plates, wells and mono legends the
-   rest of the site uses. */
-/* .main is a column flex container, so `align-items` is the horizontal axis here
-   and `justify-content` the vertical one. Centred horizontally, but pinned to the
-   top rather than the middle: vertical centring left a band of empty chassis above
-   and below the console on a tall window. */
-.media-main { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 32px 40px; flex: 1; }
-.media-console {
-  width: 100%;
-  max-width: 940px;
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  /* the body centres its children; every reading here is left-aligned */
-  text-align: left;
-}
-.media-panel { padding: 16px; }
-
-/* Supporting panels sit side by side so the console reads as one instrument face
-   rather than a column of cards adrift in the page. */
-.media-grid {
-  display: grid;
-  grid-template-columns: 1.15fr 1fr;
-  gap: 14px;
-  /* equal heights: two panels of different depth read as two cards, one face */
-  align-items: stretch;
-}
-/* the app link sits on the panel floor so both columns end on the same line */
-.media-grid .media-panel { display: flex; flex-direction: column; }
-.media-grid .media-secondary-link { margin-top: auto; }
-
-/* ---------- the readout ----------
-   Lamp left, identity right. The home page gives each of eight panels a 7px lamp
-   so the lamps line up into a column; here there is one reading, so the lamp is
-   the instrument itself rather than a marker beside a title. */
-/* Lamp, identity, controls on one line: the reading and the thing you do about it
-   belong in the same glance. The controls take the slack so they sit hard right. */
-.media-readout { display: flex; align-items: center; gap: 18px; padding: 6px 0 4px; flex-wrap: wrap; }
-
-/* recessed housing, so the lens sits *in* the chassis rather than on it */
-.media-lamp-housing {
-  flex: 0 0 auto;
-  width: 74px; height: 74px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  background: var(--well);
-  border: 1px solid var(--border);
-  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.55);
-}
-.media-lamp {
-  width: 40px; height: 40px;
-  border-radius: 50%;
-  background: var(--accent-dim);
-  opacity: 0.4;
-  /* the dark bevel is what makes an unlit lens read as glass rather than a hole */
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6), inset 0 -3px 7px rgba(0, 0, 0, 0.5);
-  transition: background 0.3s var(--ease), box-shadow 0.3s var(--ease), opacity 0.3s var(--ease);
-}
-/* The panel lamps all strike to amber, so `lamp-strike` hardcodes that colour as
-   its end state - and with fill-mode `both` it holds there, painting over whatever
-   the lens is actually reporting. This lens has to keep its own colour, so it
-   strikes on brightness alone and lets the state rules below own the hue. */
-@keyframes lamp-strike-lens {
-  0% { filter: brightness(0.35); }
-  35% { filter: brightness(2.1); }
-  100% { filter: brightness(1); }
-}
-
-/* Answering. Green rather than the site's amber on purpose: amber means "this
-   panel is reporting", and here the reading itself is a pass/fail. */
-.media-lamp[data-state="online"] {
-  background: var(--success);
-  opacity: 1;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45), 0 0 16px color-mix(in srgb, var(--success) 55%, transparent);
-  animation: lamp-strike-lens 0.55s var(--ease) both;
-}
-.media-lamp[data-state="offline"] {
-  background: var(--danger);
-  opacity: 1;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45), 0 0 16px color-mix(in srgb, var(--danger) 55%, transparent);
-  animation: lamp-strike-lens 0.55s var(--ease) both;
-}
-/* Stays dark: the check could not be made, which is not a claim about the server.
-   Matches every other unlit lamp on the site meaning "waiting on data". */
-.media-lamp[data-state="unknown"] { background: var(--text-faint); opacity: 0.55; }
-
-.media-identity { min-width: 0; flex: 1 1 260px; }
-.media-service {
-  margin: 0;
-  font-family: var(--font-legend);
-  font-size: clamp(1.5rem, 3.4vw, 1.9rem);
-  font-weight: 700;
-  line-height: 1.05;
-  color: var(--text);
-}
-.media-status-value {
-  margin: 6px 0 0;
-  font-family: var(--font-mono);
-  font-size: 0.82rem;
-  font-weight: 500;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text);
-}
-.media-status-value.online { color: var(--success); }
-.media-status-value.offline { color: var(--danger); }
-.media-status-value.unknown { color: var(--text-faint); }
-/* the state is one word; this is the sentence that keeps it from being cryptic */
-.media-status-note { margin: 5px 0 0; font-size: 0.78rem; line-height: 1.5; color: var(--text-muted); }
-
-.media-actions { display: flex; flex-wrap: wrap; gap: 10px; flex: 0 0 auto; }
-.media-launch-btn {
-  height: 44px;
-  padding: 0 20px;
-  font-size: 13px;
-  gap: 10px;
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-contrast);
-  font-weight: 700;
-  box-shadow: 0 0 20px rgba(255, 176, 0, 0.22);
-  display: inline-flex;
-  width: fit-content;
-  margin: 0;
-}
-.media-launch-btn:hover {
-  background: var(--accent-strong);
-  border-color: var(--accent-strong);
-  color: var(--accent-contrast);
-  box-shadow: 0 0 28px rgba(255, 176, 0, 0.34);
-}
-/* secondary: re-running the check is maintenance, not the thing you came to do */
-.media-recheck-btn { height: 44px; padding: 0 18px; font-size: 13px; margin: 0; }
-.media-recheck-btn[disabled] { opacity: 0.55; cursor: default; }
-
-/* ---------- connection facts ----------
-   Recessed rows, the same shape the home page uses for supporting numbers under
-   a headline reading. */
-.media-facts {
-  margin: 16px 0 0;
-  padding: 0;
-  display: grid;
-  gap: 1px;
-  background: var(--border);
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  overflow: hidden;
-}
-.media-fact {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  padding: 9px 13px;
-  background: var(--well);
-}
-.media-fact dt {
-  font-family: var(--font-legend);
-  font-size: 0.64rem;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-}
-.media-fact dd {
-  margin: 0;
-  font-family: var(--font-mono);
-  font-size: 0.8rem;
-  font-variant-numeric: tabular-nums;
-  color: var(--text);
-  text-align: right;
-}
-
-.media-note { margin: 0 0 12px; font-size: 0.82rem; line-height: 1.6; color: var(--text-muted); }
-.media-note:last-of-type { margin-bottom: 14px; }
-
-/* ---------- diagnostic order ----------
-   Numbered because the sequence is real: each step rules out a cause the next one
-   assumes. The numerals are engraved plates, matching the legend type elsewhere. */
-.media-steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
-.media-steps li { display: flex; gap: 11px; align-items: flex-start; font-size: 0.82rem; line-height: 1.55; color: var(--text-muted); }
-.media-step-n {
-  flex: 0 0 auto;
-  width: 20px; height: 20px;
-  margin-top: 1px;
-  display: grid;
-  place-items: center;
-  border-radius: var(--r-sm);
-  background: var(--well);
-  border: 1px solid var(--border);
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  font-weight: 700;
-  color: var(--accent);
-}
-
-.media-secondary-link { height: 38px; padding: 0 16px; font-size: 12px; gap: 8px; margin: 0; width: fit-content; }
-
-@media (max-width: 760px) {
-  .media-grid { grid-template-columns: 1fr; }
-}
-@media (max-width: 560px) {
-  .media-main { padding: 16px 14px 28px; }
-  .media-readout { gap: 14px; }
-  .media-lamp-housing { width: 58px; height: 58px; }
-  .media-lamp { width: 30px; height: 30px; }
-  .media-actions { width: 100%; }
-  .media-actions > * { flex: 1 1 100%; justify-content: center; }
-}
-
 /* ---------- dashboard grid ---------- */
 .tradingview-grid {
   display: none;
@@ -1536,6 +1324,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 /* shared fixed exit control for any theater/fullscreen mode */
 .dashboard-theater-exit, .dashboard-theater-exit.home-button,
 .stream-theater-exit, .stream-theater-exit.home-button,
+.subs-theater-exit, .subs-theater-exit.home-button,
 .rpg-theater-exit, .rpg-theater-exit.home-button {
   position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
   z-index: 36; display: none;
@@ -1555,7 +1344,8 @@ body.dashboard-theater-scope-panel .tv-panel { display: none; }
 body.dashboard-theater-scope-panel .tv-panel.dashboard-theater-target { display: flex; width: 100vw; height: 100dvh; border-radius: 0; }
 body.dashboard-theater-mode .tv-panel, body.dashboard-theater-mode .tv-widget { border-radius: 0; }
 body.dashboard-theater-mode .dashboard-theater-exit,
-body.stream-theater-mode .stream-theater-exit {
+body.stream-theater-mode .stream-theater-exit,
+body.subs-theater-mode .subs-theater-exit {
   display: inline-flex; opacity: 0; pointer-events: none;
   transform: translateX(-50%) translateY(-10px);
   transition: opacity 0.18s ease, transform 0.18s ease;
@@ -1563,7 +1353,9 @@ body.stream-theater-mode .stream-theater-exit {
 body.dashboard-theater-mode .tradingview-grid:hover .dashboard-theater-exit,
 body.dashboard-theater-mode .tradingview-grid:focus-within .dashboard-theater-exit,
 body.stream-theater-mode .stream-container:hover .stream-theater-exit,
-body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
+body.stream-theater-mode .stream-container:focus-within .stream-theater-exit,
+body.subs-theater-mode .subs-player:hover .subs-theater-exit,
+body.subs-theater-mode .subs-player:focus-within .subs-theater-exit {
   opacity: 1; pointer-events: auto; transform: translateX(-50%) translateY(0);
 }
 

@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https: http://192.168.1.212:8096; frame-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self'" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https://www.googleapis.com; frame-src 'self' https://www.youtube.com https://www.youtube-nocookie.com; media-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'self'" />
   <meta name="theme-color" content="#0d1116" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>Media Server - Command Center</title>
+  <title>Media - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="../assets/css/styles.css?v=20260722shell1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
+  <link rel="stylesheet" href="./assets/media.css?v=20260722subs1" />
 </head>
 <body class="site-page media-page">
   <div class="page">
@@ -28,81 +29,56 @@
         <a href="../repos/" class="home-button">Repos</a>
       </div>
     </header>
-    <!-- One machine, one reading. The home page gives each of its eight panels a
-         7px lamp because eight lamps have to form a column; this page reports a
-         single thing, so the lamp is the instrument rather than a marker on it. -->
-    <main class="main media-main">
-      <h1 class="visually-hidden">Media Server</h1>
-      <div class="media-console">
-        <section class="card media-panel">
-          <h2 class="home-box-title">
-            <span class="plate-label">Media Server</span>
-            <span id="media-asof" class="panel-asof"></span>
-          </h2>
+    <main class="main subs-main">
+      <h1 class="visually-hidden">Subscription Feed</h1>
 
-          <div class="media-readout">
-            <span class="media-lamp-housing">
-              <span id="media-lamp" class="media-lamp" data-state="checking"></span>
-            </span>
-            <div class="media-identity">
-              <p class="media-service">Jellyfin</p>
-              <p id="server-status" class="media-status-value">Checking...</p>
-              <p id="server-status-note" class="media-status-note">Asking the server whether it is up.</p>
-            </div>
-            <div class="media-actions">
-              <a href="http://192.168.1.212:8096" target="_blank" rel="noopener noreferrer" class="home-button media-launch-btn">
-                Open Jellyfin <span aria-hidden="true">↗</span>
-              </a>
-              <button id="media-recheck" type="button" class="home-button media-recheck-btn">Check again</button>
-            </div>
+      <!-- The player is authored here rather than built on demand so it holds a
+           fixed slot in the document: mounting it above a grid that is already on
+           screen would otherwise shove every card down the page under the cursor. -->
+      <section id="subs-player" class="card subs-player" hidden>
+        <!-- The floating exit the dashboard and stream pages already use: it only
+             appears in theater mode, and only while the pointer is over the video. -->
+        <button id="subs-theater-exit" type="button" class="home-button subs-theater-exit">Default View</button>
+        <div class="subs-player-frame" id="subs-player-frame"></div>
+        <div class="subs-player-bar">
+          <div class="subs-player-meta">
+            <p id="subs-player-title" class="subs-player-title"></p>
+            <p id="subs-player-channel" class="subs-player-channel"></p>
           </div>
-
-          <!-- The server's address is deliberately not printed here. This page is
-               served publicly, and the host and port describe the inside of a home
-               network; the launch control carries the address it needs without
-               putting the LAN's layout on screen. -->
-          <dl class="media-facts">
-            <div class="media-fact">
-              <dt>Reach</dt>
-              <dd>Home network only</dd>
-            </div>
-            <div class="media-fact">
-              <dt>Away</dt>
-              <dd>VPN required</dd>
-            </div>
-            <div class="media-fact">
-              <dt>Exposure</dt>
-              <dd>Not on the internet</dd>
-            </div>
-          </dl>
-        </section>
-
-        <div class="media-grid">
-          <!-- Numbered because this genuinely is an order: each step rules out a
-               cause the next one assumes. -->
-          <section class="card media-panel">
-            <h2 class="home-box-title">
-              <span class="plate-label">Diagnostics</span>
-            </h2>
-            <ol class="media-steps">
-              <li><span class="media-step-n">1</span><span>Check the server machine is powered on and awake.</span></li>
-              <li><span class="media-step-n">2</span><span>Confirm this device is on the home network, not cellular.</span></li>
-              <li><span class="media-step-n">3</span><span>Away from the house, connect the VPN and try the launch button.</span></li>
-            </ol>
-          </section>
-
-          <section class="card media-panel">
-            <h2 class="home-box-title">
-              <span class="plate-label">Access</span>
-            </h2>
-            <p class="media-note">Jellyfin answers on the home network only and is never published to the internet. The launch button already carries the address, so connecting the VPN is the whole difference between away and home.</p>
-            <p class="media-note">Playing on a TV, phone or tablet is the same library through a native app rather than the browser.</p>
-            <a href="https://jellyfin.org/downloads/" target="_blank" rel="noopener noreferrer" class="home-button media-secondary-link">
-              Jellyfin apps <span aria-hidden="true">↗</span>
-            </a>
-          </section>
+          <div class="subs-player-actions">
+            <button id="subs-player-theater" type="button" class="home-button subs-player-btn">Theater Mode</button>
+            <a id="subs-player-open" class="home-button subs-player-btn" href="#" target="_blank" rel="noopener noreferrer">Open on YouTube <span aria-hidden="true">↗</span></a>
+            <button id="subs-player-close" type="button" class="home-button subs-player-btn">Close</button>
+          </div>
         </div>
-      </div>
+      </section>
+
+      <section class="card subs-panel">
+        <h2 class="home-box-title">
+          <span class="plate-label">Subscription Feed</span>
+          <span id="subs-asof" class="panel-asof"></span>
+        </h2>
+        <!-- Scope under the plate rather than on it, the same way the Tech Pulse
+             and Seismic panels carry theirs: three facts never fit a plate row. -->
+        <p id="subs-scope" class="subs-scope panel-scope">Not connected</p>
+
+        <div class="subs-controls">
+          <button id="subs-refresh" type="button" class="home-button subs-control-btn">↻ Refresh videos</button>
+          <button id="subs-resync" type="button" class="home-button subs-control-btn">Resync subscriptions</button>
+          <button id="subs-disconnect" type="button" class="home-button subs-control-btn subs-control-quiet">Disconnect</button>
+        </div>
+
+        <!-- Every state below is authored, not assembled from strings at runtime:
+             a panel that reports someone else's service has to be able to say
+             exactly which of five things went wrong, and say it the same way twice. -->
+        <div id="subs-state" class="subs-state" hidden>
+          <p id="subs-state-title" class="subs-state-title"></p>
+          <p id="subs-state-note" class="subs-state-note"></p>
+          <div id="subs-state-actions" class="subs-state-actions"></div>
+        </div>
+
+        <div id="subs-grid" class="subs-grid"></div>
+      </section>
     </main>
     <footer class="site-footer">
       <a href="../" class="footer-plate" aria-label="Command Center home">
@@ -119,7 +95,6 @@
     </footer>
   </div>
   <script src="../assets/js/script.js"></script>
-  <script src="./assets/media-inline.js?v=20260722shell1"></script>
+  <script type="module" src="./assets/media-inline.js?v=20260722subs1"></script>
 </body>
 </html>
-
