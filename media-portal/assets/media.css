@@ -86,6 +86,12 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
+  /* Grid stretches every card to the tallest in its row, and the shared button
+     rule centres content on the main axis — which, in a column, is vertical. So
+     a card with a one-line title had its whole contents sink to the middle of
+     the box while a two-line neighbour rode higher, and the thumbnails in a row
+     stopped lining up. They start at the top, whatever the title does. */
+  justify-content: flex-start;
   gap: 0;
   height: auto;
   padding: 0;

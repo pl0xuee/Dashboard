@@ -1,4 +1,4 @@
-const CACHE_NAME = 'command-center-v96';
+const CACHE_NAME = 'command-center-v97';
 // These are cache keys, not file paths: the query string is part of the key, so an
 // entry whose ?v= does not match what the HTML actually requests is precached and
 // then never read. Offline, the request misses, the network leg fails, and
@@ -32,7 +32,7 @@ const APP_SHELL_FILES = [
   '/media-portal/',
   '/media-portal/index.html',
   '/media-portal/assets/media-inline.js?v=20260722proxy1',
-  '/media-portal/assets/media.css?v=20260722proxy1',
+  '/media-portal/assets/media.css?v=20260722align1',
   '/repos/',
   '/repos/index.html',
   '/repos/assets/repos-inline.css?v=20260722shell1',
