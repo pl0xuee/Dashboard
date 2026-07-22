@@ -1,7 +1,8 @@
     let allNewsItems = [];
-    // Tuned so the news column plus the tech pulse panel lands level with the side
-    // columns - the feed itself carries 30-60 items, so this is the only limit.
-    const NEWS_MAX_ITEMS = 12;
+    // The feeds carry 20-60 items each and several are merged, so this is the only
+    // limit that matters. Ten headlines; the column length is checked against the
+    // side columns rather than assumed.
+    const NEWS_MAX_ITEMS = 10;
     const NEWS_CACHE_PREFIX = 'homeNewsCache:v3:';
     const NEWS_REQUEST_TIMEOUT_MS = 9000;
     const NEWS_LOADING_TIMEOUT_MS = 12000;
@@ -249,15 +250,22 @@
     const DIRECT_NEWS_FEEDS = {
       usa: [
         { url: 'https://rss.nytimes.com/services/xml/rss/nyt/US.xml', source: 'The New York Times' },
-        { url: 'https://moxie.foxnews.com/google-publisher/us.xml', source: 'Fox News' }
+        { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Politics.xml', source: 'The New York Times' },
+        { url: 'https://moxie.foxnews.com/google-publisher/us.xml', source: 'Fox News' },
+        { url: 'https://moxie.foxnews.com/google-publisher/politics.xml', source: 'Fox News' }
       ],
       world: [
         { url: 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml', source: 'The New York Times' },
-        { url: 'https://moxie.foxnews.com/google-publisher/world.xml', source: 'Fox News' }
+        { url: 'https://moxie.foxnews.com/google-publisher/world.xml', source: 'Fox News' },
+        // The one non-American desk in the list, which is most of the point of a
+        // world tab. Its feed is RSS 1.0, so it dates items with dc:date rather
+        // than pubDate - see parseRssItems.
+        { url: 'https://rss.dw.com/rdf/rss-en-top', source: 'Deutsche Welle' }
       ],
       finance: [
         { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml', source: 'The New York Times' },
-        { url: 'https://moxie.foxnews.com/google-publisher/business.xml', source: 'Fox News' }
+        { url: 'https://feeds.content.dowjones.io/public/rss/mw_topstories', source: 'MarketWatch' },
+        { url: 'https://feeds.content.dowjones.io/public/rss/RSSMarketsMain', source: 'The Wall Street Journal' }
       ]
     };
 
@@ -281,10 +289,17 @@
           title = title.slice(0, -(source.length + 3)).trim();
         }
 
+        // RSS 2.0 dates with <pubDate>; RSS 1.0 uses Dublin Core's <dc:date>, and
+        // a namespaced tag is not reachable through querySelector because the
+        // colon reads as a pseudo-class. Without this fallback every item from an
+        // RSS 1.0 feed carries no date, which sorts the lot to the bottom of a
+        // merged list and prints no time beside any of them.
+        const dcDate = item.getElementsByTagName('dc:date')[0];
+
         return {
           title,
           link: text('link'),
-          pubDate: text('pubDate'),
+          pubDate: text('pubDate') || (dcDate && dcDate.textContent ? dcDate.textContent.trim() : ''),
           author: source,
           // tells renderNews the publisher is already known, so it must not go
           // hunting for one by splitting the headline on " - "
@@ -345,6 +360,45 @@
       return Date.parse(raw);
     }
 
+    // Merging several feeds and taking the newest N does not give a mix of
+    // publishers, it gives whichever publisher files most often. Fox posts far
+    // more per hour than the New York Times, so a straight recency cut of the US
+    // tab came out eight to two — a feed nominally drawn from four sources that
+    // read like one.
+    //
+    // So each source gets a share of the ten slots and is passed over once it has
+    // had its share. Within that, recency still decides: the order is the same as
+    // before, only the domination is removed. If a source is quiet and cannot
+    // fill its share the leftover slots go back to whoever has stories, so a slow
+    // news day never returns a short list.
+    function balanceBySource(items, limit) {
+      const sources = new Set(items.map((item) => item.author || ''));
+      if (sources.size < 2) return items.slice(0, limit);
+
+      const share = Math.ceil(limit / sources.size);
+      const taken = new Map();
+      const picked = [];
+
+      for (const item of items) {
+        if (picked.length >= limit) break;
+        const key = item.author || '';
+        const count = taken.get(key) || 0;
+        if (count >= share) continue;
+        taken.set(key, count + 1);
+        picked.push(item);
+      }
+
+      if (picked.length < limit) {
+        const chosen = new Set(picked);
+        for (const item of items) {
+          if (picked.length >= limit) break;
+          if (!chosen.has(item)) picked.push(item);
+        }
+      }
+
+      return picked.sort((a, b) => (parseNewsDate(b.pubDate) || 0) - (parseNewsDate(a.pubDate) || 0));
+    }
+
     function renderNews() {
       const container = document.getElementById('news-container');
       const limit = NEWS_MAX_ITEMS;
@@ -365,7 +419,7 @@
       list.style.margin = '0';
       list.style.listStyle = 'none';
 
-      allNewsItems.slice(0, limit).forEach((item) => {
+      balanceBySource(allNewsItems, limit).forEach((item) => {
         // Same rule as the panel stamps: a bare time silently reads as today, and
         // anything not from today carries its date. An unparseable pubDate shows
         // nothing rather than "Invalid Date".

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'command-center-v102';
+const CACHE_NAME = 'command-center-v104';
 // These are cache keys, not file paths: the query string is part of the key, so an
 // entry whose ?v= does not match what the HTML actually requests is precached and
 // then never read. Offline, the request misses, the network leg fails, and
@@ -17,7 +17,7 @@ const APP_SHELL_FILES = [
   // Imported as a module by the stream shim and the media page, so it is a real
   // request that never appears as a <script src> in any HTML.
   '/assets/js/config.js',
-  '/assets/js/index-inline.js?v=20260722shell1',
+  '/assets/js/index-inline.js?v=20260722news2',
   '/manifest.webmanifest',
   '/assets/icons/favicon.svg',
   '/dashboard/',
