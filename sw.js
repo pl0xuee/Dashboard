@@ -1,31 +1,37 @@
-const CACHE_NAME = 'command-center-v89';
+const CACHE_NAME = 'command-center-v90';
+// These are cache keys, not file paths: the query string is part of the key, so an
+// entry whose ?v= does not match what the HTML actually requests is precached and
+// then never read. Offline, the request misses, the network leg fails, and
+// staleWhileRevalidate throws - the page loads with no stylesheet or no script.
+// Any time an asset's ?v= is bumped in the HTML it has to be bumped here as well,
+// and CACHE_NAME bumped so this list is re-fetched rather than reused.
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
-  '/assets/css/styles.css?v=20260721regroup1',
+  '/assets/css/styles.css?v=20260721ui1',
   '/assets/js/script.js',
-  '/assets/js/index-inline.js?v=20260721regroup1',
+  '/assets/js/index-inline.js?v=20260721ui1',
   '/manifest.webmanifest',
   '/assets/icons/favicon.svg',
   '/dashboard/',
   '/dashboard/index.html',
-  '/dashboard/assets/dashboard-widgets.js?v=20260706crypto247a',
+  '/dashboard/assets/dashboard-widgets.js?v=20260721timeout1',
   '/stream/',
   '/stream/index.html',
-  '/stream/assets/config-inline.js?v=20260630c',
-  '/stream/assets/stream-inline.css?v=20260712refined1',
-  '/stream/assets/stream-inline.js?v=20260713popoutchat1',
+  '/stream/assets/config-inline.js?v=20260721cleanup1',
+  '/stream/assets/stream-inline.css?v=20260713multi1',
+  '/stream/assets/stream-inline.js?v=20260721timeout1',
   '/media-portal/',
   '/media-portal/index.html',
-  '/media-portal/assets/media-inline.js?v=20260711media2',
+  '/media-portal/assets/media-inline.js?v=20260721panel1',
   '/repos/',
   '/repos/index.html',
   '/repos/assets/repos-inline.css?v=20260713repos1',
-  '/repos/assets/repos-inline.js?v=20260713repos1',
+  '/repos/assets/repos-inline.js?v=20260721timeout1',
   '/web-games/',
   '/web-games/index.html',
-  '/web-games/assets/web-games-inline.css?v=20260721annunciator1',
-  '/web-games/assets/web-games-inline.js?v=20260712dedupe1',
+  '/web-games/assets/web-games-inline.css?v=20260721boardfirst6',
+  '/web-games/assets/web-games-inline.js?v=20260721boardfirst6',
   '/web-games/middle-earth-rpg/',
   '/web-games/middle-earth-rpg/index.html',
   '/web-games/middle-earth-rpg/assets/rpg-inline.css?v=20260711gunmetal2',

@@ -1707,12 +1707,20 @@
       const viewportH = window.innerHeight;
       const viewportW = window.innerWidth;
       const shellWidth = Math.max(320, Math.min(1240, gamesMainEl.clientWidth - 24));
-      const viewportBottomPadding = 28;
+      // Board-first layout puts a status line and the card's own padding below every
+      // board, and the site footer sits below that again. Measuring to the viewport
+      // bottom therefore overstates the room: Tetris sized itself past the fold and
+      // pushed the whole page into scroll. The floor is the footer, not the window.
+      const footerEl = document.querySelector('.site-footer');
+      const floorY = footerEl
+        ? Math.min(viewportH, footerEl.getBoundingClientRect().top)
+        : viewportH;
+      const viewportBottomPadding = 112;
 
       const getAvailableHeight = (element, fallback, bottomPadding = viewportBottomPadding) => {
         if (!element) return fallback;
         const rect = element.getBoundingClientRect();
-        return Math.max(fallback, Math.floor(viewportH - Math.max(rect.top, 0) - bottomPadding));
+        return Math.max(fallback, Math.floor(floorY - Math.max(rect.top, 0) - bottomPadding));
       };
 
       const getInnerWidth = (element, fallback) => {
@@ -1732,9 +1740,9 @@
       const snakeSizeByWidth = Math.floor(Math.max(260, shellWidth - 56));
       const snakeDisplaySize = Math.min(snakeSizeByHeight, snakeSizeByWidth, Math.floor(viewportW * 0.92), 720);
 
-      const tetrisRenderedWidth = Math.max(220, Math.floor(boardCanvas.getBoundingClientRect().width || tetrisDisplayWidth));
-      nextCanvas.style.width = `${Math.max(100, Math.floor(tetrisRenderedWidth * 0.3))}px`;
-      nextCanvas.style.height = 'auto';
+      // Next is a chip in the game bar now, not a panel in a sidebar, so its size
+      // is a fixed CSS concern. Scaling it to 30% of the board width made it a
+      // 100px block sitting in a 30px-tall row.
 
       snakeCanvas.style.width = `${snakeDisplaySize}px`;
       snakeCanvas.style.height = 'auto';
@@ -2281,3 +2289,19 @@
     setActiveGame(null);
     resizeGameCanvases();
     window.addEventListener('resize', resizeGameCanvases);
+
+    // Controls toggle. The hint is read once and then just occupies the board's
+    // space, so each panel folds it behind a button in its bar. Delegated because
+    // every panel has one and they are all identical; `hidden` is the state, so
+    // the button only has to mirror it into aria-expanded.
+    document.addEventListener('click', (event) => {
+      const button = event.target.closest('.game-help');
+      if (!button) return;
+
+      const panel = document.getElementById(button.getAttribute('aria-controls'));
+      if (!panel) return;
+
+      const nowOpen = panel.hidden;
+      panel.hidden = !nowOpen;
+      button.setAttribute('aria-expanded', String(nowOpen));
+    });

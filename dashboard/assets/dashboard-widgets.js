@@ -13,7 +13,6 @@ if (!window.__dashboardWidgetsInitialized) {
   const CHART_CACHE_TTL_MS = 15 * 60 * 1000;
   const CHART_CACHE_KEY_PREFIX = 'dashboardChartCache:v3:';
   const CUSTOM_TICKERS_STORAGE_KEY = 'dashboardCustomTickers:v1';
-  const MAX_VISIBLE_TICKER_OPTIONS = 10;
   const INITIAL_VISIBLE_TICKER_OPTIONS = 6;
   const TOP_TICKER_OPTIONS = [
     { value: 'AAPL', label: 'AAPL - Apple', group: 'Stocks' },
@@ -665,6 +664,23 @@ if (!window.__dashboardWidgetsInitialized) {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  // Every chart request is serialized through yahooRequestQueue, so this deadline
+  // is what keeps one stalled proxy from taking the whole dashboard with it: a
+  // fetch that never settles never settles the queue either, and every later
+  // request - including all four panels' 45s refreshes - chains off it and never
+  // runs again. Failing is recoverable here; hanging is not.
+  const YAHOO_REQUEST_TIMEOUT_MS = 12000;
+
+  async function fetchWithTimeout(url, options = {}, timeoutMs = YAHOO_REQUEST_TIMEOUT_MS) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+    try {
+      return await fetch(url, { ...options, signal: controller.signal });
+    } finally {
+      clearTimeout(timeoutId);
+    }
+  }
+
   function scheduleChartRetry(index, symbol, delayMs = 8000) {
     const retryKey = `retryTimeout${index}`;
     if (window[retryKey]) {
@@ -695,7 +711,7 @@ if (!window.__dashboardWidgetsInitialized) {
       }
 
       yahooLastRequestAt = Date.now();
-      const response = await fetch(getYahooChartUrl(symbol));
+      const response = await fetchWithTimeout(getYahooChartUrl(symbol));
       if (response.status === 429) {
         yahooRateLimitUntil = Date.now() + YAHOO_RATE_LIMIT_COOLDOWN_MS;
       }

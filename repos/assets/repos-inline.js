@@ -59,10 +59,24 @@
     }
   }
 
+  // The refresh button is re-enabled in a `finally`, so a request that hangs rather
+  // than failing leaves it disabled and the page stuck on "Loading repositories..."
+  // with no way to retry. A rejection walks the existing error path instead.
+  const GITHUB_REQUEST_TIMEOUT_MS = 9000;
+
   async function ghFetch(path) {
-    const res = await fetch(API + path, {
-      headers: { Accept: 'application/vnd.github+json' }
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), GITHUB_REQUEST_TIMEOUT_MS);
+
+    let res;
+    try {
+      res = await fetch(API + path, {
+        headers: { Accept: 'application/vnd.github+json' },
+        signal: controller.signal
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (res.status === 404) return null;
 

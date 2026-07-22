@@ -53,7 +53,6 @@
     function setStreamTheaterMode(nextValue) {
       streamTheaterMode = Boolean(nextValue);
       document.body.classList.toggle('stream-theater-mode', streamTheaterMode);
-      document.documentElement.classList.toggle('stream-theater-mode', streamTheaterMode);
       updateTheaterModeButton();
       // The resize this triggers can leave embedded Twitch players paused.
       scheduleTwitchResumeAll('theatermode');
@@ -887,6 +886,23 @@
       return results;
     }
 
+    // A third party that refuses is handled everywhere below; one that accepts the
+    // connection and then never answers was not. The in-flight guards here are
+    // released in a `finally`, so a fetch that never settles never releases them -
+    // the streamer dropdown and the YouTube scan would stay locked for the rest of
+    // the session rather than failing and retrying on the next hover.
+    const STREAM_REQUEST_TIMEOUT_MS = 9000;
+
+    async function fetchWithTimeout(url, options = {}, timeoutMs = STREAM_REQUEST_TIMEOUT_MS) {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
     function getCachedJson(key) {
       try {
         return JSON.parse(localStorage.getItem(key) || 'null');
@@ -927,7 +943,7 @@
     }
 
     async function ytApi(path, token) {
-      const resp = await fetch(`https://www.googleapis.com/youtube/v3/${path}`, {
+      const resp = await fetchWithTimeout(`https://www.googleapis.com/youtube/v3/${path}`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
 
@@ -1156,8 +1172,13 @@
 
     async function renderList() {
       const manual   = getManualStreamers();
-        const followed = JSON.parse(localStorage.getItem('twitchFollowed')) || [];
-        const youtubeLive = await fetchYouTubeLiveStreams();
+      // Read through the same guarded helper as every other cached key here: a
+      // malformed value threw synchronously out of renderList, and since both
+      // callers await it without a catch, the dropdown stayed empty for the rest
+      // of the session rather than just skipping the followed list.
+      const cachedFollowed = getCachedJson('twitchFollowed');
+      const followed = Array.isArray(cachedFollowed) ? cachedFollowed : [];
+      const youtubeLive = await fetchYouTubeLiveStreams();
 
         // Merge manual + followed, dedupe by lowercase url/login
         const seen = new Set();
@@ -1179,7 +1200,7 @@
                 const batch = twitchItems.slice(i, i + 100);
                 const query = batch.map(b => `user_login=${encodeURIComponent(b.url)}`).join('&');
                 try {
-                    const resp = await fetch(`https://api.twitch.tv/helix/streams?${query}`, {
+                    const resp = await fetchWithTimeout(`https://api.twitch.tv/helix/streams?${query}`, {
                         headers: { 'Client-Id': clientId, 'Authorization': `Bearer ${token}` }
                     });
                     if (resp.ok) {
@@ -1322,7 +1343,7 @@
         if (url.includes('youtube')) return false;
         const channel = url.includes('twitch.tv/') ? url.split('twitch.tv/').pop().split('/')[0] : url;
         try {
-            const response = await fetch(`https://decapi.me/twitch/uptime/${channel}`);
+            const response = await fetchWithTimeout(`https://decapi.me/twitch/uptime/${channel}`);
             const text = await response.text();
             return !text.includes("offline") && !text.includes("not found");
         } catch (e) {
@@ -1412,7 +1433,7 @@
 
       twitchFollowsSyncInFlight = true;
         try {
-            const userResp = await fetch('https://api.twitch.tv/helix/users', {
+            const userResp = await fetchWithTimeout('https://api.twitch.tv/helix/users', {
                 headers: { 'Client-Id': clientId, 'Authorization': `Bearer ${token}` }
             });
             if (!userResp.ok) { twitchLogout(); return; }
@@ -1422,7 +1443,7 @@
             let follows = [], cursor = '';
             do {
                 const url = `https://api.twitch.tv/helix/channels/followed?user_id=${userId}&first=100${cursor ? '&after=' + cursor : ''}`;
-                const resp = await fetch(url, {
+                const resp = await fetchWithTimeout(url, {
                     headers: { 'Client-Id': clientId, 'Authorization': `Bearer ${token}` }
                 });
                 if (!resp.ok) break;

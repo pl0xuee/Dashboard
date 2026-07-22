@@ -20,19 +20,22 @@
       margin: 0 auto 12px;
     }
 
+    /* The intro sits above the grid, not beside it. As a side-by-side row this was
+       a ~180px block of copy next to a ~673px grid, aligned to the top, so roughly
+       490px of the left column was empty - and stretching the panel would only have
+       moved that emptiness inside its border. Stacked, the copy is a full-width
+       strip and the grid gets the whole width. */
     .games-toolbar {
       display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 14px;
       background: transparent;
       border-radius: 16px;
     }
 
     .games-toolbar-copy {
-      flex: 0 1 320px;
-      min-width: 260px;
+      flex: 0 0 auto;
       padding: 18px;
       border: 1px solid rgba(182, 203, 230, 0.18);
       border-radius: 18px;
@@ -60,8 +63,10 @@
       max-width: 34ch;
     }
 
+    /* three across on a full-width strip; they stack again when there is no room */
     .games-toolbar-notes {
       display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 8px;
       margin-top: 14px;
     }
@@ -231,21 +236,23 @@
     .games-page .game-panel { background: var(--surface); border-color: var(--border); box-shadow: none; }
     .games-page .welcome-inner { background: linear-gradient(160deg, var(--surface-raised), var(--surface)); border: 1px solid var(--border); border-radius: 20px; }
 
-    .game-picker-btn:not(.game-picker-btn-rpg) {
-      display: grid;
-      grid-template-columns: 40px minmax(0, 1fr);
-      column-gap: 12px;
-      padding: 16px 16px 15px;
-      min-height: 126px;
+    /* The art fills the card and the copy rides on top of it, the same shape as the
+       featured pair above -- just smaller. It used to be a 40px glyph in a
+       two-column grid, which left most of the card empty. */
+    .game-picker-btn:not(.game-picker-btn-hero) {
+      display: block;
+      position: relative;
+      padding: 0;
+      min-height: 152px;
       height: auto;
-      align-items: flex-start;
+      overflow: hidden;
       border-color: var(--border);
       background: var(--surface);
       box-shadow: none;
       isolation: isolate;
     }
 
-    .game-picker-btn:not(.game-picker-btn-rpg)::after {
+    .game-picker-btn:not(.game-picker-btn-hero)::after {
       content: '';
       position: absolute;
       left: 0;
@@ -256,12 +263,6 @@
       opacity: 1;
       pointer-events: none;
       z-index: 0;
-    }
-
-
-    .games-side-title {
-      margin-bottom: 0;
-      font-size: 0.74rem;
     }
 
     .game-picker-btn[data-game='rpg'] {
@@ -436,17 +437,53 @@
       word-break: break-word;
     }
 
+    /* Pixel art, so `pixelated`: these are 448px scenes covering a ~227px card and
+       any smooth filter would resample the hard edges into mush. */
     .game-picker-art {
-      width: 40px;
-      height: 40px;
-      border-radius: 12px;
-      border: 1px solid rgba(183, 203, 225, 0.24);
-      position: relative;
-      flex: 0 0 40px;
-      box-shadow: inset 0 0 0 1px rgba(10, 18, 33, 0.4), 0 6px 14px rgba(8, 14, 26, 0.26);
-      overflow: hidden;
-      align-self: flex-start;
-      margin-top: 2px;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      image-rendering: pixelated;
+      border: 0;
+      margin: 0;
+      box-shadow: none;
+      transition: transform 0.28s var(--ease, ease);
+    }
+
+    /* Guaranteed legibility: the art is darkened toward the lower-left when it is
+       generated, but a bright stack of tetrominoes or a row of lit Simon pads can
+       still land under the title. This gradient is what the copy actually reads
+       against - baked-in shading alone was not enough. ::after is already spoken
+       for by the accent bar, so the scrim rides ::before. */
+    .game-picker-btn:not(.game-picker-btn-hero)::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        180deg,
+        rgba(8, 11, 17, 0) 0%,
+        rgba(8, 11, 17, 0.32) 40%,
+        rgba(8, 11, 17, 0.82) 72%,
+        rgba(8, 11, 17, 0.94) 100%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* copy sits over the art's darkened lower-left corner */
+    .game-picker-btn:not(.game-picker-btn-hero) .game-picker-copy {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      padding: 12px 14px 13px;
+      gap: 5px;
+    }
+
+    .game-picker-btn:not(.game-picker-btn-hero):hover .game-picker-art {
+      transform: scale(1.03);
     }
 
     .game-picker-btn:hover {
@@ -456,7 +493,7 @@
       filter: none;
     }
 
-    .game-picker-btn:not(.game-picker-btn-rpg):hover {
+    .game-picker-btn:not(.game-picker-btn-hero):hover {
       transform: translateY(-2px);
       border-color: rgba(200,210,220,.32);
       background: #192028;
@@ -468,227 +505,34 @@
       box-shadow: inset 0 0 0 1px rgba(10, 18, 33, 0.34), 0 8px 16px rgba(8, 14, 26, 0.34);
     }
 
-    .game-picker-art.tetris {
-      background:
-        linear-gradient(90deg, #4fd3ff 0 33%, #ffd166 33% 66%, #ff6f91 66% 100%),
-        linear-gradient(180deg, #7d8fb8, #2a3550);
-    }
 
-    .game-picker-art.tetris::after {
-      content: '';
-      position: absolute;
-      left: 4px;
-      right: 4px;
-      top: 16px;
-      height: 2px;
-      background: rgba(10, 16, 28, 0.45);
-      box-shadow: 0 -9px 0 rgba(10, 16, 28, 0.45), 0 9px 0 rgba(10, 16, 28, 0.45);
-    }
 
-    .game-picker-art.snake {
-      background: linear-gradient(180deg, #13220d, #1e3212);
-    }
 
-    .game-picker-art.snake::before {
-      content: '';
-      position: absolute;
-      width: 7px;
-      height: 7px;
-      left: 4px;
-      top: 14px;
-      background: #8fff64;
-      box-shadow: 7px 0 0 #8fff64, 14px 0 0 #8fff64, 14px -7px 0 #8fff64, 21px -7px 0 #b8ff7a;
-    }
 
-    .game-picker-art.pong {
-      background: linear-gradient(180deg, #0d1629, #1a223a);
-    }
 
-    .game-picker-art.pong::before,
-    .game-picker-art.pong::after {
-      content: '';
-      position: absolute;
-    }
 
-    .game-picker-art.pong::before {
-      left: 5px;
-      top: 8px;
-      width: 3px;
-      height: 16px;
-      background: rgba(240, 247, 255, 0.92);
-      box-shadow: 21px 0 0 rgba(240, 247, 255, 0.92);
-    }
 
-    .game-picker-art.pong::after {
-      left: 14px;
-      top: 14px;
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: #7fe7ff;
-    }
 
-    .game-picker-art.breakout {
-      background: linear-gradient(180deg, #21142f, #0c1324);
-    }
 
-    .game-picker-art.breakout::before {
-      content: '';
-      position: absolute;
-      left: 4px;
-      right: 4px;
-      top: 5px;
-      height: 9px;
-      background: linear-gradient(90deg, #ff7d6a 0 33%, #ffd166 33% 66%, #6ae2ff 66% 100%);
-      box-shadow: 0 11px 0 rgba(98, 115, 170, 0.44);
-    }
 
-    .game-picker-art.breakout::after {
-      content: '';
-      position: absolute;
-      left: 9px;
-      right: 9px;
-      bottom: 4px;
-      height: 4px;
-      background: #f8fbff;
-    }
 
-    .game-picker-art.dash {
-      background: linear-gradient(180deg, #0f2230, #0a111d);
-    }
 
-    .game-picker-art.dash::before {
-      content: '';
-      position: absolute;
-      left: 14px;
-      top: 5px;
-      width: 7px;
-      height: 19px;
-      background: #78e9ff;
-      clip-path: polygon(50% 0, 100% 100%, 50% 78%, 0 100%);
-    }
 
-    .game-picker-art.memory {
-      background: linear-gradient(180deg, #1c1733, #0e1223);
-    }
 
-    .game-picker-art.memory::before,
-    .game-picker-art.memory::after {
-      content: '';
-      position: absolute;
-      width: 10px;
-      height: 14px;
-      top: 8px;
-      border-radius: 3px;
-    }
 
-    .game-picker-art.memory::before {
-      left: 5px;
-      background: #ffbf69;
-    }
 
-    .game-picker-art.memory::after {
-      right: 5px;
-      background: #71d2ff;
-    }
 
-    .game-picker-art.minefield {
-      background: linear-gradient(180deg, #1b2529, #0d161b);
-    }
 
-    .game-picker-art.minefield::before,
-    .game-picker-art.minefield::after {
-      content: '';
-      position: absolute;
-      background: #d8e8ef;
-    }
 
-    .game-picker-art.minefield::before {
-      left: 16px;
-      top: 5px;
-      width: 3px;
-      height: 22px;
-    }
 
-    .game-picker-art.minefield::after {
-      left: 6px;
-      top: 16px;
-      width: 22px;
-      height: 3px;
-    }
 
-    .game-picker-art.simon {
-      background: linear-gradient(180deg, #1c2036, #0d111f);
-    }
 
-    .game-picker-art.simon::before {
-      content: '';
-      position: absolute;
-      inset: 5px;
-      border-radius: 50%;
-      background: conic-gradient(#ff8a73 0 25%, #ffd166 25% 50%, #8cf08a 50% 75%, #71d2ff 75% 100%);
-    }
 
-    .game-picker-art.whack {
-      background: linear-gradient(180deg, #231b19, #11100e);
-    }
 
-    .game-picker-art.whack::before {
-      content: '';
-      position: absolute;
-      left: 8px;
-      top: 8px;
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: #ff8c6c;
-      box-shadow: 0 0 0 3px rgba(12, 12, 12, 0.35) inset;
-    }
 
-    .game-picker-art.rpg {
-      background:
-        linear-gradient(180deg, #6d87a8 0 45%, #31435d 45% 68%, #243424 68% 100%),
-        linear-gradient(180deg, #281d14, #141018);
-      image-rendering: pixelated;
-    }
 
-    .game-picker-art.rpg::before,
-    .game-picker-art.rpg::after {
-      content: '';
-      position: absolute;
-    }
 
-    .game-picker-art.rpg::before {
-      left: 3px;
-      top: 17px;
-      width: 6px;
-      height: 14px;
-      background: #2f211b;
-      box-shadow:
-        6px -5px 0 #42563c,
-        12px -9px 0 #516748,
-        18px -4px 0 #42563c,
-        0 4px 0 #2f211b,
-        6px 0 0 #2f211b,
-        12px 5px 0 #2f211b,
-        18px 1px 0 #2f211b,
-        24px -6px 0 #42563c,
-        24px -1px 0 #2f211b;
-    }
 
-    .game-picker-art.rpg::after {
-      left: 11px;
-      top: 12px;
-      width: 10px;
-      height: 10px;
-      background: #e0c37e;
-      box-shadow:
-        0 5px 0 #8e7446,
-        -5px 5px 0 #8e7446,
-        5px 5px 0 #8e7446,
-        -10px 10px 0 rgba(239, 211, 142, 0.35),
-        10px 10px 0 rgba(239, 211, 142, 0.35);
-    }
 
     .game-picker-btn.featured .game-picker-art {
       width: 42px;
@@ -707,30 +551,9 @@
       color: #f0dcb0;
     }
 
-    .game-picker-art.doom {
-      background: linear-gradient(180deg, #6c1713 0%, #30120f 60%, #1a202d 60%, #202c3d 100%);
-    }
 
-    .game-picker-art.doom::before,
-    .game-picker-art.doom::after {
-      content: '';
-      position: absolute;
-      background: rgba(255, 240, 210, 0.85);
-    }
 
-    .game-picker-art.doom::before {
-      width: 18px;
-      height: 2px;
-      left: 7px;
-      top: 16px;
-    }
 
-    .game-picker-art.doom::after {
-      width: 2px;
-      height: 18px;
-      left: 16px;
-      top: 7px;
-    }
 
     .game-picker-btn.active {
       border-color: rgba(145, 188, 255, 0.66);
@@ -741,7 +564,7 @@
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 16px 30px rgba(18, 32, 64, 0.34), 0 0 0 1px rgba(123, 178, 255, 0.28);
     }
 
-    .game-picker-btn:not(.game-picker-btn-rpg).active {
+    .game-picker-btn:not(.game-picker-btn-hero).active {
       background:
         linear-gradient(165deg, rgba(70, 100, 166, 0.96), rgba(34, 51, 92, 0.98)),
         radial-gradient(circle at top left, rgba(145, 188, 255, 0.32), transparent 58%);
@@ -753,7 +576,7 @@
         0 0 0 1px rgba(130, 186, 255, 0.3);
     }
 
-    .game-picker-btn:not(.game-picker-btn-rpg).active .game-picker-kicker {
+    .game-picker-btn:not(.game-picker-btn-hero).active .game-picker-kicker {
       background: rgba(182, 214, 255, 0.24);
       color: #e6f4ff;
     }
@@ -835,82 +658,6 @@
       line-height: 1.3;
     }
 
-    body.gameplay-active-mode #snakePanel.active,
-    body.gameplay-active-mode #pongPanel.active,
-    body.gameplay-active-mode #breakoutPanel.active,
-    body.gameplay-active-mode #dashPanel.active,
-    body.gameplay-active-mode #memoryPanel.active,
-    body.gameplay-active-mode #minefieldPanel.active,
-    body.gameplay-active-mode #simonPanel.active,
-    body.gameplay-active-mode #whackPanel.active {
-      grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
-      column-gap: 14px;
-      align-items: start;
-    }
-
-    body.gameplay-active-mode #snakePanel.active .snake-wrap,
-    body.gameplay-active-mode #pongPanel.active .pong-wrap,
-    body.gameplay-active-mode #breakoutPanel.active .breakout-wrap,
-    body.gameplay-active-mode #dashPanel.active .dash-wrap,
-    body.gameplay-active-mode #memoryPanel.active .memory-grid-wrap,
-    body.gameplay-active-mode #minefieldPanel.active .minefield-grid-wrap,
-    body.gameplay-active-mode #simonPanel.active .simon-wrap,
-    body.gameplay-active-mode #whackPanel.active .whack-grid-wrap {
-      grid-column: 1;
-      grid-row: 1 / span 4;
-      margin-top: 0;
-      width: 100%;
-      align-self: start;
-    }
-
-    body.gameplay-active-mode #snakePanel.active .control-hint,
-    body.gameplay-active-mode #pongPanel.active .control-hint,
-    body.gameplay-active-mode #breakoutPanel.active .control-hint,
-    body.gameplay-active-mode #dashPanel.active .control-hint,
-    body.gameplay-active-mode #memoryPanel.active .control-hint,
-    body.gameplay-active-mode #minefieldPanel.active .control-hint,
-    body.gameplay-active-mode #simonPanel.active .control-hint,
-    body.gameplay-active-mode #whackPanel.active .control-hint {
-      grid-column: 2;
-      grid-row: 1;
-      margin-top: 0;
-    }
-
-    body.gameplay-active-mode #snakePanel.active .snake-stats,
-    body.gameplay-active-mode #pongPanel.active .pong-stats,
-    body.gameplay-active-mode #breakoutPanel.active .breakout-stats,
-    body.gameplay-active-mode #dashPanel.active .dash-stats,
-    body.gameplay-active-mode #memoryPanel.active .memory-stats,
-    body.gameplay-active-mode #minefieldPanel.active .minefield-stats,
-    body.gameplay-active-mode #simonPanel.active .simon-stats,
-    body.gameplay-active-mode #whackPanel.active .whack-stats {
-      grid-column: 2;
-      grid-row: 2;
-      margin-top: 0;
-      grid-template-columns: 1fr;
-    }
-
-    body.gameplay-active-mode #snakePanel.active #snakeStatus,
-    body.gameplay-active-mode #pongPanel.active #pongStatus,
-    body.gameplay-active-mode #breakoutPanel.active #breakoutStatus,
-    body.gameplay-active-mode #dashPanel.active #dashStatus,
-    body.gameplay-active-mode #memoryPanel.active #memoryStatus,
-    body.gameplay-active-mode #minefieldPanel.active #minefieldStatus,
-    body.gameplay-active-mode #simonPanel.active #simonStatus,
-    body.gameplay-active-mode #whackPanel.active #whackStatus {
-      grid-column: 2;
-      grid-row: 3;
-      margin: 0;
-      padding: 10px 12px;
-      border: 1px solid rgba(167, 188, 255, 0.18);
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.03);
-      color: #d9e7ff;
-      min-height: 0;
-      line-height: 1.35;
-      font-size: 0.84rem;
-    }
-
     body.gameplay-active-mode #retroDoomPanel.active {
       grid-template-columns: minmax(0, 1fr);
       gap: 10px;
@@ -923,62 +670,6 @@
     body.gameplay-active-mode #retroDoomPanel.active .retro-doom-embed-wrap {
       margin-top: 0;
       padding: 0;
-    }
-
-    body.gameplay-active-mode #minefieldPanel.active .minefield-controls {
-      grid-column: 2;
-      grid-row: 2;
-      margin-top: 0;
-      grid-template-columns: 1fr;
-    }
-
-    body.gameplay-active-mode #minefieldPanel.active .minefield-stats {
-      grid-row: 3;
-    }
-
-    body.gameplay-active-mode #minefieldPanel.active #minefieldStatus {
-      grid-row: 4;
-    }
-
-    body.gameplay-active-mode #tetrisPanel.active {
-      grid-template-columns: minmax(320px, 1fr) minmax(240px, 320px);
-      column-gap: 14px;
-    }
-
-    body.gameplay-active-mode #tetrisPanel.active .control-hint {
-      grid-column: 2;
-      grid-row: 1;
-      margin-top: 0;
-    }
-
-    body.gameplay-active-mode #tetrisPanel.active .tetris-board-wrap {
-      grid-column: 1;
-      grid-row: 1 / span 3;
-    }
-
-    body.gameplay-active-mode #tetrisPanel.active .stats-grid {
-      grid-column: 2;
-      grid-row: 2;
-      grid-template-columns: 1fr;
-    }
-
-    body.gameplay-active-mode #tetrisPanel.active .side-layout {
-      grid-column: 2;
-      grid-row: 3;
-      grid-template-columns: 1fr;
-      gap: 10px;
-    }
-
-    body.gameplay-active-mode .game-panel.active .stats-grid,
-    body.gameplay-active-mode .game-panel.active .snake-stats,
-    body.gameplay-active-mode .game-panel.active .pong-stats,
-    body.gameplay-active-mode .game-panel.active .breakout-stats,
-    body.gameplay-active-mode .game-panel.active .dash-stats,
-    body.gameplay-active-mode .game-panel.active .memory-stats,
-    body.gameplay-active-mode .game-panel.active .minefield-stats,
-    body.gameplay-active-mode .game-panel.active .simon-stats,
-    body.gameplay-active-mode .game-panel.active .whack-stats {
-      margin-top: 8px;
     }
 
     body.gameplay-active-mode .tetris-board-wrap,
@@ -1032,12 +723,7 @@
       padding: 12px;
     }
 
-    #tetrisPanel.active {
-      display: grid;
-      grid-template-columns: minmax(320px, 1fr) minmax(240px, 320px);
-      gap: 12px;
-      align-items: start;
-    }
+
 
     #tetrisPanel .games-title,
     #tetrisPanel .control-hint {
@@ -1050,19 +736,6 @@
       margin-top: 0;
     }
 
-    #tetrisPanel .stats-grid {
-      grid-column: 2;
-      grid-row: 3;
-      margin-top: 0;
-    }
-
-    #tetrisPanel .side-layout {
-      grid-column: 2;
-      grid-row: 4;
-      margin-top: 0;
-      grid-template-columns: 1fr;
-    }
-
     #tetrisBoard {
       max-width: 100%;
       border-radius: 8px;
@@ -1072,59 +745,16 @@
       display: block;
     }
 
-    .stats-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
-      margin-top: 12px;
-    }
-
-    .stat {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.03);
-    }
-
-    .stat-label {
-      font-size: 0.68rem;
-      color: var(--text-muted);
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-    }
-
-    .stat-value {
-      color: #f6faff;
-      font-weight: 800;
-      font-size: 1.2rem;
-      line-height: 1.1;
-    }
-
-    .side-layout {
-      display: grid;
-      grid-template-columns: minmax(140px, 180px) minmax(180px, 1fr);
-      gap: 12px;
-      margin-top: 12px;
-    }
-
-    .next-wrap,
-    .status-wrap {
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.03);
-    }
-
+    /* Next is a chip in the game bar, sized here because this id rule outranks any
+       class selector that tried to shrink it from 120px. */
     #nextCanvas {
       display: block;
-      width: 120px;
-      height: 120px;
-      max-width: 100%;
-      margin: 8px auto 0;
-      background: #0a0f1a;
-      border-radius: 10px;
-      border: 1px solid rgba(130, 152, 200, 0.2);
+      width: 32px;
+      height: 32px;
+      margin: 0;
+      background: var(--bg);
+      border-radius: var(--r-sm);
+      border: 1px solid var(--border);
       image-rendering: pixelated;
     }
 
@@ -1174,13 +804,6 @@
       border: 1px solid rgba(130, 152, 200, 0.2);
       border-radius: 10px;
       image-rendering: pixelated;
-    }
-
-    .snake-stats {
-      margin-top: 12px;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 10px;
     }
 
     .pong-wrap,
@@ -1541,10 +1164,21 @@
       display: none;
     }
 
-    .game-picker-btn-rpg {
+    /* The two featured worlds sit in one full-width row, split evenly. They used to
+       be full-bleed one above the other, which read as a queue rather than a
+       choice. The wrapper owns the span so the hero itself no longer has to know
+       how many columns the auto-fill grid happens to have resolved to. */
+    .game-picker-heroes {
       grid-column: 1 / -1;
-      min-height: 240px;
-      height: 360px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      align-items: stretch;
+    }
+
+    .game-picker-btn-hero {
+      min-height: 200px;
+      height: 268px;
       padding: 0;
       align-items: stretch;
       flex-direction: column;
@@ -1553,7 +1187,7 @@
       background: transparent;
     }
 
-    .game-picker-btn-rpg .game-picker-banner {
+    .game-picker-btn-hero .game-picker-banner {
       position: absolute;
       inset: 0;
       width: 100%;
@@ -1564,7 +1198,7 @@
       filter: saturate(0.98) contrast(1.02);
     }
 
-    .game-picker-btn-rpg::after {
+    .game-picker-btn-hero::after {
       content: '';
       position: absolute;
       inset: 0;
@@ -1572,7 +1206,7 @@
       pointer-events: none;
     }
 
-    .game-picker-btn-rpg .game-picker-copy {
+    .game-picker-btn-hero .game-picker-copy {
       position: absolute;
       left: 0;
       right: 0;
@@ -1585,21 +1219,33 @@
       backdrop-filter: blur(1px);
     }
 
-    .game-picker-btn-rpg .game-picker-kicker {
+    /* Kicker tint is the one per-game part of the hero treatment: the layout is
+       shared, the colour belongs to whichever world the banner is showing. */
+    .game-picker-btn-hero[data-game='rpg'] .game-picker-kicker {
       background: rgba(35, 46, 31, 0.78);
       color: #dce7c9;
     }
 
-    .game-picker-btn-rpg .game-picker-label {
+    /* Dreadkeep's own HUD palette: soot plate, brass lettering. */
+    .game-picker-btn-hero[data-game='retrodoom'] .game-picker-kicker {
+      background: rgba(28, 18, 12, 0.82);
+      color: #d9a54f;
+    }
+
+    .game-picker-btn-hero .game-picker-label {
       font-size: 1.06rem;
       line-height: 1.15;
       text-wrap: balance;
     }
 
-    .game-picker-btn-rpg:hover .game-picker-banner {
+    .game-picker-btn-hero:hover .game-picker-banner {
       transform: scale(1.02);
     }
 
+    /* Tetris and Snake were left out of this cap, so they alone ran the full
+       1480px shell -- switching games visibly jumped the panel width. */
+    #tetrisPanel,
+    #snakePanel,
     #pongPanel,
     #breakoutPanel,
     #dashPanel,
@@ -1612,6 +1258,14 @@
       margin: 0 auto;
     }
 
+    /* ---------- board-first game layout ----------
+       One shape for all nine: a slim bar (name, readouts, controls toggle), then
+       the board with the rest of the space, then the status line. This replaces
+       about nine sets of hand-placed per-game `grid-column` rules, and stops a
+       game that measures one number carrying the same 320px rail as one that
+       measures four. */
+    #tetrisPanel.active,
+    #snakePanel.active,
     #pongPanel.active,
     #breakoutPanel.active,
     #dashPanel.active,
@@ -1619,8 +1273,9 @@
     #minefieldPanel.active,
     #simonPanel.active,
     #whackPanel.active {
-      display: grid;
-      gap: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     #pongPanel .games-title,
@@ -1647,16 +1302,6 @@
       width: 100%;
       margin-left: auto;
       margin-right: auto;
-    }
-
-    .pong-stats,
-    .breakout-stats,
-    .dash-stats {
-      max-width: 980px;
-      width: 100%;
-      margin-left: auto;
-      margin-right: auto;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
     }
 
     .memory-grid-wrap,
@@ -1687,29 +1332,6 @@
     .whack-grid {
       max-width: 520px;
       margin: 0 auto;
-    }
-
-    .memory-stats,
-    .minefield-stats,
-    .simon-stats,
-    .whack-stats {
-      max-width: 720px;
-      width: 100%;
-      margin-left: auto;
-      margin-right: auto;
-    }
-
-    .memory-stats,
-    .whack-stats {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .minefield-stats {
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-    }
-
-    .simon-stats {
-      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .minefield-controls {
@@ -1944,21 +1566,6 @@
       cursor: default;
     }
 
-    #memoryPanel.active .memory-grid-wrap {
-      max-width: 620px;
-      border-color: rgba(150, 214, 255, 0.24);
-      background:
-        linear-gradient(180deg, rgba(15, 24, 38, 0.97), rgba(10, 15, 24, 0.98)),
-        radial-gradient(circle at top left, rgba(113, 210, 255, 0.1), transparent 38%),
-        radial-gradient(circle at 85% 100%, rgba(224, 183, 111, 0.08), transparent 30%);
-      padding: 18px;
-    }
-
-    #memoryPanel.active .memory-stats .stat {
-      background: linear-gradient(180deg, rgba(18, 28, 42, 0.88), rgba(12, 18, 28, 0.92));
-      border-color: rgba(145, 176, 224, 0.22);
-    }
-
     #memoryPanel.active #memoryStatus {
       margin-top: 0;
       padding: 12px 14px;
@@ -2053,77 +1660,8 @@
         grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       }
 
-      body.gameplay-active-mode #tetrisPanel.active,
-      body.gameplay-active-mode #snakePanel.active,
-      body.gameplay-active-mode #pongPanel.active,
-      body.gameplay-active-mode #breakoutPanel.active,
-      body.gameplay-active-mode #dashPanel.active,
-      body.gameplay-active-mode #memoryPanel.active,
-      body.gameplay-active-mode #minefieldPanel.active,
-      body.gameplay-active-mode #simonPanel.active,
-      body.gameplay-active-mode #whackPanel.active {
-        grid-template-columns: 1fr;
-      }
-
-      body.gameplay-active-mode #tetrisPanel.active .tetris-board-wrap,
-      body.gameplay-active-mode #snakePanel.active .snake-wrap,
-      body.gameplay-active-mode #pongPanel.active .pong-wrap,
-      body.gameplay-active-mode #breakoutPanel.active .breakout-wrap,
-      body.gameplay-active-mode #dashPanel.active .dash-wrap,
-      body.gameplay-active-mode #memoryPanel.active .memory-grid-wrap,
-      body.gameplay-active-mode #minefieldPanel.active .minefield-grid-wrap,
-      body.gameplay-active-mode #simonPanel.active .simon-wrap,
-      body.gameplay-active-mode #whackPanel.active .whack-grid-wrap,
-      body.gameplay-active-mode #tetrisPanel.active .control-hint,
-      body.gameplay-active-mode #snakePanel.active .control-hint,
-      body.gameplay-active-mode #pongPanel.active .control-hint,
-      body.gameplay-active-mode #breakoutPanel.active .control-hint,
-      body.gameplay-active-mode #dashPanel.active .control-hint,
-      body.gameplay-active-mode #memoryPanel.active .control-hint,
-      body.gameplay-active-mode #minefieldPanel.active .control-hint,
-      body.gameplay-active-mode #simonPanel.active .control-hint,
-      body.gameplay-active-mode #whackPanel.active .control-hint,
-      body.gameplay-active-mode #tetrisPanel.active .stats-grid,
-      body.gameplay-active-mode #snakePanel.active .snake-stats,
-      body.gameplay-active-mode #pongPanel.active .pong-stats,
-      body.gameplay-active-mode #breakoutPanel.active .breakout-stats,
-      body.gameplay-active-mode #dashPanel.active .dash-stats,
-      body.gameplay-active-mode #memoryPanel.active .memory-stats,
-      body.gameplay-active-mode #minefieldPanel.active .minefield-controls,
-      body.gameplay-active-mode #minefieldPanel.active .minefield-stats,
-      body.gameplay-active-mode #simonPanel.active .simon-stats,
-      body.gameplay-active-mode #whackPanel.active .whack-stats,
-      body.gameplay-active-mode #tetrisPanel.active .side-layout,
-      body.gameplay-active-mode #snakePanel.active #snakeStatus,
-      body.gameplay-active-mode #pongPanel.active #pongStatus,
-      body.gameplay-active-mode #breakoutPanel.active #breakoutStatus,
-      body.gameplay-active-mode #dashPanel.active #dashStatus,
-      body.gameplay-active-mode #memoryPanel.active #memoryStatus,
-      body.gameplay-active-mode #minefieldPanel.active #minefieldStatus,
-      body.gameplay-active-mode #simonPanel.active #simonStatus,
-      body.gameplay-active-mode #whackPanel.active #whackStatus {
-        grid-column: auto;
-        grid-row: auto;
-      }
-
-      body.gameplay-active-mode #tetrisPanel.active .stats-grid,
-      body.gameplay-active-mode #snakePanel.active .snake-stats,
-      body.gameplay-active-mode #pongPanel.active .pong-stats,
-      body.gameplay-active-mode #breakoutPanel.active .breakout-stats,
-      body.gameplay-active-mode #dashPanel.active .dash-stats,
-      body.gameplay-active-mode #memoryPanel.active .memory-stats,
-      body.gameplay-active-mode #minefieldPanel.active .minefield-stats,
-      body.gameplay-active-mode #simonPanel.active .simon-stats,
-      body.gameplay-active-mode #whackPanel.active .whack-stats {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-
       #tetrisPanel.active {
         display: block;
-      }
-
-      .side-layout {
-        grid-template-columns: 1fr 1fr;
       }
     }
 
@@ -2150,15 +1688,9 @@
         grid-template-columns: 1fr;
       }
 
-      .game-picker-btn:not(.game-picker-btn-rpg) {
+      .game-picker-btn:not(.game-picker-btn-hero) {
         min-height: 0;
         padding: 14px 12px;
-      }
-
-      .game-picker-art {
-        width: 34px;
-        height: 34px;
-        flex-basis: 34px;
       }
 
       .game-picker-label {
@@ -2167,19 +1699,6 @@
 
       .game-picker-meta {
         font-size: 0.66rem;
-      }
-
-      .side-layout,
-      .stats-grid,
-      .snake-stats,
-      .pong-stats,
-      .breakout-stats,
-      .dash-stats,
-      .memory-stats,
-      .minefield-stats,
-      .simon-stats,
-      .whack-stats {
-        grid-template-columns: 1fr;
       }
 
       .game-toolbar-actions.visible {
@@ -2292,7 +1811,7 @@
 /* the picker's coloured tint survives as a left edge marker, not a wash.
    The RPG tile is excluded: its ::after is the scrim that keeps the label
    legible over the banner photo, and must not be replaced. */
-.games-page .game-picker-btn:not(.game-picker-btn-rpg)::after {
+.games-page .game-picker-btn:not(.game-picker-btn-hero)::after {
   content: '';
   position: absolute;
   left: 0; top: 0; bottom: 0;
@@ -2305,21 +1824,21 @@
   z-index: 1;
 }
 .games-page .game-picker-btn:hover,
-.games-page .game-picker-btn:not(.game-picker-btn-rpg):hover {
+.games-page .game-picker-btn:not(.game-picker-btn-hero):hover {
   transform: none;
   border-color: var(--border-strong);
   background: var(--surface-hover);
   box-shadow: var(--bezel), var(--shadow-sm);
   filter: none;
 }
-.games-page .game-picker-btn:not(.game-picker-btn-rpg):hover::after { opacity: 0.8; }
+.games-page .game-picker-btn:not(.game-picker-btn-hero):hover::after { opacity: 0.8; }
 .games-page .game-picker-btn[aria-pressed='true'],
 .games-page .game-picker-btn.active {
   border-color: var(--accent-border);
   background: var(--surface-raised);
 }
-.games-page .game-picker-btn:not(.game-picker-btn-rpg)[aria-pressed='true']::after,
-.games-page .game-picker-btn:not(.game-picker-btn-rpg).active::after {
+.games-page .game-picker-btn:not(.game-picker-btn-hero)[aria-pressed='true']::after,
+.games-page .game-picker-btn:not(.game-picker-btn-hero).active::after {
   opacity: 1;
   box-shadow: 0 0 10px var(--accent-glow);
 }
@@ -2351,18 +1870,6 @@
   border-color: var(--border);
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
 }
-.games-page .stat-label {
-  font-family: var(--font-legend);
-  letter-spacing: 0.16em;
-  font-weight: 700;
-  color: var(--text-faint);
-}
-.games-page .stat-value {
-  font-family: var(--font-mono);
-  font-variant-numeric: tabular-nums;
-  color: var(--accent-strong);
-  font-weight: 700;
-}
 /* game panel titles: sized explicitly so h1 (Tetris) and h2 (Snake, Pong…)
    render identically instead of inheriting wildly different element defaults */
 .games-page .games-title {
@@ -2384,4 +1891,140 @@
   letter-spacing: 0.2em;
   color: var(--text-muted);
   margin: 0 0 10px;
+}
+
+/* Two heroes side by side stop being readable once each is narrower than about a
+   phone screen; below that they stack and each gets the full width back. */
+@media (max-width: 720px) {
+  .game-picker-heroes { grid-template-columns: 1fr; }
+}
+
+/* The only native form controls in the games are Minefield's difficulty select and
+   board-size slider, and both were rendering with OS chrome -- a system dropdown
+   arrow and the browser's default blue thumb -- against an interface that styles
+   everything else itself. */
+.games-page .minefield-controls select,
+.games-page #minefieldPanel select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding: 8px 30px 8px 11px;
+  border-radius: var(--r-sm);
+  background-color: var(--well);
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%),
+                    linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position: calc(100% - 15px) 50%, calc(100% - 10px) 50%;
+  background-size: 5px 5px, 5px 5px;
+  background-repeat: no-repeat;
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+}
+.games-page #minefieldPanel select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.games-page #minefieldPanel input[type='range'] {
+  accent-color: var(--accent);
+}
+
+/* ---------- the game bar ----------
+   Name on the left, the readings this particular game actually has on the right,
+   and the controls folded away behind a toggle. A hint that is only read once
+   should not hold a permanent block of the screen. */
+.game-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 9px 12px;
+  border-radius: var(--r-md);
+  background: var(--well);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.game-bar .games-title { margin: 0; flex: 0 0 auto; font-size: 1.15rem; }
+
+.game-readouts {
+  display: flex;
+  flex: 1 1 auto;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px 20px;
+  min-width: 0;
+}
+.readout { display: inline-flex; align-items: baseline; gap: 7px; }
+.readout-label {
+  font-family: var(--font-legend);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  white-space: nowrap;
+}
+.readout-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--accent-strong);
+}
+/* Next is a picture rather than a figure, so it centres on the row instead of
+   sitting on the numerals' baseline */
+.readout-next { align-items: center; }
+
+.game-help { flex: 0 0 auto; height: 30px; padding: 0 12px; font-size: 11px; margin: 0; }
+.game-help[aria-expanded='true'] { border-color: var(--accent-border); color: var(--accent-strong); }
+
+.game-help-panel { display: grid; gap: 10px; }
+.game-help-panel[hidden] { display: none; }
+
+/* the board gets whatever the bar and status line do not */
+.game-stage {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+/* The board wrappers measure themselves with clientWidth to size their canvas, so
+   they have to span the stage rather than shrink to their own content -- otherwise
+   the canvas sizes itself from a box that is only as wide as the canvas. */
+.game-stage > * {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.game-status {
+  margin: 0;
+  padding: 2px 0;
+  text-align: center;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: var(--text-muted);
+  min-height: 1.4em;
+}
+
+/* Minefield's difficulty and board size are setup, not readings, so they sit with
+   the controls rather than among the live counters. */
+.games-page .minefield-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  margin: 0;
+}
+.games-page .minefield-control { display: grid; gap: 6px; }
+.games-page .minefield-control > span {
+  font-family: var(--font-legend);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
 }

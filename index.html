@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Home - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260721regroup1" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260721ui1" />
   <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
 </head>
 <body class="home-page">
@@ -59,7 +59,10 @@
             <!-- Left Side: Links -->
             <section class="home-links-col">
               <section class="card info-card">
-                <h2 class="home-box-title">Market Sentiment</h2>
+                <h2 class="home-box-title">
+                  <span class="plate-label">Market Sentiment</span>
+                  <span id="sentiment-asof" class="panel-asof"></span>
+                </h2>
                 <p id="sentiment-val" class="info-value">Loading...</p>
                 <!-- Fear &amp; Greed scale. Zone hairlines sit at the same thresholds the
                      script colours the number by (25/45/55/75). The track stays neutral:
@@ -103,7 +106,10 @@
                    sits with the markets and shortcuts rather than with the live
                    environmental readouts on the right. -->
               <section class="card info-card">
-                <h2 class="home-box-title">🏁 Next NASCAR Race</h2>
+                <h2 class="home-box-title">
+                  <span class="plate-label">🏁 Next NASCAR Race</span>
+                  <span id="nascar-asof" class="panel-asof"></span>
+                </h2>
                 <div class="nascar-tabs">
                   <button id="nascar-tab-cup" type="button" class="home-button nascar-tab-btn active">Cup</button>
                   <button id="nascar-tab-truck" type="button" class="home-button nascar-tab-btn">Truck</button>
@@ -181,9 +187,13 @@
                    read as more of the same story rather than a different instrument. -->
               <section class="card hn-card">
                 <h2 class="home-box-title">
-                  <span class="hn-plate-label">Tech Pulse</span>
-                  <span class="hn-scope">Hacker News · Top</span>
+                  <span class="plate-label">Tech Pulse</span>
+                  <span id="hn-asof" class="panel-asof"></span>
                 </h2>
+                <!-- Scope sits under the plate rather than on it. Three items never
+                     fit one plate row, and letting it wrap made these two panels
+                     taller than every other legend on the page. -->
+                <p class="hn-scope panel-scope">Hacker News · Top</p>
                 <div id="hn-container" class="hn-container">
                   <p class="hn-status-note">Loading stories...</p>
                 </div>
@@ -193,7 +203,10 @@
             <!-- Right Side: Stats -->
             <section class="home-stats-col">
               <section class="card info-card">
-                <h2 class="home-box-title">Weather</h2>
+                <h2 class="home-box-title">
+                  <span class="plate-label">Weather</span>
+                  <span id="weather-asof" class="panel-asof"></span>
+                </h2>
                 <div id="weather" class="weather-box">
                   <p id="weather-temp" class="weather-temp">--°F</p>
                   <p id="weather-range" class="weather-range">H:--° L:--°</p>
@@ -211,7 +224,10 @@
                    the drivers behind it, so they sit recessed in a well rather than
                    competing with it. -->
               <section class="card info-card">
-                <h2 class="home-box-title">Space Weather</h2>
+                <h2 class="home-box-title">
+                  <span class="plate-label">Space Weather</span>
+                  <span id="spacewx-asof" class="panel-asof"></span>
+                </h2>
                 <div class="spacewx-head">
                   <p id="spacewx-kp" class="info-value">Loading...</p>
                   <span id="spacewx-state" class="spacewx-state na">--</span>
@@ -251,9 +267,13 @@
                    bottom as sky then ground: weather, space weather, seismic. -->
               <section class="card info-card">
                 <h2 class="home-box-title">
-                  <span class="quake-plate-label">Seismic Watch</span>
-                  <span class="quake-scope">N. America · M2.5+ · 24h</span>
+                  <span class="plate-label">Seismic Watch</span>
+                  <span id="quake-asof" class="panel-asof"></span>
                 </h2>
+                <!-- The threshold still has to be stated - a short list only reads as
+                     "quiet" if you know what was being watched for - but it cannot
+                     share a 266px plate with a title and a stamp. -->
+                <p class="quake-scope panel-scope">N. America · M2.5+ · 24h</p>
                 <div id="quake-container" class="quake-container">
                   <p class="quake-status">Loading events...</p>
                 </div>
@@ -290,7 +310,7 @@
     </footer>
   </div>
   <script src="assets/js/script.js"></script>
-  <script src="assets/js/index-inline.js?v=20260721regroup1"></script>
+  <script src="assets/js/index-inline.js?v=20260721ui1"></script>
 </body>
 </html>
 

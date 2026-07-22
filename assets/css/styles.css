@@ -487,7 +487,14 @@ tv-ticker-tape { width: 100%; height: 100%; }
 /* lit: the panel is holding real, current data */
 /* `.quake-empty` counts as arrived data on purpose: "nothing above M4.5 today" is
    a reading the feed actually returned, so the panel is reporting, not waiting. */
+/* `.last` counts for the same reason, and leaving it out was a bug: it lit only on
+   `.live`, so the lamp went dark every evening purely because the market had shut,
+   while the panel sat there holding three real quotes and a sentiment reading. That
+   is the exact failure the status rail refuses to carry a lamp to avoid - a dark
+   lamp has to keep meaning "waiting on data". Only `.na` is waiting; `.last` is a
+   quote that arrived and is simply the closing one. */
 .card:has(.market-index-state.live) > .home-box-title:first-child::before,
+.card:has(.market-index-state.last) > .home-box-title:first-child::before,
 .card:has(.news-list) > .home-box-title:first-child::before,
 .card:has(.weather-day) > .home-box-title:first-child::before,
 .card:has(.spacewx-scale.is-set) > .home-box-title:first-child::before,
@@ -511,11 +518,20 @@ tv-ticker-tape { width: 100%; height: 100%; }
    respond — a plate with no lamp never gets `content`, so no pseudo-element
    exists to light. The media portal's status lamp is listed too; it is the same
    signature element, just reporting a server instead of a panel. */
-body.lamp-test .card > .home-box-title:first-child::before,
-body.lamp-test .media-eyebrow::before {
+body.lamp-test .card > .home-box-title:first-child::before {
   background: var(--accent);
   opacity: 1;
   box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent);
+  animation: lamp-strike 0.55s var(--ease) both;
+}
+/* The media portal's lens is the same signature element at instrument scale, so
+   press-to-test has to strike it too - that control exists precisely to prove a
+   dark lamp is dark because the server is unreachable, not because it is dead.
+   Amber here regardless of state: this is the lamp under test, not a reading. */
+body.lamp-test .media-lamp {
+  background: var(--accent);
+  opacity: 1;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45), 0 0 18px var(--accent-glow), 0 0 4px var(--accent);
   animation: lamp-strike 0.55s var(--ease) both;
 }
 
@@ -717,6 +733,9 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 .news-controls .home-button.active { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-strong); }
 .news-container, #news-container { text-align: left; overflow: visible; }
 .news-list { padding-left: 0; margin: 0; list-style: none; }
+/* text-align is explicit: the home column centres its children, so a status line
+   left to inherit would sit centred and read as a heading rather than a note */
+.news-status-note { margin: 0; padding: 2px 0; font-size: 0.78rem; color: var(--text-faint); text-align: left; }
 .news-item-card {
   margin-bottom: 1px;
   padding: 11px 14px;
@@ -798,6 +817,52 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   color: var(--text-faint);
 }
 
+/* Title text on a legend plate that also carries a stamp: takes the slack so the
+   stamp is pushed to the right edge. Same rule the per-panel *-plate-label
+   classes carry; those predate it and stay for the markup already using them. */
+.plate-label { flex: 1 1 auto; min-width: 0; }
+
+/* ---------- panel freshness stamp ----------
+   Every panel that pulls from the network carries one, on the legend plate beside
+   its title - the same place the news card has always put its own. It reads as
+   plate engraving, not content: faint, mono, matching .hn-scope and .quake-scope
+   so a title bar never carries two competing type treatments.
+
+   `.is-stale` lights it amber: the panel is showing the last good reading and
+   could not confirm it, which has to be legible at a glance. The plate is a flex
+   row, so `margin-left: auto` pins the stamp right whether or not the title also
+   carries a scope label. */
+.panel-asof {
+  flex: 0 0 auto;
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+/* ---------- panel scope caption ----------
+   Two panels qualify their reading ("Hacker News · Top", "N. America · M2.5+ · 24h").
+   That used to ride the legend plate beside the title and the stamp, but three
+   items never fit one row: Seismic has 266px of plate and needs about 378px, so it
+   wrapped and those two legends stood a row or two taller than every other plate on
+   the page. The scope now sits directly under the plate instead. Every legend is
+   title-plus-stamp on a single row, and the qualifier is still the first thing read
+   beneath it. */
+.panel-scope {
+  display: block;
+  margin: -4px 0 10px;
+  text-align: left;
+}
+
+/* Lets the plate become a multi-row legend: it carries the deliberate break above
+   on the scoped panels, and on a title-plus-stamp panel it still absorbs a long
+   title rather than crushing the stamp against it. */
+.home-box-title:has(.panel-asof) { flex-wrap: wrap; row-gap: 3px; }
+.panel-asof.is-stale { color: var(--warn); }
+.panel-asof.is-stale::after { content: ' · stale'; }
+
 /* ---------- shared panel well ----------
    Label/value rows recessed into a panel face. The NASCAR card predates this and
    keeps its own copy of the shape; anything new uses these. */
@@ -861,9 +926,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
    directly beneath that list and needs to read as a different instrument. */
 .hn-card { padding: 14px; }
 .hn-card > .home-box-title:first-child { margin: 0 -14px 12px; padding: 10px 14px; }
-.hn-plate-label { flex: 1 1 auto; min-width: 0; }
 .hn-scope {
-  flex: 0 0 auto;
   font-family: var(--font-mono);
   font-size: 0.62rem;
   letter-spacing: 0.06em;
@@ -920,25 +983,26 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   overflow: hidden;
 }
 .hn-cell:hover .hn-title { color: var(--accent-strong); }
+/* One row, and the domain is the only part allowed to lose characters to it: the
+   count and the age are short and fixed, so they always survive. */
 .hn-meta {
-  display: block;
+  display: flex;
   margin-top: 4px;
   font-family: var(--font-mono);
   font-size: 0.62rem;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text-faint);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
+  overflow: hidden;
 }
+.hn-meta-domain { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.hn-meta-rest { flex: 0 0 auto; }
 
 /* ---------- seismic watch ---------- */
 /* the threshold rides the legend plate: a short list only reads as "quiet" if you
    know what was being watched for */
-.quake-plate-label { flex: 1 1 auto; min-width: 0; }
 .quake-scope {
-  flex: 0 0 auto;
   font-family: var(--font-mono);
   font-size: 0.62rem;
   letter-spacing: 0.06em;
@@ -1069,12 +1133,19 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 .weather-day-cond { font-size: 0.7rem; color: var(--text-muted); line-height: 1.25; }
 .weather-day-temps { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text); font-weight: 500; font-variant-numeric: tabular-nums; }
 
-.nascar-meta { display: grid; gap: 1px; margin-top: 10px; background: var(--border); border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
+/* the race name owns the gap below it; stacking a second margin here made this the
+   widest gap in the card */
+.nascar-meta { display: grid; gap: 1px; margin-top: 0; background: var(--border); border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
 .nascar-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; margin: 2px 0 10px; }
 .nascar-tab-btn { height: 32px; padding: 0 5px; font-size: 10px; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: var(--r-sm); }
 .nascar-tab-btn.active { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-strong); }
 .nascar-line { display: grid; grid-template-columns: 74px 1fr; align-items: baseline; gap: 8px; padding: 8px 10px; border: 0; border-radius: 0; background: var(--well); text-align: left; }
-.nascar-race-name { font-family: var(--font-sans); font-size: 1rem; margin: 0 0 8px; line-height: 1.35; min-height: 2.7em; color: var(--text); font-weight: 500; letter-spacing: 0; text-wrap: balance; }
+/* No reserved second line. `min-height: 2.7em` held two lines' worth so the card
+   would not resize when a longer race name loaded on another series tab, but most
+   names are one line, so the steady state was a visible band of empty plate under
+   the title. The card resizes on the odd two-line name instead - the same way every
+   other content-sized panel on this page behaves. */
+.nascar-race-name { font-family: var(--font-sans); font-size: 1rem; margin: 0 0 12px; line-height: 1.35; color: var(--text); font-weight: 500; letter-spacing: 0; text-wrap: balance; }
 .nascar-label { font-family: var(--font-legend); font-size: 0.66rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-faint); font-weight: 700; }
 .nascar-value { font-size: 0.8rem; color: var(--text); font-weight: 500; }
 
@@ -1083,52 +1154,124 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 .home-welcome { width: 100%; padding: 0 0 24px; }
 .home-welcome-inner { max-width: none; width: 100%; }
 
-/* ---------- media portal ---------- */
-.media-page .welcome-inner {
-  max-width: 660px;
+/* ---------- media portal ----------
+   The page reports exactly one thing: whether a machine on the LAN is answering.
+   It used to say so in a centred hero card that could have fronted any product;
+   it now says so as an instrument, in the same plates, wells and mono legends the
+   rest of the site uses. */
+/* .main is a column flex container, so `align-items` is the horizontal axis here
+   and `justify-content` the vertical one. Centred horizontally, but pinned to the
+   top rather than the middle: vertical centring left a band of empty chassis above
+   and below the console on a tall window. */
+.media-main { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 24px 32px 40px; flex: 1; }
+.media-console {
   width: 100%;
-  padding: clamp(32px, 5vw, 56px);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--bezel), var(--shadow-md);
+  max-width: 940px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  /* the body centres its children; every reading here is left-aligned */
   text-align: left;
 }
+.media-panel { padding: 16px; }
 
-.media-eyebrow {
-  margin: 0 0 14px;
-  color: var(--text-faint);
-  font-family: var(--font-legend);
-  font-size: 11px; font-weight: 700; letter-spacing: 0.24em; text-transform: uppercase;
-  display: flex; align-items: center; gap: 9px;
+/* Supporting panels sit side by side so the console reads as one instrument face
+   rather than a column of cards adrift in the page. */
+.media-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 14px;
+  /* equal heights: two panels of different depth read as two cards, one face */
+  align-items: stretch;
 }
-.media-eyebrow::before {
-  content: '';
-  width: 7px; height: 7px; border-radius: 50%;
+/* the app link sits on the panel floor so both columns end on the same line */
+.media-grid .media-panel { display: flex; flex-direction: column; }
+.media-grid .media-secondary-link { margin-top: auto; }
+
+/* ---------- the readout ----------
+   Lamp left, identity right. The home page gives each of eight panels a 7px lamp
+   so the lamps line up into a column; here there is one reading, so the lamp is
+   the instrument itself rather than a marker beside a title. */
+/* Lamp, identity, controls on one line: the reading and the thing you do about it
+   belong in the same glance. The controls take the slack so they sit hard right. */
+.media-readout { display: flex; align-items: center; gap: 18px; padding: 6px 0 4px; flex-wrap: wrap; }
+
+/* recessed housing, so the lens sits *in* the chassis rather than on it */
+.media-lamp-housing {
+  flex: 0 0 auto;
+  width: 74px; height: 74px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--well);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.55);
+}
+.media-lamp {
+  width: 40px; height: 40px;
+  border-radius: 50%;
   background: var(--accent-dim);
-  opacity: 0.5;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.55);
+  opacity: 0.4;
+  /* the dark bevel is what makes an unlit lens read as glass rather than a hole */
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.6), inset 0 -3px 7px rgba(0, 0, 0, 0.5);
+  transition: background 0.3s var(--ease), box-shadow 0.3s var(--ease), opacity 0.3s var(--ease);
 }
-/* the portal lamp reports the server, not the page */
-.media-page .welcome-inner:has(.media-status-dot.online) .media-eyebrow::before {
-  background: var(--accent);
-  opacity: 1;
-  box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent);
+/* The panel lamps all strike to amber, so `lamp-strike` hardcodes that colour as
+   its end state - and with fill-mode `both` it holds there, painting over whatever
+   the lens is actually reporting. This lens has to keep its own colour, so it
+   strikes on brightness alone and lets the state rules below own the hue. */
+@keyframes lamp-strike-lens {
+  0% { filter: brightness(0.35); }
+  35% { filter: brightness(2.1); }
+  100% { filter: brightness(1); }
 }
-.media-title {
-  margin: 0 0 12px;
-  color: var(--text);
-  font-family: var(--font-legend);
-  font-size: clamp(1.9rem, 4.2vw, 2.8rem);
-  font-weight: 700;
-  letter-spacing: -0.005em;
-  line-height: 1.06;
-}
-.media-subtitle { max-width: 46ch; margin: 0 0 30px; color: var(--text-muted); font-size: 0.95rem; line-height: 1.6; }
 
+/* Answering. Green rather than the site's amber on purpose: amber means "this
+   panel is reporting", and here the reading itself is a pass/fail. */
+.media-lamp[data-state="online"] {
+  background: var(--success);
+  opacity: 1;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45), 0 0 16px color-mix(in srgb, var(--success) 55%, transparent);
+  animation: lamp-strike-lens 0.55s var(--ease) both;
+}
+.media-lamp[data-state="offline"] {
+  background: var(--danger);
+  opacity: 1;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45), 0 0 16px color-mix(in srgb, var(--danger) 55%, transparent);
+  animation: lamp-strike-lens 0.55s var(--ease) both;
+}
+/* Stays dark: the check could not be made, which is not a claim about the server.
+   Matches every other unlit lamp on the site meaning "waiting on data". */
+.media-lamp[data-state="unknown"] { background: var(--text-faint); opacity: 0.55; }
+
+.media-identity { min-width: 0; flex: 1 1 260px; }
+.media-service {
+  margin: 0;
+  font-family: var(--font-legend);
+  font-size: clamp(1.5rem, 3.4vw, 1.9rem);
+  font-weight: 700;
+  line-height: 1.05;
+  color: var(--text);
+}
+.media-status-value {
+  margin: 6px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.media-status-value.online { color: var(--success); }
+.media-status-value.offline { color: var(--danger); }
+.media-status-value.unknown { color: var(--text-faint); }
+/* the state is one word; this is the sentence that keeps it from being cryptic */
+.media-status-note { margin: 5px 0 0; font-size: 0.78rem; line-height: 1.5; color: var(--text-muted); }
+
+.media-actions { display: flex; flex-wrap: wrap; gap: 10px; flex: 0 0 auto; }
 .media-launch-btn {
-  height: 48px;
-  padding: 0 22px;
+  height: 44px;
+  padding: 0 20px;
   font-size: 13px;
   gap: 10px;
   background: var(--accent);
@@ -1146,24 +1289,84 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   color: var(--accent-contrast);
   box-shadow: 0 0 28px rgba(255, 176, 0, 0.34);
 }
+/* secondary: re-running the check is maintenance, not the thing you came to do */
+.media-recheck-btn { height: 44px; padding: 0 18px; font-size: 13px; margin: 0; }
+.media-recheck-btn[disabled] { opacity: 0.55; cursor: default; }
 
-.media-status-wrap {
-  margin-top: 24px;
-  padding: 11px 16px;
+/* ---------- connection facts ----------
+   Recessed rows, the same shape the home page uses for supporting numbers under
+   a headline reading. */
+.media-facts {
+  margin: 16px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.media-fact {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 9px 13px;
+  background: var(--well);
+}
+.media-fact dt {
+  font-family: var(--font-legend);
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+}
+.media-fact dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  text-align: right;
+}
+
+.media-note { margin: 0 0 12px; font-size: 0.82rem; line-height: 1.6; color: var(--text-muted); }
+.media-note:last-of-type { margin-bottom: 14px; }
+
+/* ---------- diagnostic order ----------
+   Numbered because the sequence is real: each step rules out a cause the next one
+   assumes. The numerals are engraved plates, matching the legend type elsewhere. */
+.media-steps { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+.media-steps li { display: flex; gap: 11px; align-items: flex-start; font-size: 0.82rem; line-height: 1.55; color: var(--text-muted); }
+.media-step-n {
+  flex: 0 0 auto;
+  width: 20px; height: 20px;
+  margin-top: 1px;
+  display: grid;
+  place-items: center;
   border-radius: var(--r-sm);
   background: var(--well);
   border: 1px solid var(--border);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  width: fit-content;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent);
 }
-.media-status-title { margin: 0; font-family: var(--font-legend); font-size: 0.7rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.16em; font-weight: 700; }
-.media-status-value { font-family: var(--font-mono); font-size: 0.82rem; margin: 0; font-weight: 500; display: flex; align-items: center; gap: 8px; color: var(--text); }
-.media-status-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
-.media-status-dot.online { background: var(--success); box-shadow: 0 0 8px color-mix(in srgb, var(--success) 60%, transparent); }
-.media-status-dot.offline { background: var(--danger); box-shadow: 0 0 8px color-mix(in srgb, var(--danger) 60%, transparent); }
+
+.media-secondary-link { height: 38px; padding: 0 16px; font-size: 12px; gap: 8px; margin: 0; width: fit-content; }
+
+@media (max-width: 760px) {
+  .media-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .media-main { padding: 16px 14px 28px; }
+  .media-readout { gap: 14px; }
+  .media-lamp-housing { width: 58px; height: 58px; }
+  .media-lamp { width: 30px; height: 30px; }
+  .media-actions { width: 100%; }
+  .media-actions > * { flex: 1 1 100%; justify-content: center; }
+}
 
 /* ---------- dashboard grid ---------- */
 .tradingview-grid {

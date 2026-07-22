@@ -9,9 +9,9 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Web Games - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260721regroup1" />
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260721ui1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
-  <link rel="stylesheet" href="./assets/web-games-inline.css?v=20260721annunciator1" />
+  <link rel="stylesheet" href="./assets/web-games-inline.css?v=20260721boardfirst6" />
 </head>
 <body class="home-page games-page">
   <div class="page">
@@ -36,25 +36,30 @@
           <div class="games-toolbar">
             <div class="games-toolbar-copy">
               <p class="games-lead">Arcade Station</p>
-              <p class="games-sublead">Start with the featured Middle-earth RPG or jump into the arcade grid.</p>
+              <p class="games-sublead">Start with a featured world — the Middle-earth RPG or Castle of the Dreadkeep — or jump into the arcade grid.</p>
               <div class="games-toolbar-notes" aria-label="Game selection notes">
-                <p class="games-toolbar-note"><strong>Featured world:</strong> Launch the RPG for the full adventure run.</p>
+                <p class="games-toolbar-note"><strong>Featured worlds:</strong> Launch the Middle-earth RPG or storm the Dreadkeep.</p>
                 <p class="games-toolbar-note"><strong>Quick arcade:</strong> Pick a challenge for reflex, puzzle, or score chasing.</p>
                 <p class="games-toolbar-note"><strong>Instant play:</strong> Every game starts fast and supports quick restart flow.</p>
               </div>
             </div>
             <div id="gamePicker" class="game-picker" role="tablist" aria-label="Game selector">
-              <button id="pickRpg" type="button" class="home-button game-picker-btn featured game-picker-btn-rpg" data-game="rpg" role="tab" aria-selected="false"><img class="game-picker-banner" src="./middle-earth-rpg/RPG%20Banner/game%20banner.webp" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">Featured</span><span class="game-picker-label">Middle-earth RPG</span></span></button>
-              <button id="pickTetris" type="button" class="home-button game-picker-btn" data-game="tetris" role="tab" aria-selected="false"><span class="game-picker-art tetris" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Arcade</span><span class="game-picker-label">Tetris</span><span class="game-picker-meta">Stack fast, clear rows, chase high scores.</span></span></button>
-              <button id="pickSnake" type="button" class="home-button game-picker-btn" data-game="snake" role="tab" aria-selected="false"><span class="game-picker-art snake" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Classic</span><span class="game-picker-label">Snake</span><span class="game-picker-meta">Grow longer while threading tight turns.</span></span></button>
-              <button id="pickPong" type="button" class="home-button game-picker-btn" data-game="pong" role="tab" aria-selected="false"><span class="game-picker-art pong" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Versus</span><span class="game-picker-label">Pong</span><span class="game-picker-meta">Quick rallies and first-to-five pressure.</span></span></button>
-              <button id="pickBreakout" type="button" class="home-button game-picker-btn" data-game="breakout" role="tab" aria-selected="false"><span class="game-picker-art breakout" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Precision</span><span class="game-picker-label">Breakout</span><span class="game-picker-meta">Control angles and sweep every brick.</span></span></button>
-              <button id="pickDash" type="button" class="home-button game-picker-btn" data-game="dash" role="tab" aria-selected="false"><span class="game-picker-art dash" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Reflex</span><span class="game-picker-label">Asteroid Dash</span><span class="game-picker-meta">Dodge waves of debris as speed climbs.</span></span></button>
-              <button id="pickMemory" type="button" class="home-button game-picker-btn" data-game="memory" role="tab" aria-selected="false"><span class="game-picker-art memory" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Puzzle</span><span class="game-picker-label">Memory Flip</span><span class="game-picker-meta">Match pairs in fewer moves each run.</span></span></button>
-              <button id="pickMinefield" type="button" class="home-button game-picker-btn" data-game="minefield" role="tab" aria-selected="false"><span class="game-picker-art minefield" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Strategy</span><span class="game-picker-label">Minefield</span><span class="game-picker-meta">Read the grid, flag safely, clear all.</span></span></button>
-              <button id="pickSimon" type="button" class="home-button game-picker-btn" data-game="simon" role="tab" aria-selected="false"><span class="game-picker-art simon" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Pattern</span><span class="game-picker-label">Simon Pulse</span><span class="game-picker-meta">Memorize longer sequences every round.</span></span></button>
-              <button id="pickWhack" type="button" class="home-button game-picker-btn" data-game="whack" role="tab" aria-selected="false"><span class="game-picker-art whack" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">Speed</span><span class="game-picker-label">Whack-A-Bot</span><span class="game-picker-meta">React instantly before bots disappear.</span></span></button>
-              <button id="pickRetroDoom" type="button" class="home-button game-picker-btn" data-game="retrodoom" role="tab" aria-selected="false"><span class="game-picker-art doom" aria-hidden="true"></span><span class="game-picker-copy"><span class="game-picker-kicker">FPS</span><span class="game-picker-label">Castle of the Dreadkeep</span><span class="game-picker-meta">A medieval castle crawler of guardians, keys, and cursed halls.</span></span></button>
+              <!-- The two featured worlds share a row: side by side they read as a
+                   choice between them; stacked they read as a queue. role=presentation
+                   keeps both tabs exposed directly to the tablist. -->
+              <div class="game-picker-heroes" role="presentation">
+                <button id="pickRpg" type="button" class="home-button game-picker-btn featured game-picker-btn-hero" data-game="rpg" role="tab" aria-selected="false"><img class="game-picker-banner" src="./middle-earth-rpg/RPG%20Banner/game%20banner.webp" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">RPG</span><span class="game-picker-label">Middle-earth RPG</span><span class="game-picker-meta">A campaign through the shadowed marches of Middle-earth.</span></span></button>
+                <button id="pickRetroDoom" type="button" class="home-button game-picker-btn featured game-picker-btn-hero" data-game="retrodoom" role="tab" aria-selected="false"><img class="game-picker-banner" src="./assets/dreadkeep-banner.webp?v=20260721art3" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">FPS</span><span class="game-picker-label">Castle of the Dreadkeep</span><span class="game-picker-meta">A medieval castle crawler of guardians, keys, and cursed halls.</span></span></button>
+              </div>
+              <button id="pickTetris" type="button" class="home-button game-picker-btn" data-game="tetris" role="tab" aria-selected="false"><img class="game-picker-art" src="./assets/art/tetris.webp?v=20260721art3" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">Arcade</span><span class="game-picker-label">Tetris</span><span class="game-picker-meta">Stack fast, clear rows, chase high scores.</span></span></button>
+              <button id="pickSnake" type="button" class="home-button game-picker-btn" data-game="snake" role="tab" aria-selected="false"><img class="game-picker-art" src="./assets/art/snake.webp?v=20260721art3" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">Classic</span><span class="game-picker-label">Snake</span><span class="game-picker-meta">Grow longer while threading tight turns.</span></span></button>
+              <button id="pickPong" type="button" class="home-button game-picker-btn" data-game="pong" role="tab" aria-selected="false"><img class="game-picker-art" src="./assets/art/pong.webp?v=20260721art3" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">Versus</span><span class="game-picker-label">Pong</span><span class="game-picker-meta">Quick rallies and first-to-five pressure.</span></span></button>
+              <button id="pickBreakout" type="button" class="home-button game-picker-btn" data-game="breakout" role="tab" aria-selected="false"><img class="game-picker-art" src="./assets/art/breakout.webp?v=20260721art3" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">Precision</span><span class="game-picker-label">Breakout</span><span class="game-picker-meta">Control angles and sweep every brick.</span></span></button>
+              <button id="pickDash" type="button" class="home-button game-picker-btn" data-game="dash" role="tab" aria-selected="false"><img class="game-picker-art" src="./assets/art/dash.webp?v=20260721art3" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">Reflex</span><span class="game-picker-label">Asteroid Dash</span><span class="game-picker-meta">Dodge waves of debris as speed climbs.</span></span></button>
+              <button id="pickMemory" type="button" class="home-button game-picker-btn" data-game="memory" role="tab" aria-selected="false"><img class="game-picker-art" src="./assets/art/memory.webp?v=20260721art3" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">Puzzle</span><span class="game-picker-label">Memory Flip</span><span class="game-picker-meta">Match pairs in fewer moves each run.</span></span></button>
+              <button id="pickMinefield" type="button" class="home-button game-picker-btn" data-game="minefield" role="tab" aria-selected="false"><img class="game-picker-art" src="./assets/art/minefield.webp?v=20260721art3" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">Strategy</span><span class="game-picker-label">Minefield</span><span class="game-picker-meta">Read the grid, flag safely, clear all.</span></span></button>
+              <button id="pickSimon" type="button" class="home-button game-picker-btn" data-game="simon" role="tab" aria-selected="false"><img class="game-picker-art" src="./assets/art/simon.webp?v=20260721art3" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">Pattern</span><span class="game-picker-label">Simon Pulse</span><span class="game-picker-meta">Memorize longer sequences every round.</span></span></button>
+              <button id="pickWhack" type="button" class="home-button game-picker-btn" data-game="whack" role="tab" aria-selected="false"><img class="game-picker-art" src="./assets/art/whack.webp?v=20260721art3" alt="" aria-hidden="true" /><span class="game-picker-copy"><span class="game-picker-kicker">Speed</span><span class="game-picker-label">Whack-A-Bot</span><span class="game-picker-meta">React instantly before bots disappear.</span></span></button>
             </div>
             <div id="gameToolbarActions" class="game-toolbar-actions">
               <p class="controls-note game-toolbar-hint" id="activeGameHint"><span class="game-toolbar-hint-kicker">Arcade</span><span class="game-toolbar-hint-title">Pick a game</span><span class="game-toolbar-hint-meta">Choose a game to start playing.</span></p>
@@ -66,206 +71,217 @@
         </section>
 
         <section id="tetrisPanel" class="games-card game-panel">
-          <h1 class="games-title">Tetris</h1>
-          <p class="control-hint">Controls: A/D move, S soft drop, W rotate, Z rotate left, Space hard drop, P pause, R restart.</p>
-          <div class="tetris-board-wrap">
+          <header class="game-bar">
+            <h1 class="games-title">Tetris</h1>
+            <div class="game-readouts">
+              <span class="readout"><span class="readout-label">Score</span><span class="readout-value" id="scoreVal">0</span></span>
+              <span class="readout"><span class="readout-label">Lines</span><span class="readout-value" id="linesVal">0</span></span>
+              <span class="readout"><span class="readout-label">Level</span><span class="readout-value" id="levelVal">1</span></span>
+              <span class="readout"><span class="readout-label">Best</span><span class="readout-value" id="bestVal">0</span></span>
+              <span class="readout readout-next"><span class="readout-label">Next</span><canvas id="nextCanvas" width="120" height="120" aria-label="Next piece preview"></canvas></span>
+            </div>
+            <button id="tetrisHelp" type="button" class="game-help" aria-expanded="false" aria-controls="tetrisHint">Controls</button>
+          </header>
+          <div id="tetrisHint" class="game-help-panel" hidden>
+            <p class="control-hint">Controls: A/D move, S soft drop, W rotate, Z rotate left, Space hard drop, P pause, R restart.</p>
+          </div>
+          <div class="game-stage">
+            <div class="tetris-board-wrap">
             <canvas id="tetrisBoard" width="300" height="600" aria-label="Tetris game board"></canvas>
-          </div>
-
-          <div class="stats-grid">
-            <div class="stat">
-              <div class="stat-label">Score</div>
-              <div class="stat-value" id="scoreVal">0</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Lines</div>
-              <div class="stat-value" id="linesVal">0</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Level</div>
-              <div class="stat-value" id="levelVal">1</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Best</div>
-              <div class="stat-value" id="bestVal">0</div>
             </div>
           </div>
-
-          <div class="side-layout">
-            <div class="next-wrap">
-              <h2 class="games-title games-side-title">Next</h2>
-              <canvas id="nextCanvas" width="120" height="120" aria-label="Next piece preview"></canvas>
-            </div>
-            <div class="status-wrap">
-              <h2 class="games-title games-side-title">Status</h2>
-              <p id="gameStatus">Running. Press P to pause, R to restart.</p>
-            </div>
-          </div>
+          <p id="gameStatus" class="game-status">Running. Press P to pause, R to restart.</p>
         </section>
 
         <section id="snakePanel" class="games-card game-panel">
-          <h2 class="games-title">Snake</h2>
-          <p class="control-hint">Controls: W/A/S/D move, P pause, R restart.</p>
-          <div class="snake-wrap">
+          <header class="game-bar">
+            <h2 class="games-title">Snake</h2>
+            <div class="game-readouts">
+              <span class="readout"><span class="readout-label">Score</span><span class="readout-value" id="snakeScoreVal">0</span></span>
+              <span class="readout"><span class="readout-label">Best</span><span class="readout-value" id="snakeBestVal">0</span></span>
+            </div>
+            <button id="snakeHelp" type="button" class="game-help" aria-expanded="false" aria-controls="snakeHint">Controls</button>
+          </header>
+          <div id="snakeHint" class="game-help-panel" hidden>
+            <p class="control-hint">Controls: W/A/S/D move, P pause, R restart.</p>
+          </div>
+          <div class="game-stage">
+            <div class="snake-wrap">
             <canvas id="snakeBoard" width="320" height="320" aria-label="Snake game board"></canvas>
-          </div>
-          <div class="snake-stats">
-            <div class="stat">
-              <div class="stat-label">Snake Score</div>
-              <div class="stat-value" id="snakeScoreVal">0</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Snake Best</div>
-              <div class="stat-value" id="snakeBestVal">0</div>
             </div>
           </div>
-          <p id="snakeStatus">Running. Use W A S D.</p>
+          <p id="snakeStatus" class="game-status">Running. Use W A S D.</p>
         </section>
 
         <section id="pongPanel" class="games-card game-panel">
-          <h2 class="games-title">Pong</h2>
-          <p class="control-hint">Controls: W/S move, P pause, R restart. First to 5 points wins.</p>
-          <div class="pong-wrap">
+          <header class="game-bar">
+            <h2 class="games-title">Pong</h2>
+            <div class="game-readouts">
+              <span class="readout"><span class="readout-label">Player</span><span class="readout-value" id="pongScoreVal">0</span></span>
+              <span class="readout"><span class="readout-label">Rival</span><span class="readout-value" id="pongEnemyVal">0</span></span>
+              <span class="readout"><span class="readout-label">Best Rally</span><span class="readout-value" id="pongBestVal">0</span></span>
+              <span class="readout"><span class="readout-label">Rally</span><span class="readout-value" id="pongRallyVal">0</span></span>
+            </div>
+            <button id="pongHelp" type="button" class="game-help" aria-expanded="false" aria-controls="pongHint">Controls</button>
+          </header>
+          <div id="pongHint" class="game-help-panel" hidden>
+            <p class="control-hint">Controls: W/S move, P pause, R restart. First to 5 points wins.</p>
+          </div>
+          <div class="game-stage">
+            <div class="pong-wrap">
             <canvas id="pongBoard" width="640" height="360" aria-label="Pong game board"></canvas>
-          </div>
-          <div class="stats-grid pong-stats">
-            <div class="stat">
-              <div class="stat-label">Player</div>
-              <div class="stat-value" id="pongScoreVal">0</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Rival</div>
-              <div class="stat-value" id="pongEnemyVal">0</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Best Rally</div>
-              <div class="stat-value" id="pongBestVal">0</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Rally</div>
-              <div class="stat-value" id="pongRallyVal">0</div>
             </div>
           </div>
-          <p id="pongStatus">Match live. First to 5 wins.</p>
+          <p id="pongStatus" class="game-status">Match live. First to 5 wins.</p>
         </section>
 
         <section id="breakoutPanel" class="games-card game-panel">
-          <h2 class="games-title">Breakout</h2>
-          <p class="control-hint">Controls: A/D move, Space launch, P pause, R restart. Clear every brick to win.</p>
-          <div class="breakout-wrap">
+          <header class="game-bar">
+            <h2 class="games-title">Breakout</h2>
+            <div class="game-readouts">
+              <span class="readout"><span class="readout-label">Score</span><span class="readout-value" id="breakoutScoreVal">0</span></span>
+              <span class="readout"><span class="readout-label">Lives</span><span class="readout-value" id="breakoutLivesVal">3</span></span>
+              <span class="readout"><span class="readout-label">Bricks</span><span class="readout-value" id="breakoutBricksVal">0</span></span>
+              <span class="readout"><span class="readout-label">Best</span><span class="readout-value" id="breakoutBestVal">0</span></span>
+            </div>
+            <button id="breakoutHelp" type="button" class="game-help" aria-expanded="false" aria-controls="breakoutHint">Controls</button>
+          </header>
+          <div id="breakoutHint" class="game-help-panel" hidden>
+            <p class="control-hint">Controls: A/D move, Space launch, P pause, R restart. Clear every brick to win.</p>
+          </div>
+          <div class="game-stage">
+            <div class="breakout-wrap">
             <canvas id="breakoutBoard" width="640" height="360" aria-label="Breakout game board"></canvas>
-          </div>
-          <div class="stats-grid breakout-stats">
-            <div class="stat">
-              <div class="stat-label">Score</div>
-              <div class="stat-value" id="breakoutScoreVal">0</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Lives</div>
-              <div class="stat-value" id="breakoutLivesVal">3</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Bricks</div>
-              <div class="stat-value" id="breakoutBricksVal">0</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Best</div>
-              <div class="stat-value" id="breakoutBestVal">0</div>
             </div>
           </div>
-          <p id="breakoutStatus">Press Space to launch the ball.</p>
+          <p id="breakoutStatus" class="game-status">Press Space to launch the ball.</p>
         </section>
 
         <section id="dashPanel" class="games-card game-panel">
-          <h2 class="games-title">Asteroid Dash</h2>
-          <p class="control-hint">Controls: A/D move, P pause, R restart. Dodge the falling debris as long as you can.</p>
-          <div class="dash-wrap">
+          <header class="game-bar">
+            <h2 class="games-title">Asteroid Dash</h2>
+            <div class="game-readouts">
+              <span class="readout"><span class="readout-label">Score</span><span class="readout-value" id="dashScoreVal">0</span></span>
+              <span class="readout"><span class="readout-label">Best</span><span class="readout-value" id="dashBestVal">0</span></span>
+            </div>
+            <button id="dashHelp" type="button" class="game-help" aria-expanded="false" aria-controls="dashHint">Controls</button>
+          </header>
+          <div id="dashHint" class="game-help-panel" hidden>
+            <p class="control-hint">Controls: A/D move, P pause, R restart. Dodge the falling debris as long as you can.</p>
+          </div>
+          <div class="game-stage">
+            <div class="dash-wrap">
             <canvas id="dashBoard" width="640" height="360" aria-label="Asteroid Dash game board"></canvas>
+            </div>
           </div>
-          <div class="stats-grid dash-stats">
-            <div class="stat"><div class="stat-label">Score</div><div class="stat-value" id="dashScoreVal">0</div></div>
-            <div class="stat"><div class="stat-label">Best</div><div class="stat-value" id="dashBestVal">0</div></div>
-          </div>
-          <p id="dashStatus">Stay alive and keep weaving.</p>
+          <p id="dashStatus" class="game-status">Stay alive and keep weaving.</p>
         </section>
 
         <section id="memoryPanel" class="games-card game-panel">
-          <h2 class="games-title">Memory Flip</h2>
-          <p class="control-hint">Controls: W/A/S/D move card focus, Space or Enter flip, R restart. Clear the full board in as few moves as possible.</p>
-          <div class="memory-grid-wrap">
+          <header class="game-bar">
+            <h2 class="games-title">Memory Flip</h2>
+            <div class="game-readouts">
+              <span class="readout"><span class="readout-label">Moves</span><span class="readout-value" id="memoryMovesVal">0</span></span>
+              <span class="readout"><span class="readout-label">Matches</span><span class="readout-value" id="memoryMatchesVal">0</span></span>
+              <span class="readout"><span class="readout-label">Best</span><span class="readout-value" id="memoryBestVal">0</span></span>
+            </div>
+            <button id="memoryHelp" type="button" class="game-help" aria-expanded="false" aria-controls="memoryHint">Controls</button>
+          </header>
+          <div id="memoryHint" class="game-help-panel" hidden>
+            <p class="control-hint">Controls: W/A/S/D move card focus, Space or Enter flip, R restart. Clear the full board in as few moves as possible.</p>
+          </div>
+          <div class="game-stage">
+            <div class="memory-grid-wrap">
             <div id="memoryGrid" class="memory-grid" aria-label="Memory card grid"></div>
+            </div>
           </div>
-          <div class="stats-grid memory-stats">
-            <div class="stat"><div class="stat-label">Moves</div><div class="stat-value" id="memoryMovesVal">0</div></div>
-            <div class="stat"><div class="stat-label">Matches</div><div class="stat-value" id="memoryMatchesVal">0</div></div>
-            <div class="stat"><div class="stat-label">Best</div><div class="stat-value" id="memoryBestVal">0</div></div>
-          </div>
-          <p id="memoryStatus">Flip two cards to start matching.</p>
+          <p id="memoryStatus" class="game-status">Flip two cards to start matching.</p>
         </section>
 
         <section id="minefieldPanel" class="games-card game-panel">
-          <h2 class="games-title">Minefield</h2>
-          <p class="control-hint">Controls: W/A/S/D move tile focus, Space or Enter reveal, F flag, R restart. Clear every safe tile without hitting a mine.</p>
-          <div class="minefield-controls" aria-label="Minefield settings">
+          <header class="game-bar">
+            <h2 class="games-title">Minefield</h2>
+            <div class="game-readouts">
+              <span class="readout"><span class="readout-label">Safe Left</span><span class="readout-value" id="minefieldSafeVal">0</span></span>
+              <span class="readout"><span class="readout-label">Flags</span><span class="readout-value" id="minefieldFlagsVal">0</span></span>
+              <span class="readout"><span class="readout-label">Mines</span><span class="readout-value" id="minefieldMinesVal">0</span></span>
+              <span class="readout"><span class="readout-label">Wins</span><span class="readout-value" id="minefieldWinsVal">0</span></span>
+            </div>
+            <button id="minefieldHelp" type="button" class="game-help" aria-expanded="false" aria-controls="minefieldHint">Controls</button>
+          </header>
+          <div id="minefieldHint" class="game-help-panel" hidden>
+            <p class="control-hint">Controls: W/A/S/D move tile focus, Space or Enter reveal, F flag, R restart. Clear every safe tile without hitting a mine.</p>
+            <div class="minefield-controls" aria-label="Minefield settings">
             <label class="minefield-control" for="minefieldDifficultySelect">
-              <span>Difficulty</span>
-              <select id="minefieldDifficultySelect">
-                <option value="easy">Easy</option>
-                <option value="normal" selected>Normal</option>
-                <option value="hard">Hard</option>
-                <option value="brutal">Brutal</option>
-              </select>
+            <span>Difficulty</span>
+            <select id="minefieldDifficultySelect">
+            <option value="easy">Easy</option>
+            <option value="normal" selected>Normal</option>
+            <option value="hard">Hard</option>
+            <option value="brutal">Brutal</option>
+            </select>
             </label>
             <label class="minefield-control minefield-control-slider" for="minefieldSizeSlider">
-              <span>Board Size</span>
-              <div class="minefield-slider-row">
-                <input id="minefieldSizeSlider" type="range" min="6" max="14" step="1" value="8" />
-                <output id="minefieldSizeValue" for="minefieldSizeSlider">8 x 8</output>
-              </div>
+            <span>Board Size</span>
+            <div class="minefield-slider-row">
+            <input id="minefieldSizeSlider" type="range" min="6" max="14" step="1" value="8" />
+            <output id="minefieldSizeValue" for="minefieldSizeSlider">8 x 8</output>
+            </div>
             </label>
+            </div>
           </div>
-          <div class="minefield-grid-wrap">
+          <div class="game-stage">
+            <div class="minefield-grid-wrap">
             <div id="minefieldGrid" class="minefield-grid" aria-label="Minefield grid"></div>
+            </div>
           </div>
-          <div class="stats-grid minefield-stats">
-            <div class="stat"><div class="stat-label">Safe Left</div><div class="stat-value" id="minefieldSafeVal">0</div></div>
-            <div class="stat"><div class="stat-label">Flags</div><div class="stat-value" id="minefieldFlagsVal">0</div></div>
-            <div class="stat"><div class="stat-label">Mines</div><div class="stat-value" id="minefieldMinesVal">0</div></div>
-            <div class="stat"><div class="stat-label">Wins</div><div class="stat-value" id="minefieldWinsVal">0</div></div>
-          </div>
-          <p id="minefieldStatus">Find the safe route.</p>
+          <p id="minefieldStatus" class="game-status">Find the safe route.</p>
         </section>
 
         <section id="simonPanel" class="games-card game-panel">
-          <h2 class="games-title">Simon Pulse</h2>
-          <p class="control-hint">Controls: W north, D east, S south, A west, R restart. Repeat the pulse pattern in order.</p>
-          <div class="simon-wrap">
+          <header class="game-bar">
+            <h2 class="games-title">Simon Pulse</h2>
+            <div class="game-readouts">
+              <span class="readout"><span class="readout-label">Round</span><span class="readout-value" id="simonRoundVal">0</span></span>
+              <span class="readout"><span class="readout-label">Best</span><span class="readout-value" id="simonBestVal">0</span></span>
+            </div>
+            <button id="simonHelp" type="button" class="game-help" aria-expanded="false" aria-controls="simonHint">Controls</button>
+          </header>
+          <div id="simonHint" class="game-help-panel" hidden>
+            <p class="control-hint">Controls: W north, D east, S south, A west, R restart. Repeat the pulse pattern in order.</p>
+          </div>
+          <div class="game-stage">
+            <div class="simon-wrap">
             <div class="simon-grid" aria-label="Simon pad grid">
-              <button id="simonPad0" type="button" class="simon-pad" data-pad="0">North</button>
-              <button id="simonPad1" type="button" class="simon-pad" data-pad="1">East</button>
-              <button id="simonPad2" type="button" class="simon-pad" data-pad="2">South</button>
-              <button id="simonPad3" type="button" class="simon-pad" data-pad="3">West</button>
+            <button id="simonPad0" type="button" class="simon-pad" data-pad="0">North</button>
+            <button id="simonPad1" type="button" class="simon-pad" data-pad="1">East</button>
+            <button id="simonPad2" type="button" class="simon-pad" data-pad="2">South</button>
+            <button id="simonPad3" type="button" class="simon-pad" data-pad="3">West</button>
+            </div>
             </div>
           </div>
-          <div class="stats-grid simon-stats">
-            <div class="stat"><div class="stat-label">Round</div><div class="stat-value" id="simonRoundVal">0</div></div>
-            <div class="stat"><div class="stat-label">Best</div><div class="stat-value" id="simonBestVal">0</div></div>
-          </div>
-          <p id="simonStatus">Watch the first pulse.</p>
+          <p id="simonStatus" class="game-status">Watch the first pulse.</p>
         </section>
 
         <section id="whackPanel" class="games-card game-panel">
-          <h2 class="games-title">Whack-A-Bot</h2>
-          <p class="control-hint">Controls: W/A/S/D move focus, Space or Enter whack, P pause, R restart. Survive the full timer with the highest score you can.</p>
-          <div class="whack-grid-wrap">
+          <header class="game-bar">
+            <h2 class="games-title">Whack-A-Bot</h2>
+            <div class="game-readouts">
+              <span class="readout"><span class="readout-label">Score</span><span class="readout-value" id="whackScoreVal">0</span></span>
+              <span class="readout"><span class="readout-label">Time</span><span class="readout-value" id="whackTimeVal">30</span></span>
+              <span class="readout"><span class="readout-label">Best</span><span class="readout-value" id="whackBestVal">0</span></span>
+            </div>
+            <button id="whackHelp" type="button" class="game-help" aria-expanded="false" aria-controls="whackHint">Controls</button>
+          </header>
+          <div id="whackHint" class="game-help-panel" hidden>
+            <p class="control-hint">Controls: W/A/S/D move focus, Space or Enter whack, P pause, R restart. Survive the full timer with the highest score you can.</p>
+          </div>
+          <div class="game-stage">
+            <div class="whack-grid-wrap">
             <div id="whackGrid" class="whack-grid" aria-label="Whack-a-Bot grid"></div>
+            </div>
           </div>
-          <div class="stats-grid whack-stats">
-            <div class="stat"><div class="stat-label">Score</div><div class="stat-value" id="whackScoreVal">0</div></div>
-            <div class="stat"><div class="stat-label">Time</div><div class="stat-value" id="whackTimeVal">30</div></div>
-            <div class="stat"><div class="stat-label">Best</div><div class="stat-value" id="whackBestVal">0</div></div>
-          </div>
-          <p id="whackStatus">Click the active bot as quickly as you can.</p>
+          <p id="whackStatus" class="game-status">Click the active bot as quickly as you can.</p>
         </section>
 
         <section id="retroDoomPanel" class="games-card game-panel">
@@ -274,7 +290,7 @@
           <div class="retro-doom-embed-wrap">
             <div class="retrodoom-theater-exit-trigger" aria-hidden="true"></div>
             <button id="retroDoomTheaterExitBtn" type="button" class="home-button retrodoom-theater-exit">Back to Games</button>
-            <iframe id="retroDoomFrame" src="./retro-doom93/index.html?v=20260711dreadkeep" title="Castle of the Dreadkeep medieval castle crawler" loading="lazy" allowfullscreen></iframe>
+            <iframe id="retroDoomFrame" src="./retro-doom93/index.html?v=20260721v137" title="Castle of the Dreadkeep medieval castle crawler" loading="lazy" allowfullscreen></iframe>
           </div>
         </section>
 
@@ -308,6 +324,6 @@
   </div>
 
   <script src="../assets/js/script.js"></script>
-  <script src="./assets/web-games-inline.js?v=20260712dedupe1"></script>
+  <script src="./assets/web-games-inline.js?v=20260721boardfirst6"></script>
 </body>
 </html>

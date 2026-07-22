@@ -48,6 +48,26 @@
       return Number.isFinite(updatedAt) && Date.now() - updatedAt < ttlMs;
     }
 
+    // Every network read on this page goes through here.
+    //
+    // A refusal is survivable - the panel keeps its last reading and flags it. A
+    // hang is not: a proxy that accepts the connection and then never answers
+    // leaves the panel at "Loading..." with no value, no stamp and no error, which
+    // is the one state the freshness stamps exist to make impossible. The news and
+    // sentiment chains each grew their own copy of this after exactly that
+    // happened; this is that guard applied to the rest of them.
+    const REQUEST_TIMEOUT_MS = 9000;
+
+    async function fetchWithTimeout(url, options = {}, timeoutMs = REQUEST_TIMEOUT_MS) {
+      const controller = new AbortController();
+      const timeoutId = window.setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    }
+
     function reverseGeoCacheKey(latitude, longitude) {
       return `${REVERSE_GEO_CACHE_PREFIX}${Number(latitude).toFixed(3)},${Number(longitude).toFixed(3)}`;
     }
@@ -59,7 +79,7 @@
         return cached.data;
       }
 
-      const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
+      const geoRes = await fetchWithTimeout(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`);
       const geo = await geoRes.json();
       writeStorageJson(cacheKey, { data: geo, updatedAt: Date.now() });
       return geo;
@@ -82,6 +102,34 @@
       });
     }
 
+    // Freshness stamp shared by every panel that pulls from the network. A panel
+    // holding the last good reading looks identical to a live one, so each states
+    // when its number was actually obtained.
+    //
+    // "As of 11:45" silently reads as today, so a reading from an earlier day gets
+    // the date too - the whole point of the line is that a frozen value can be seen
+    // to be frozen. Passing no timestamp blanks it: there is no reading to date.
+    function formatStampTime(updatedAt) {
+      const when = new Date(updatedAt);
+      const time = when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (when.toDateString() === new Date().toDateString()) return time;
+      return `${when.toLocaleDateString([], { month: 'short', day: 'numeric' })} ${time}`;
+    }
+
+    function stampPanel(elId, updatedAt, isStale) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+
+      if (!Number.isFinite(updatedAt) || updatedAt <= 0) {
+        el.textContent = '';
+        el.classList.remove('is-stale');
+        return;
+      }
+
+      el.textContent = `As of ${formatStampTime(updatedAt)}`;
+      el.classList.toggle('is-stale', Boolean(isStale));
+    }
+
     function renderNewsTimestamp() {
       const el = document.getElementById('news-asof-text');
       if (!el) return;
@@ -91,8 +139,7 @@
         return;
       }
 
-      const time = new Date(currentNewsFetchedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      el.textContent = `As of ${time}`;
+      el.textContent = `As of ${formatStampTime(currentNewsFetchedAt)}`;
     }
 
     async function showNews(type) {
@@ -105,14 +152,14 @@
       const requestId = ++newsRequestSeq;
       container.textContent = 'Loading...';
 
+      // Three transports with their own deadlines can legitimately outlast this, so
+      // the watchdog reports that the wait is unusual rather than ending it. It used
+      // to swap in canned copy here, which is why the panel could show invented
+      // headlines while the real feed was still on its way.
       const loadingWatchdog = window.setTimeout(() => {
         if (requestId !== newsRequestSeq) return;
         if (String(container.textContent || '').trim() !== 'Loading...') return;
-
-        // fallback copy is not a fetch, so it gets no timestamp to stand behind
-        currentNewsFetchedAt = null;
-        allNewsItems = Array.isArray(FALLBACK_NEWS.items) ? FALLBACK_NEWS.items : [];
-        renderNews();
+        container.textContent = 'Still fetching headlines...';
       }, NEWS_LOADING_TIMEOUT_MS);
 
       try {
@@ -141,25 +188,35 @@
 
         allNewsItems = Array.isArray(data?.items) ? data.items : [];
         renderNews();
-      } catch (e) { 
+      } catch (e) {
         if (requestId !== newsRequestSeq) return;
         console.error('News error:', e);
-        currentNewsFetchedAt = null;
-        allNewsItems = Array.isArray(FALLBACK_NEWS.items) ? FALLBACK_NEWS.items : [];
-        renderNews();
+        renderNewsUnavailable();
       } finally {
         clearTimeout(loadingWatchdog);
       }
     }
 
-    // Cached fallback news data
-    const FALLBACK_NEWS = {
-      items: [
-        { title: "Technology advances drive market growth", link: "#", pubDate: new Date().toISOString(), author: "News Feed" },
-        { title: "Global economic updates this week", link: "#", pubDate: new Date().toISOString(), author: "Finance" },
-        { title: "Breaking: Industry trends reshape 2026", link: "#", pubDate: new Date().toISOString(), author: "Business" },
-      ]
-    };
+    // Every transport failed. This used to render three invented headlines stamped
+    // with the current time - copy that was indistinguishable from real reporting on
+    // a panel whose entire job is to carry real reporting, and which the freshness
+    // stamp would then have dated as though it had been fetched. A panel with
+    // nothing to show says so.
+    function renderNewsUnavailable() {
+      const container = document.getElementById('news-container');
+      if (!container) return;
+
+      allNewsItems = [];
+      currentNewsFetchedAt = null;
+
+      container.innerHTML = '';
+      const note = document.createElement('p');
+      note.className = 'news-status-note';
+      note.textContent = 'Headlines unavailable. Use the refresh control to try again.';
+      container.appendChild(note);
+
+      renderNewsTimestamp();
+    }
 
     async function fetchNewsWithCache(feedUrl, cacheKey) {
       // Check if cache exists and is still valid
@@ -362,10 +419,29 @@
       }
 
       // Last resort: publishers that need neither proxy nor converter. This still
-      // throws if they all fail, so the caller shows FALLBACK_NEWS without letting
-      // it reach the cache - a cached fallback would be served for CACHE_DURATION
-      // even after the real feed recovered.
+      // throws if they all fail, which is what keeps the failure out of the cache -
+      // an empty or placeholder result written here would be served for
+      // CACHE_DURATION even after the real feed recovered.
       return fetchNewsDirect(newsType);
+    }
+
+    // The transports disagree about how a publication date is written, and one of
+    // them is ambiguous in a way that reads as a bug on screen.
+    //
+    // The XML feeds carry RFC-822 dates with an explicit zone ("Tue, 21 Jul 2026
+    // 23:36:00 GMT"), which Date.parse handles. rss2json instead normalises to
+    // "2026-07-21 23:36:00" - UTC, but with nothing on the string that says so, so
+    // the browser reads it as local time. West of Greenwich that pushes every
+    // headline into the future: a story filed at 23:36 UTC showed as 11:36 PM on a
+    // panel stamped 7:03 PM. Zone-less stamps are therefore read as UTC, which is
+    // what rss2json actually means by them.
+    const ZONELESS_STAMP = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/;
+
+    function parseNewsDate(pubDate) {
+      const raw = String(pubDate || '').trim();
+      if (!raw) return NaN;
+      if (ZONELESS_STAMP.test(raw)) return Date.parse(`${raw.replace(' ', 'T')}Z`);
+      return Date.parse(raw);
     }
 
     function renderNews() {
@@ -389,7 +465,11 @@
       list.style.listStyle = 'none';
 
       allNewsItems.slice(0, limit).forEach((item) => {
-        const date = item.pubDate ? new Date(item.pubDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+        // Same rule as the panel stamps: a bare time silently reads as today, and
+        // anything not from today carries its date. An unparseable pubDate shows
+        // nothing rather than "Invalid Date".
+        const publishedAt = parseNewsDate(item.pubDate);
+        const date = Number.isFinite(publishedAt) ? formatStampTime(publishedAt) : '';
 
         let displayTitle = String(item.title || 'Untitled');
         let displaySource = String(item.author || 'News Feed');
@@ -415,7 +495,8 @@
 
         const meta = document.createElement('div');
         meta.className = 'news-item-meta';
-        meta.textContent = `🗞️ ${displaySource} • 🕒 ${date}`;
+        // a dateless item drops the clock rather than trailing an empty one
+        meta.textContent = date ? `🗞️ ${displaySource} • 🕒 ${date}` : `🗞️ ${displaySource}`;
 
         li.appendChild(link);
         li.appendChild(meta);
@@ -428,10 +509,16 @@
     }
     showNews('usa');
     const SENTIMENT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+    // Past this a cached reading stops standing in for a live one. The panel is a
+    // market instrument: yesterday's number shown as though it were current reads
+    // worse than an honest blank, because nothing on screen contradicts it.
+    const SENTIMENT_STALE_LIMIT = 12 * 60 * 60 * 1000; // 12 hours
+    const SENTIMENT_REQUEST_TIMEOUT_MS = 9000;
 
-    function applysentiment(el, valueText, color) {
+    function applysentiment(el, valueText, color, updatedAt, isStale) {
       el.textContent = valueText;
       el.style.color = color;
+      stampPanel('sentiment-asof', updatedAt, isStale);
 
       // Read the score back off the rendered text rather than widening the cache
       // payload: entries already in localStorage predate the gauge and carry no
@@ -450,6 +537,16 @@
       mark.classList.add('is-set');
     }
 
+    // No reading to stand behind: blank the mark and the timestamp too, so none of
+    // the three carries over from a previous render.
+    function clearSentiment(el) {
+      el.textContent = 'Unavailable';
+      el.style.color = 'rgba(255,255,255,0.65)';
+      stampPanel('sentiment-asof', null, false);
+      const mark = document.getElementById('sentiment-mark');
+      if (mark) mark.classList.remove('is-set');
+    }
+
     async function fetchSentiment() {
       const el = document.getElementById('sentiment-val');
       if (!el) return;
@@ -459,21 +556,33 @@
       try {
         const cached = JSON.parse(localStorage.getItem('cnnSentimentCache') || 'null');
         if (cached && cached.valueText) {
-          const age = Date.now() - (cached.updatedAt || 0);
+          const cachedAt = Number(cached.updatedAt) || 0;
+          const age = Date.now() - cachedAt;
           // If cache is fresh enough, show it and skip the network call entirely
           if (age < SENTIMENT_CACHE_TTL) {
-            applysentiment(el, cached.valueText, cached.color || '#ffffff');
+            applysentiment(el, cached.valueText, cached.color || '#ffffff', cachedAt, false);
             return;
           }
-          // Stale cache: show it immediately, then refresh in background
-          applysentiment(el, `${cached.valueText}`, cached.color || '#ffffff');
-          hadCache = true;
+          // Stale but still worth showing: display it flagged while we revalidate.
+          // Beyond the stale limit it is not shown at all - the fetch below either
+          // replaces it or the panel ends up reading Unavailable.
+          if (age < SENTIMENT_STALE_LIMIT) {
+            applysentiment(el, `${cached.valueText}`, cached.color || '#ffffff', cachedAt, true);
+            hadCache = true;
+          }
         }
       } catch (_) { /* ignore broken cache */ }
 
+      // Three transports, because a single proxy going dark is what froze this
+      // panel before. CNN is tried first as the canonical source but answers 418
+      // to anything it reads as a bot and sends no CORS header; jina reflects the
+      // caller's Origin and wraps the JSON in a text preamble, which the brace-span
+      // fallback in readSentimentPayload already handles.
+      const SENTIMENT_FEED = 'https://production.dataviz.cnn.io/index/fearandgreed/graphdata';
       const sentimentSources = [
-        'https://production.dataviz.cnn.io/index/fearandgreed/graphdata',
-        'https://api.allorigins.win/raw?url=' + encodeURIComponent('https://production.dataviz.cnn.io/index/fearandgreed/graphdata')
+        SENTIMENT_FEED,
+        'https://r.jina.ai/' + SENTIMENT_FEED,
+        'https://api.allorigins.win/raw?url=' + encodeURIComponent(SENTIMENT_FEED)
       ];
 
       const readSentimentPayload = async (response) => {
@@ -505,12 +614,18 @@
         let lastError = null;
 
         for (const sourceUrl of sentimentSources) {
+          // Each transport gets its own deadline: a proxy that hangs rather than
+          // refusing would otherwise strand the whole chain and the panel with it.
+          const controller = new AbortController();
+          const timeoutId = window.setTimeout(() => controller.abort(), SENTIMENT_REQUEST_TIMEOUT_MS);
           try {
-            const res = await fetch(sourceUrl, { cache: 'no-store' });
+            const res = await fetch(sourceUrl, { cache: 'no-store', signal: controller.signal });
             data = await readSentimentPayload(res);
             break;
           } catch (error) {
             lastError = error;
+          } finally {
+            clearTimeout(timeoutId);
           }
         }
 
@@ -533,23 +648,24 @@
           else color = '#6dff85';
 
           const valueText = `${rounded} (${label})`;
-          applysentiment(el, valueText, color);
+          const updatedAt = Date.now();
+          applysentiment(el, valueText, color, updatedAt, false);
 
           localStorage.setItem('cnnSentimentCache', JSON.stringify({
             valueText,
             color,
-            updatedAt: Date.now()
+            updatedAt
           }));
           return;
         }
       } catch (e) {
-        // Network failed — if we already showed stale cache, leave it; otherwise show unavailable
+        // Network failed - a cache inside the stale limit is already on screen and
+        // flagged as such, so leave it; anything older never got shown.
         if (hadCache) return;
       }
 
       if (!hadCache) {
-        el.textContent = 'Unavailable';
-        el.style.color = 'rgba(255,255,255,0.65)';
+        clearSentiment(el);
       }
     }
 
@@ -769,6 +885,10 @@
     const INDEX_CACHE_TTL_LIVE = 5 * 60 * 1000;
     const INDEX_CACHE_TTL_CLOSED = 60 * 60 * 1000;
 
+    // The index rows carry no stamp of their own: the card's plate stamp dates the
+    // panel, and a second timestamp floating under the rows was the only reading on
+    // the page not engraved on a legend. The per-row LIVE/LAST chips already say
+    // whether a quote is current.
     function applyIndexCache(cache) {
       updateIndexRow('idx-dji', cache.dji);
       updateIndexRow('idx-ixic', cache.ixic);
@@ -802,7 +922,6 @@
           const age = Date.now() - cached.updatedAt;
           if (age < cacheTTL) {
             applyIndexCache(cached);
-            fetchSentiment();
             return;
           }
           // Stale — show immediately while refreshing in background
@@ -816,7 +935,7 @@
       // --- Helper: fetch a single index quote from Yahoo Finance via r.jina.ai ---
       async function fetchJinaYahooQuote(symbol) {
         const url = `https://r.jina.ai/http://https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=2d`;
-        const res = await fetch(url);
+        const res = await fetchWithTimeout(url);
         if (!res.ok) throw new Error(`Jina Yahoo ${symbol} ${res.status}`);
 
         const text = await res.text();
@@ -851,7 +970,7 @@
       let twelveDataOk = false;
       if (!isTwelveDataBackedOff()) {
         try {
-          const requestedRes = await fetch(`https://api.twelvedata.com/quote?symbol=.DJI,.SPX,.IXIC&apikey=${TWELVE_DATA_API_KEY}`);
+          const requestedRes = await fetchWithTimeout(`https://api.twelvedata.com/quote?symbol=.DJI,.SPX,.IXIC&apikey=${TWELVE_DATA_API_KEY}`);
           if (requestedRes.status === 429) {
             markTwelveDataBackoff();
             throw new Error('Twelve Data rate limited');
@@ -888,19 +1007,19 @@
         updateIndexRow('idx-ixic', ixicQuote);
         updateIndexRow('idx-gspc', spxQuote);
 
+        const updatedAt = Date.now();
+
         localStorage.setItem(MAJOR_INDEX_CACHE_KEY, JSON.stringify({
           dji: djiQuote,
           ixic: ixicQuote,
           spx: spxQuote,
-          updatedAt: Date.now()
+          updatedAt
         }));
       } else if (!hadCache) {
         updateIndexRow('idx-dji', null);
         updateIndexRow('idx-ixic', null);
         updateIndexRow('idx-gspc', null);
       }
-
-      fetchSentiment();
     }
     // No seconds: the countdown lives in the page's top bezel, and a digit changing
     // every second there reads as flicker rather than information.
@@ -1036,7 +1155,12 @@
 
       majorIndexesInFlight = true;
       try {
-        await fetchMajorIndexes();
+        // Two independent readings that happen to share a card. Sentiment used to
+        // be called from the tail of fetchMajorIndexes, so a slow index transport
+        // held it at "Loading..." even though its own feed was answering. They run
+        // side by side now, and allSettled keeps one failing from cancelling the
+        // other - each panel already reports its own outcome.
+        await Promise.allSettled([fetchMajorIndexes(), fetchSentiment()]);
       } finally {
         majorIndexesInFlight = false;
         scheduleMajorIndexesRefresh();
@@ -1120,8 +1244,9 @@
         71: "🌨️", 73: "🌨️", 75: "❄️", 95: "⚡"
       };
 
-      function renderWeatherSnapshot(snapshot, locationLabel) {
+      function renderWeatherSnapshot(snapshot, locationLabel, updatedAt, isStale) {
         if (!snapshot) return;
+        stampPanel('weather-asof', Number(updatedAt) || 0, isStale);
 
         tempEl.textContent = `${snapshot.icon} ${snapshot.temp}°F`;
         descEl.textContent = snapshot.condition;
@@ -1144,11 +1269,24 @@
         const dailyMax = data.daily.temperature_2m_max;
         const dailyMin = data.daily.temperature_2m_min;
         const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        // Label each column from the date the forecast row is actually for, the way
+        // the hourly strip below reads its own stamps. Counting forward from the
+        // browser's weekday instead would slide every label by a day whenever the
+        // browser and the forecast location sit on opposite sides of midnight.
+        // The stamps are plain "YYYY-MM-DD" in the location's zone, so they are
+        // read at noon UTC - far enough from either edge that no offset moves them.
+        const dailyDates = (data.daily && data.daily.time) || [];
         const today = new Date().getDay();
+        const weekdayFor = (index) => {
+          const stamp = dailyDates[index];
+          const parsed = stamp ? new Date(`${stamp}T12:00:00Z`) : null;
+          if (parsed && Number.isFinite(parsed.getTime())) return parsed.getUTCDay();
+          return (today + index) % 7;
+        };
 
         let weekHtml = '';
         for (let i = 1; i <= 6; i++) {
-          const dayIndex = (today + i) % 7;
+          const dayIndex = weekdayFor(i);
           const dayCondition = conditions[dailyCodes[i]] || 'Var';
           const dayIcon = icons[dailyCodes[i]] || '🌡️';
           const dayMax = Math.round(dailyMax[i]);
@@ -1203,11 +1341,11 @@
         return `${WEATHER_LAST_SNAPSHOT_KEY}:${latitude.toFixed(2)},${longitude.toFixed(2)}`;
       }
 
-      function persistWeatherSnapshot(cacheKey, snapshot, locationLabel) {
+      function persistWeatherSnapshot(cacheKey, snapshot, locationLabel, updatedAt) {
         const payload = {
           snapshot,
           locationLabel: locationLabel || '',
-          updatedAt: Date.now()
+          updatedAt: updatedAt || Date.now()
         };
         writeStorageJson(cacheKey, payload);
         writeStorageJson(WEATHER_LAST_SNAPSHOT_KEY, payload);
@@ -1215,27 +1353,30 @@
 
       const lastSnapshot = readStorageJson(WEATHER_LAST_SNAPSHOT_KEY);
       if (lastSnapshot && isFreshTimestamp(lastSnapshot.updatedAt, WEATHER_CACHE_TTL_MS) && lastSnapshot.snapshot) {
-        renderWeatherSnapshot(lastSnapshot.snapshot, lastSnapshot.locationLabel);
+        renderWeatherSnapshot(lastSnapshot.snapshot, lastSnapshot.locationLabel, lastSnapshot.updatedAt, false);
       }
 
       async function renderWeather(latitude, longitude, locationLabel) {
         const cacheKey = getWeatherCacheKey(latitude, longitude);
         const cached = readStorageJson(cacheKey);
         if (cached && isFreshTimestamp(cached.updatedAt, WEATHER_CACHE_TTL_MS) && cached.snapshot) {
-          renderWeatherSnapshot(cached.snapshot, locationLabel || cached.locationLabel);
+          renderWeatherSnapshot(cached.snapshot, locationLabel || cached.locationLabel, cached.updatedAt, false);
           return;
         }
 
+        // Past its TTL: shown flagged so the forecast on screen is not mistaken for
+        // a current one while the request below runs.
         if (cached && cached.snapshot) {
-          renderWeatherSnapshot(cached.snapshot, locationLabel || cached.locationLabel);
+          renderWeatherSnapshot(cached.snapshot, locationLabel || cached.locationLabel, cached.updatedAt, true);
         }
 
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&timezone=auto&forecast_days=7`);
+        const res = await fetchWithTimeout(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&hourly=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code&temperature_unit=fahrenheit&timezone=auto&forecast_days=7`);
         const data = await res.json();
         const snapshot = buildWeatherSnapshot(data);
+        const updatedAt = Date.now();
 
-        renderWeatherSnapshot(snapshot, locationLabel || cached?.locationLabel);
-        persistWeatherSnapshot(cacheKey, snapshot, locationLabel || cached?.locationLabel);
+        renderWeatherSnapshot(snapshot, locationLabel || cached?.locationLabel, updatedAt, false);
+        persistWeatherSnapshot(cacheKey, snapshot, locationLabel || cached?.locationLabel, updatedAt);
       }
 
       async function fetchApproximateLocation() {
@@ -1244,7 +1385,7 @@
           return cached;
         }
 
-        const res = await fetch('https://ipapi.co/json/');
+        const res = await fetchWithTimeout('https://ipapi.co/json/');
         if (!res.ok) throw new Error('Approximate location lookup failed');
         const data = await res.json();
         if (typeof data.latitude !== 'number' || typeof data.longitude !== 'number') {
@@ -1296,7 +1437,12 @@
             cityEl.textContent = `Location: ${label}`;
             const latest = readStorageJson(getWeatherCacheKey(latitude, longitude));
             if (latest && latest.snapshot) {
-              persistWeatherSnapshot(getWeatherCacheKey(latitude, longitude), latest.snapshot, label);
+              // Naming the place is not a new reading of the weather, so the
+              // snapshot keeps the timestamp it was fetched under. Letting this
+              // default to now would re-date an old forecast - and because the
+              // same stamp drives the TTL, every reload would push the refresh
+              // out again and the panel could sit frozen while reading current.
+              persistWeatherSnapshot(getWeatherCacheKey(latitude, longitude), latest.snapshot, label, latest.updatedAt);
             }
           });
         }
@@ -1347,16 +1493,28 @@
 
       const selected = seriesMap[seriesType] || seriesMap.cup;
 
+      // When the schedule behind the displayed race was pulled. The year loop can
+      // read more than one cache entry, so this keeps the oldest of the ones it
+      // actually used - the stamp should never claim to be fresher than its data.
+      let scheduleFetchedAt = 0;
+      const notePulled = (at) => {
+        if (!at) return;
+        scheduleFetchedAt = scheduleFetchedAt ? Math.min(scheduleFetchedAt, at) : at;
+      };
+
       async function getNascarSchedule(year) {
         const cacheKey = `${NASCAR_CACHE_PREFIX}${year}`;
         const cached = readStorageJson(cacheKey);
         if (cached && isFreshTimestamp(cached.updatedAt, NASCAR_CACHE_TTL_MS) && cached.data) {
+          notePulled(Number(cached.updatedAt) || 0);
           return cached.data;
         }
 
-        const res = await fetch(`https://cf.nascar.com/cacher/${year}/race_list_basic.json`);
+        const res = await fetchWithTimeout(`https://cf.nascar.com/cacher/${year}/race_list_basic.json`);
         const data = await res.json();
-        writeStorageJson(cacheKey, { data, updatedAt: Date.now() });
+        const updatedAt = Date.now();
+        notePulled(updatedAt);
+        writeStorageJson(cacheKey, { data, updatedAt });
         return data;
       }
 
@@ -1365,6 +1523,7 @@
         trackEl.textContent = '--';
         whenEl.textContent = '--';
         broadcastEl.textContent = '--';
+        stampPanel('nascar-asof', null, false);
       };
 
       try {
@@ -1425,6 +1584,7 @@
         trackEl.textContent = nextRace.track_name || '--';
         whenEl.textContent = `${displayDate} | PT: ${displayTimePT} | ET: ${displayTimeET}`;
         broadcastEl.textContent = `TV: ${tv}`;
+        stampPanel('nascar-asof', scheduleFetchedAt, false);
       } catch (e) {
         setUnavailable();
       }
@@ -1553,7 +1713,8 @@
       return { label: 'Quiet', tone: 'calm' };
     }
 
-    function renderSpaceWeather(reading) {
+    function renderSpaceWeather(reading, updatedAt, isStale) {
+      stampPanel('spacewx-asof', Number(updatedAt) || 0, isStale);
       const kpEl = document.getElementById('spacewx-kp');
       const stateEl = document.getElementById('spacewx-state');
       const scaleEl = document.getElementById('spacewx-scale');
@@ -1619,21 +1780,22 @@
     async function fetchSpaceWeather() {
       const cached = readStorageJson(SPACEWX_CACHE_KEY);
       if (cached && cached.reading) {
-        renderSpaceWeather(cached.reading);
-        if (isFreshTimestamp(cached.updatedAt, SPACEWX_CACHE_TTL_MS)) return;
+        const fresh = isFreshTimestamp(cached.updatedAt, SPACEWX_CACHE_TTL_MS);
+        renderSpaceWeather(cached.reading, cached.updatedAt, !fresh);
+        if (fresh) return;
       }
 
       try {
         // Kp is required - without it the panel has no headline. The two wind
         // summaries are supporting detail, so they degrade to "--" on their own.
         const [kpSeries, windSummary, magSummary] = await Promise.all([
-          fetch('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json').then((res) => {
+          fetchWithTimeout('https://services.swpc.noaa.gov/products/noaa-planetary-k-index.json').then((res) => {
             if (!res.ok) throw new Error(`SWPC Kp feed failed with ${res.status}`);
             return res.json();
           }),
-          fetch('https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json')
+          fetchWithTimeout('https://services.swpc.noaa.gov/products/summary/solar-wind-speed.json')
             .then((res) => (res.ok ? res.json() : null)).catch(() => null),
-          fetch('https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json')
+          fetchWithTimeout('https://services.swpc.noaa.gov/products/summary/solar-wind-mag-field.json')
             .then((res) => (res.ok ? res.json() : null)).catch(() => null)
         ]);
 
@@ -1646,11 +1808,13 @@
           bz: Number(magSummary && magSummary[0] && magSummary[0].bz_gsm)
         };
 
-        renderSpaceWeather(reading);
-        writeStorageJson(SPACEWX_CACHE_KEY, { reading, updatedAt: Date.now() });
+        const updatedAt = Date.now();
+        renderSpaceWeather(reading, updatedAt, false);
+        writeStorageJson(SPACEWX_CACHE_KEY, { reading, updatedAt });
       } catch (e) {
-        // a stale reading already on screen beats replacing it with an error
-        if (!(cached && cached.reading)) renderSpaceWeather(null);
+        // a stale reading already on screen beats replacing it with an error - and
+        // it keeps the flagged stamp the cache branch above already put on it
+        if (!(cached && cached.reading)) renderSpaceWeather(null, null, false);
       }
     }
 
@@ -1662,7 +1826,10 @@
     // runs to hundreds of events a day and stops being a watch.
     const QUAKE_CACHE_KEY = 'homeSeismicWatch:v3';
     const QUAKE_CACHE_TTL_MS = 15 * 60 * 1000;
-    const QUAKE_MAX_ROWS = 5;
+    // Also the environmental column's ballast: moving the scope off the legend
+    // plate shortened this column, and these rows are what bring its bottom back
+    // level with the links and news columns beside it.
+    const QUAKE_MAX_ROWS = 7;
 
     function formatTimeAgo(timestamp) {
       // an unparseable date yields no age rather than "NaNm ago"; callers drop the blank
@@ -1713,7 +1880,8 @@
       return true;
     }
 
-    function renderQuakes(events) {
+    function renderQuakes(events, updatedAt, isStale) {
+      stampPanel('quake-asof', Number(updatedAt) || 0, isStale);
       const container = document.getElementById('quake-container');
       if (!container) return;
 
@@ -1778,12 +1946,13 @@
       const cached = readStorageJson(QUAKE_CACHE_KEY);
       if (cached && Array.isArray(cached.events)) {
         // timestamps are absolute, so a stale list ages honestly on screen
-        renderQuakes(cached.events);
-        if (isFreshTimestamp(cached.updatedAt, QUAKE_CACHE_TTL_MS)) return;
+        const fresh = isFreshTimestamp(cached.updatedAt, QUAKE_CACHE_TTL_MS);
+        renderQuakes(cached.events, cached.updatedAt, !fresh);
+        if (fresh) return;
       }
 
       try {
-        const res = await fetch('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson');
+        const res = await fetchWithTimeout('https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson');
         if (!res.ok) throw new Error(`USGS feed failed with ${res.status}`);
 
         const data = await res.json();
@@ -1809,10 +1978,11 @@
           .sort((a, b) => b.time - a.time)
           .slice(0, QUAKE_MAX_ROWS);
 
-        renderQuakes(events);
-        writeStorageJson(QUAKE_CACHE_KEY, { events, updatedAt: Date.now() });
+        const updatedAt = Date.now();
+        renderQuakes(events, updatedAt, false);
+        writeStorageJson(QUAKE_CACHE_KEY, { events, updatedAt });
       } catch (e) {
-        if (!(cached && Array.isArray(cached.events))) renderQuakes(null);
+        if (!(cached && Array.isArray(cached.events))) renderQuakes(null, null, false);
       }
     }
 
@@ -1839,7 +2009,8 @@
       }
     }
 
-    function renderTechPulse(stories) {
+    function renderTechPulse(stories, updatedAt, isStale) {
+      stampPanel('hn-asof', Number(updatedAt) || 0, isStale);
       const container = document.getElementById('hn-container');
       if (!container) return;
 
@@ -1885,14 +2056,29 @@
         title.className = 'hn-title';
         title.textContent = story.title;
 
-        // domain first: on HN it is most of what tells you what you are about to open
+        // Domain first: on HN it is most of what tells you what you are about to
+        // open. It is also the only unbounded part, so it is the part that gets to
+        // truncate - the line is one row by design, and letting it ellipsise as a
+        // single string meant a long domain swallowed the count and the age with it.
         const meta = document.createElement('span');
         meta.className = 'hn-meta';
-        meta.textContent = [
-          story.domain,
+
+        const metaDomain = document.createElement('span');
+        metaDomain.className = 'hn-meta-domain';
+        metaDomain.textContent = story.domain || '';
+
+        const metaRest = document.createElement('span');
+        metaRest.className = 'hn-meta-rest';
+        metaRest.textContent = [
           `${story.comments} comments`,
           formatTimeAgo(story.createdAt)
         ].filter(Boolean).join(' · ');
+
+        if (story.domain) {
+          meta.appendChild(metaDomain);
+          meta.appendChild(document.createTextNode(' · '));
+        }
+        meta.appendChild(metaRest);
 
         body.appendChild(title);
         body.appendChild(meta);
@@ -1908,12 +2094,13 @@
     async function fetchTechPulse() {
       const cached = readStorageJson(HN_CACHE_KEY);
       if (cached && Array.isArray(cached.stories)) {
-        renderTechPulse(cached.stories);
-        if (isFreshTimestamp(cached.updatedAt, HN_CACHE_TTL_MS)) return;
+        const fresh = isFreshTimestamp(cached.updatedAt, HN_CACHE_TTL_MS);
+        renderTechPulse(cached.stories, cached.updatedAt, !fresh);
+        if (fresh) return;
       }
 
       try {
-        const res = await fetch(`https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=${HN_MAX_ROWS}`);
+        const res = await fetchWithTimeout(`https://hn.algolia.com/api/v1/search?tags=front_page&hitsPerPage=${HN_MAX_ROWS}`);
         if (!res.ok) throw new Error(`Hacker News feed failed with ${res.status}`);
 
         const data = await res.json();
@@ -1936,10 +2123,11 @@
           .filter((story) => story.title && story.id)
           .sort((a, b) => b.points - a.points);
 
-        renderTechPulse(stories);
-        writeStorageJson(HN_CACHE_KEY, { stories, updatedAt: Date.now() });
+        const updatedAt = Date.now();
+        renderTechPulse(stories, updatedAt, false);
+        writeStorageJson(HN_CACHE_KEY, { stories, updatedAt });
       } catch (e) {
-        if (!(cached && Array.isArray(cached.stories))) renderTechPulse(null);
+        if (!(cached && Array.isArray(cached.stories))) renderTechPulse(null, null, false);
       }
     }
 

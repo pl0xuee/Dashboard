@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Media Server - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260721regroup1" />
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260721ui1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
 </head>
 <body class="home-page media-page">
@@ -28,25 +28,84 @@
         <a href="../repos/" class="home-button">Repos</a>
       </div>
     </header>
-    <main class="main welcome">
-      <div class="welcome-inner">
-        <p class="media-eyebrow">Home Network</p>
-        <h1 class="media-title">Jellyfin Media Portal</h1>
-        <p class="media-subtitle">Your library, ready when you are. Connect from your home network without leaving the command center.</p>
+    <!-- One machine, one reading. The home page gives each of its eight panels a
+         7px lamp because eight lamps have to form a column; this page reports a
+         single thing, so the lamp is the instrument rather than a marker on it. -->
+    <main class="main media-main">
+      <div class="media-console">
+        <section class="card media-panel">
+          <h2 class="home-box-title">
+            <span class="plate-label">Media Server</span>
+            <span id="media-asof" class="panel-asof"></span>
+          </h2>
 
-          <a href="http://192.168.1.212:8096" target="_blank" rel="noopener noreferrer" class="home-button media-launch-btn">
-           Open Jellyfin <span aria-hidden="true">↗</span>
-        </a>
+          <div class="media-readout">
+            <span class="media-lamp-housing">
+              <span id="media-lamp" class="media-lamp" data-state="checking"></span>
+            </span>
+            <div class="media-identity">
+              <p class="media-service">Jellyfin</p>
+              <p id="server-status" class="media-status-value">Checking...</p>
+              <p id="server-status-note" class="media-status-note">Asking the server whether it is up.</p>
+            </div>
+            <div class="media-actions">
+              <a href="http://192.168.1.212:8096" target="_blank" rel="noopener noreferrer" class="home-button media-launch-btn">
+                Open Jellyfin <span aria-hidden="true">↗</span>
+              </a>
+              <button id="media-recheck" type="button" class="home-button media-recheck-btn">Check again</button>
+            </div>
+          </div>
 
-        <div class="media-status-wrap">
-            <h3 class="media-status-title">Status</h3>
-            <p id="server-status" class="media-status-value">Checking...</p>
+          <!-- The server's address is deliberately not printed here. This page is
+               served publicly, and the host and port describe the inside of a home
+               network; the launch control carries the address it needs without
+               putting the LAN's layout on screen. -->
+          <dl class="media-facts">
+            <div class="media-fact">
+              <dt>Reach</dt>
+              <dd>Home network only</dd>
+            </div>
+            <div class="media-fact">
+              <dt>Away</dt>
+              <dd>VPN required</dd>
+            </div>
+            <div class="media-fact">
+              <dt>Exposure</dt>
+              <dd>Not on the internet</dd>
+            </div>
+          </dl>
+        </section>
+
+        <div class="media-grid">
+          <!-- Numbered because this genuinely is an order: each step rules out a
+               cause the next one assumes, and the last proves the lamp itself. -->
+          <section class="card media-panel">
+            <h2 class="home-box-title">
+              <span class="plate-label">Diagnostics</span>
+            </h2>
+            <ol class="media-steps">
+              <li><span class="media-step-n">1</span><span>Check the server machine is powered on and awake.</span></li>
+              <li><span class="media-step-n">2</span><span>Confirm this device is on the home network, not cellular.</span></li>
+              <li><span class="media-step-n">3</span><span>Away from the house, connect the VPN and check again.</span></li>
+              <li><span class="media-step-n">4</span><span>Still dark? Press to test in the footer lights every lamp, which tells you the lamp works and the server is genuinely down.</span></li>
+            </ol>
+          </section>
+
+          <section class="card media-panel">
+            <h2 class="home-box-title">
+              <span class="plate-label">Access</span>
+            </h2>
+            <p class="media-note">Jellyfin answers on the home network only and is never published to the internet. The launch button already carries the address, so connecting the VPN is the whole difference between away and home.</p>
+            <p class="media-note">Playing on a TV, phone or tablet is the same library through a native app rather than the browser.</p>
+            <a href="https://jellyfin.org/downloads/" target="_blank" rel="noopener noreferrer" class="home-button media-secondary-link">
+              Jellyfin apps <span aria-hidden="true">↗</span>
+            </a>
+          </section>
         </div>
-
       </div>
     </main>
     <!-- Bottom bezel. Carries the test control because this page has a lamp: the
-         status dot reports the Jellyfin server, and press-to-test proves it is
+         lens above reports the Jellyfin server, and press-to-test proves it is
          dark because the server is unreachable, not because the lamp is dead. -->
     <footer class="site-footer">
       <a href="../" class="footer-plate" aria-label="Command Center home">
@@ -67,7 +126,7 @@
     </footer>
   </div>
   <script src="../assets/js/script.js"></script>
-  <script src="./assets/media-inline.js?v=20260711media2"></script>
+  <script src="./assets/media-inline.js?v=20260721panel1"></script>
 </body>
 </html>
 
