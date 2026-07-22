@@ -7,16 +7,14 @@
 //   moment the import finishes — nothing here holds a live Google session.
 //
 //   What those channels have uploaded is public, so it needs no session at all.
-//   Every visit reads it with an API key the reader supplies once and which is
-//   kept in their own localStorage. It used to be committed to the repo, which
-//   worked and was defensible - the key unlocks nothing private - but a key in a
-//   public history cannot be un-published, only revoked. Keeping it on the
-//   machine that uses it costs one paste per browser and settles the question.
+//   Every visit reads it with an API key restricted by HTTP referrer. The key
+//   ships in config.js so the page works on arrival; a key saved in this browser
+//   overrides it, which is how a different one gets used without a commit.
 //
 // The alternative was asking for a Google sign-in on every visit, because the
 // implicit flow this site uses issues no refresh token and Google's access
 // tokens last about an hour.
-import { YOUTUBE_CLIENT_ID, YOUTUBE_SUBS_REDIRECT_URI } from '../../assets/js/config.js';
+import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '../../assets/js/config.js';
 
 (() => {
   const SUBS_KEY = 'ccSubsChannels:v1';
@@ -86,19 +84,31 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_SUBS_REDIRECT_URI } from '../../assets/js/co
 
   /* ---------------- api key ---------------- */
 
+  // A key saved in this browser wins over the one shipped in config.js, so a
+  // different key can be swapped in without editing or redeploying anything.
   function getApiKey() {
     try {
-      return localStorage.getItem(API_KEY_KEY) || '';
+      return localStorage.getItem(API_KEY_KEY) || YOUTUBE_API_KEY || '';
     } catch (_) {
-      return '';
+      return YOUTUBE_API_KEY || '';
     }
   }
+
+  const hasOwnKey = () => {
+    try {
+      return Boolean(localStorage.getItem(API_KEY_KEY));
+    } catch (_) {
+      return false;
+    }
+  };
 
   function showKeyForm(open) {
     keyFormEl.hidden = !open;
     if (open) {
       keyInputEl.value = '';
-      keyInputEl.placeholder = getApiKey() ? 'A key is saved — type a new one to replace it' : 'AIzaSy…';
+      keyInputEl.placeholder = hasOwnKey()
+        ? 'A key is saved in this browser — type a new one to replace it'
+        : 'AIzaSy… (overrides the key built into the site)';
       keyInputEl.focus();
     }
   }
@@ -442,7 +452,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_SUBS_REDIRECT_URI } from '../../assets/js/co
     if (!getApiKey()) {
       showState(
         'API key needed',
-        'Uploads are public, but Google still wants a key naming who is asking. It is kept in this browser only and never leaves it except to call Google. Use the API key control above to enter one.',
+        'Uploads are public, but Google still wants a key naming who is asking, and this build ships without one. Enter a key through the control above — it is kept in this browser only and goes nowhere but Google.',
         [
           { label: 'Enter a key', onClick: () => showKeyForm(true) },
           { label: 'Google Cloud credentials ↗', href: 'https://console.cloud.google.com/apis/credentials' }
@@ -742,6 +752,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_SUBS_REDIRECT_URI } from '../../assets/js/co
     else showDisconnected();
   });
 
+  // Clears this browser's override; the key shipped in config.js takes over again.
   keyClearBtn.addEventListener('click', () => {
     try { localStorage.removeItem(API_KEY_KEY); } catch (_) { /* nothing stored */ }
     keyInputEl.value = '';
@@ -750,7 +761,9 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_SUBS_REDIRECT_URI } from '../../assets/js/co
     fetchedAt = null;
     gridEl.replaceChildren();
     renderChrome();
-    if (channels.length) loadVideos();
+    // Forced, not cached: the cache was filled by the key being cleared, and the
+    // point of clearing is usually that that key was the wrong one.
+    if (channels.length) loadVideos({ force: true });
     else showDisconnected();
   });
 
