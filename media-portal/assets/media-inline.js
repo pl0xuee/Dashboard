@@ -597,7 +597,12 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
     const card = gridEl.querySelector(`.subs-card[data-video-id="${CSS.escape(video.id)}"]`);
     if (card) card.classList.add('is-playing');
 
-    playerEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // The whole page rather than the player. scrollIntoView pins the player's top
+    // edge to the top of the viewport, which pushes the header off-screen — you
+    // lose the nav and the panel legend the moment you start watching. The player
+    // is already the first thing under the header, so going to the top of the
+    // document puts it on screen with the chassis still around it.
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function closePlayer() {

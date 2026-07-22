@@ -123,16 +123,68 @@
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
-.subs-card-shot img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.subs-card-shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Resting a stop down, so hovering reads as the screen coming up to full
+     brightness rather than as a highlight being painted on top of it. */
+  filter: brightness(0.92) saturate(0.96);
+  transition: filter 0.2s var(--ease);
+}
 .subs-card:hover .subs-card-shot { border-color: var(--accent-border); }
+.subs-card:hover .subs-card-shot img { filter: brightness(1.04) saturate(1.04); }
 .subs-card:focus-visible { outline: none; }
 .subs-card:focus-visible .subs-card-shot {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
+.subs-card:focus-visible .subs-card-shot img { filter: brightness(1.04) saturate(1.04); }
+
+/* The filament the header bezel already uses to mean "this panel is powered"
+   (header::after), at card scale. Hovering a tile lights it; the tile that is
+   actually playing keeps it lit. No lift and no scale — the games page settled
+   that argument for this site, and a thumbnail that grows on hover would shove
+   its neighbours' baselines around anyway. */
+.subs-card-shot::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transform: scaleX(0.3);
+  transition: opacity 0.18s var(--ease), transform 0.26s var(--ease);
+  pointer-events: none;
+}
+.subs-card:hover .subs-card-shot::after,
+.subs-card:focus-visible .subs-card-shot::after,
+.subs-card.is-playing .subs-card-shot::after { opacity: 1; transform: scaleX(1); }
+
 .subs-card.is-playing .subs-card-shot {
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent-border);
+}
+.subs-card.is-playing .subs-card-shot img { filter: brightness(1) saturate(1); }
+
+/* Which tile is playing is a status, and this console annunciates statuses with
+   a lamp. The dark ring is what keeps it readable on a bright thumbnail — the
+   same problem the game tile kickers had. */
+.subs-card.is-playing .subs-card-shot::before {
+  content: '';
+  position: absolute;
+  top: 7px;
+  left: 7px;
+  z-index: 2;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px rgba(8, 11, 16, 0.72), 0 0 9px var(--accent-glow), 0 0 2px var(--accent);
+  animation: lamp-strike 0.55s var(--ease) both, lamp-breathe 3.4s var(--ease) 0.55s infinite;
 }
 
 /* a stamped readout over the art, so it stays legible on any thumbnail */
@@ -275,11 +327,24 @@ body.subs-theater-mode .subs-player-frame {
 }
 body.subs-theater-mode .subs-player-bar { display: none; }
 
+/* The site-wide reduced-motion rule clamps durations with `*`, which does not
+   match pseudo-elements — which is why the panel lamps in styles.css are named
+   there one by one. The card lamp is a pseudo-element too, and its breathing is
+   an infinite loop, so it has to be named here or it never stops. */
+@media (prefers-reduced-motion: reduce) {
+  .subs-card.is-playing .subs-card-shot::before { animation: none !important; }
+  .subs-card-shot::after { transition: none !important; }
+  .subs-card-shot img { transition: none !important; }
+}
+
 @media (max-width: 560px) {
   /* 140 rather than 150: at a 390px viewport the grid is 308px wide, and two
      150px tracks plus the gap need 312 — so the single most common phone width
      was the one that dropped to a single column while 414px kept two. */
   .subs-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+  /* Two lines clear a title in a 250px card and truncate six of eight in a
+     148px one. The card is taller here anyway; the room is free. */
+  .subs-card-title { -webkit-line-clamp: 3; }
   .subs-player-actions { width: 100%; }
   .subs-player-actions > * { flex: 1 1 0; justify-content: center; }
 }
