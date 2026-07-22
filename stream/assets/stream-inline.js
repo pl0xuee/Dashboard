@@ -231,6 +231,7 @@
         const slot = slots[slotIndex];
         const stillCurrent = slot && slot.platform === 'twitch' && slot.id === channel && slot.twitchPlayer === twitchPlayer;
         if (!stillCurrent || retries >= 5) {
+          if (stillCurrent && isTwitchPlaybackActive(twitchPlayer)) markSlotStarted(slotIndex, true);
           window.clearInterval(retryTimer);
           return;
         }
@@ -241,6 +242,7 @@
         }
         retries += 1;
         if (isTwitchPlaybackActive(twitchPlayer)) {
+          markSlotStarted(slotIndex, true);
           window.clearInterval(retryTimer);
         } else {
           try {
@@ -251,12 +253,22 @@
       }, TWITCH_AUTOPLAY_RETRY_INTERVAL_MS);
     }
 
+    // The tile's overlay bar is held down until the player is actually running --
+    // Twitch treats anything drawn over the embed as "obscured" and refuses to
+    // autoplay, so the bar cannot be showing while playback is trying to start.
+    function markSlotStarted(slotIndex, started) {
+      const body = document.getElementById(`streamTileBody${slotIndex}`);
+      const tile = body && body.closest('.stream-tile');
+      if (tile) tile.classList.toggle('is-started', Boolean(started));
+    }
+
     function teardownSlot(slotIndex) {
       const slot = slots[slotIndex];
       if (slot) {
         if (slot.resumeTimer) window.clearTimeout(slot.resumeTimer);
         clearSlotUnmuteHandler(slot);
       }
+      markSlotStarted(slotIndex, false);
       const body = document.getElementById(`streamTileBody${slotIndex}`);
       if (body) body.innerHTML = '';
     }
