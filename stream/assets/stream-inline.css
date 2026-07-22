@@ -55,9 +55,14 @@
 
 .stream-tile.is-visible { display: flex; }
 
+/* Focus is shown with the border alone. The amber ring read as a gold frame
+   around the video, and the 24px blur under it broke the same rule the note on
+   .stream-tile above exists for: a wide shadow bleeds past the tile, Twitch counts
+   that as its video being occluded, and refuses to play. Slot 0 is always focused,
+   so this landed on exactly the tile you watch. Keep the shadow inside the gap. */
 .stream-tile.is-focused {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft), 0 10px 24px rgba(0, 0, 0, 0.35);
+  border-color: var(--border-strong);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
 }
 
 .stream-tile.is-empty.is-focused { box-shadow: none; }
@@ -104,16 +109,15 @@
   transition: opacity 0.15s;
   pointer-events: none;
 }
-.stream-tile:hover .stream-tile-header,
-.stream-tile.is-focused .stream-tile-header { opacity: 1; }
-
-/* Twitch refuses to autoplay an embed it considers obscured, reporting it as
-   "minimum requirements for autoplay were not met: style visibility". Slot 0 is
-   focused the moment it mounts, so this bar sat over the top of the player and
-   every autoplay attempt was rejected - the retry loop then failed the same check
-   five more times over. The bar therefore stays down on a Twitch tile until
-   playback is actually running; `is-started` is set once the player reports it. */
-.stream-tile[data-platform="twitch"]:not(.is-started) .stream-tile-header { opacity: 0; }
+/* Hover only - deliberately NOT `.is-focused`.
+   Twitch refuses to autoplay an embed it considers obscured ("minimum
+   requirements for autoplay were not met: style visibility") and keeps checking
+   afterwards, pausing if something covers the video. Slot 0 is focused from the
+   moment it mounts, so revealing the bar on `.is-focused` put a permanent 32px
+   strip over the top of the one tile you actually watch. On hover it is only up
+   while you are pointing at that tile, which is also when you want the label and
+   the close button. */
+.stream-tile:hover .stream-tile-header { opacity: 1; }
 .stream-tile-header > * { pointer-events: auto; }
 
 .stream-tile-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--text-faint); }
