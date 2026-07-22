@@ -11,7 +11,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="../assets/css/styles.css?v=20260722shell1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
-  <link rel="stylesheet" href="./assets/media.css?v=20260722subs1" />
+  <link rel="stylesheet" href="./assets/media.css?v=20260722key1" />
 </head>
 <body class="site-page media-page">
   <div class="page">
@@ -65,8 +65,27 @@
         <div class="subs-controls">
           <button id="subs-refresh" type="button" class="home-button subs-control-btn">↻ Refresh videos</button>
           <button id="subs-resync" type="button" class="home-button subs-control-btn">Resync subscriptions</button>
+          <button id="subs-key" type="button" class="home-button subs-control-btn">API key</button>
           <button id="subs-disconnect" type="button" class="home-button subs-control-btn subs-control-quiet">Disconnect</button>
         </div>
+
+        <!-- The key is typed in here rather than shipped in the source. It only
+             unlocks public data, but a key committed to a public repo is in that
+             history permanently, so it stays on the reader's machine instead. -->
+        <form id="subs-key-form" class="subs-key-form" hidden>
+          <label class="subs-key-label" for="subs-key-input">YouTube Data API key</label>
+          <div class="subs-key-row">
+            <input id="subs-key-input" class="subs-key-input" type="password" autocomplete="off"
+                   spellcheck="false" placeholder="AIzaSy…" aria-describedby="subs-key-help" />
+            <button type="submit" class="home-button subs-control-btn">Save key</button>
+            <button id="subs-key-clear" type="button" class="home-button subs-control-btn subs-control-quiet">Clear</button>
+          </div>
+          <p id="subs-key-help" class="subs-key-help">
+            Stored in this browser only, never sent anywhere but Google. Create one in the
+            Google Cloud console, restrict it to this site by HTTP referrer, and limit it to
+            the YouTube Data API v3.
+          </p>
+        </form>
 
         <!-- Every state below is authored, not assembled from strings at runtime:
              a panel that reports someone else's service has to be able to say
@@ -95,6 +114,6 @@
     </footer>
   </div>
   <script src="../assets/js/script.js"></script>
-  <script type="module" src="./assets/media-inline.js?v=20260722subs1"></script>
+  <script type="module" src="./assets/media-inline.js?v=20260722key1"></script>
 </body>
 </html>
