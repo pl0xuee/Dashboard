@@ -285,6 +285,56 @@
 .subs-player-actions { display: flex; gap: 8px; flex: 0 0 auto; }
 .subs-player-btn { height: 32px; padding: 0 12px; font-size: 11px; letter-spacing: 0.1em; }
 
+/* ---------- corner player ----------
+   Scrolling past the video parks it in the corner so the feed stays browsable.
+   Position only: the iframe is never touched, because moving one in the DOM
+   reloads it and the video would restart on every scroll past. */
+.subs-player-expand { display: none; }
+
+body.subs-pip .subs-player {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 40;
+  width: min(360px, calc(100vw - 28px));
+  max-width: none;
+  margin: 0;
+  border-color: var(--border-strong);
+  /* lifted clear of the chassis, unlike every panel seated in the flow */
+  box-shadow: var(--shadow-lg);
+  animation: pip-dock 0.22s var(--ease) both;
+}
+@keyframes pip-dock {
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
+  to { opacity: 1; transform: none; }
+}
+
+body.subs-pip .subs-player-bar { padding: 8px 10px; gap: 8px; }
+body.subs-pip .subs-player-meta { flex: 1 1 auto; }
+body.subs-pip .subs-player-title {
+  font-size: 0.78rem;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* At this size the bar holds one line of title and two controls. The channel,
+   theater mode and the YouTube link are all a scroll away. */
+body.subs-pip .subs-player-channel,
+body.subs-pip #subs-player-theater,
+body.subs-pip #subs-player-open { display: none; }
+body.subs-pip .subs-player-expand { display: inline-flex; }
+body.subs-pip .subs-player-btn { height: 28px; padding: 0 10px; font-size: 10px; }
+
+@media (max-width: 560px) {
+  body.subs-pip .subs-player { right: 10px; bottom: 10px; width: calc(100vw - 20px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.subs-pip .subs-player { animation: none !important; }
+}
+
 /* ---------- theater mode ----------
    A class on the body and nothing else, so the iframe is never touched. Rebuilding
    it to go fullscreen would restart the video from zero every time you toggled. */

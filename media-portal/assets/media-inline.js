@@ -52,6 +52,8 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
   const playerCloseEl = el('subs-player-close');
   const playerTheaterEl = el('subs-player-theater');
   const playerTheaterExitEl = el('subs-theater-exit');
+  const playerSlotEl = el('subs-player-slot');
+  const playerExpandEl = el('subs-player-expand');
 
   let channels = readJson(SUBS_KEY) || [];
   let videos = [];
@@ -592,6 +594,8 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
     playerChannelEl.textContent = video.channelTitle;
     playerOpenEl.href = `https://www.youtube.com/watch?v=${encodeURIComponent(video.id)}`;
     playerEl.hidden = false;
+    setPip(false);
+    pipObserver.observe(playerSlotEl);
 
     gridEl.querySelectorAll('.subs-card.is-playing').forEach((c) => c.classList.remove('is-playing'));
     const card = gridEl.querySelector(`.subs-card[data-video-id="${CSS.escape(video.id)}"]`);
@@ -607,8 +611,10 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
 
   function closePlayer() {
     setTheater(false);
+    setPip(false);
     // Emptying the frame is what stops playback; hiding the panel alone leaves
     // the audio running.
+    pipObserver.unobserve(playerSlotEl);
     playerFrameEl.replaceChildren();
     playerEl.hidden = true;
     gridEl.querySelectorAll('.subs-card.is-playing').forEach((c) => c.classList.remove('is-playing'));
@@ -617,11 +623,48 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
   // A class on the body and nothing else. Touching the iframe — moving it in the
   // DOM or re-setting its src — would restart the video from zero on every toggle.
   function setTheater(on) {
+    if (on) setPip(false);
     document.body.classList.toggle('subs-theater-mode', Boolean(on));
     playerTheaterEl.textContent = on ? 'Default View' : 'Theater Mode';
   }
 
   const inTheater = () => document.body.classList.contains('subs-theater-mode');
+
+  // Corner player. Same rule as theater mode: a class on the body and nothing
+  // else. Re-parenting the iframe to a floating container is the obvious way to
+  // build this and the one that cannot work — moving an iframe in the DOM
+  // reloads it, so the video would restart every time you scrolled past it.
+  //
+  // The slot keeps the vacated space. Freezing its height before the player goes
+  // fixed is what stops the grid jumping up under the pointer mid-scroll.
+  function setPip(on) {
+    const next = Boolean(on);
+    if (next === document.body.classList.contains('subs-pip')) return;
+
+    if (next) {
+      // getBoundingClientRect, not offsetHeight: the latter rounds to whole
+      // pixels and the panel's real height is fractional, so freezing the
+      // rounded value shifted everything below it by a pixel.
+      playerSlotEl.style.height = `${playerSlotEl.getBoundingClientRect().height}px`;
+      document.body.classList.add('subs-pip');
+    } else {
+      document.body.classList.remove('subs-pip');
+      playerSlotEl.style.height = '';
+    }
+  }
+
+  // Watches the slot rather than the player, because once the player is fixed it
+  // is always on screen and would immediately undo the condition that put it
+  // there. The slot stays in the flow and keeps telling the truth about where
+  // the video belongs.
+  const pipObserver = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      // Theater mode owns the whole viewport; a corner player inside it is a
+      // second copy of a control that is already full screen.
+      if (playerEl.hidden || inTheater()) return;
+      setPip(!entry.isIntersecting);
+    });
+  }, { threshold: 0 });
 
   /* ---------------- flows ---------------- */
 
@@ -692,6 +735,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
   playerCloseEl.addEventListener('click', closePlayer);
   playerTheaterEl.addEventListener('click', () => setTheater(!inTheater()));
   playerTheaterExitEl.addEventListener('click', () => setTheater(false));
+  playerExpandEl.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
   document.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape') return;
     if (inTheater()) setTheater(false);

@@ -15,7 +15,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="../assets/css/styles.css?v=20260722shell1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
-  <link rel="stylesheet" href="./assets/media.css?v=20260722flare2" />
+  <link rel="stylesheet" href="./assets/media.css?v=20260722pip1" />
 </head>
 <body class="site-page media-page">
   <div class="page">
@@ -36,26 +36,31 @@
     <main class="main subs-main">
       <h1 class="visually-hidden">Subscription Feed</h1>
 
-      <!-- The player is authored here rather than built on demand so it holds a
-           fixed slot in the document: mounting it above a grid that is already on
-           screen would otherwise shove every card down the page under the cursor. -->
-      <section id="subs-player" class="card subs-player" hidden>
-        <!-- The floating exit the dashboard and stream pages already use: it only
-             appears in theater mode, and only while the pointer is over the video. -->
-        <button id="subs-theater-exit" type="button" class="home-button subs-theater-exit">Default View</button>
-        <div class="subs-player-frame" id="subs-player-frame"></div>
-        <div class="subs-player-bar">
-          <div class="subs-player-meta">
-            <p id="subs-player-title" class="subs-player-title"></p>
-            <p id="subs-player-channel" class="subs-player-channel"></p>
+      <!-- The player is authored here rather than built on demand, so it holds a
+           fixed place in the document: mounting it above a grid already on screen
+           would shove every card down under the cursor. The slot keeps that place
+           when the player detaches to the corner — without it the grid would jump
+           up mid-scroll. Its height is frozen at the moment of the handover. -->
+      <div id="subs-player-slot" class="subs-player-slot">
+        <section id="subs-player" class="card subs-player" hidden>
+          <!-- The floating exit the dashboard and stream pages already use: it only
+               appears in theater mode, and only while the pointer is over the video. -->
+          <button id="subs-theater-exit" type="button" class="home-button subs-theater-exit">Default View</button>
+          <div class="subs-player-frame" id="subs-player-frame"></div>
+          <div class="subs-player-bar">
+            <div class="subs-player-meta">
+              <p id="subs-player-title" class="subs-player-title"></p>
+              <p id="subs-player-channel" class="subs-player-channel"></p>
+            </div>
+            <div class="subs-player-actions">
+              <button id="subs-player-expand" type="button" class="home-button subs-player-btn subs-player-expand">Back to video</button>
+              <button id="subs-player-theater" type="button" class="home-button subs-player-btn">Theater Mode</button>
+              <a id="subs-player-open" class="home-button subs-player-btn" href="#" target="_blank" rel="noopener noreferrer">Open on YouTube <span aria-hidden="true">↗</span></a>
+              <button id="subs-player-close" type="button" class="home-button subs-player-btn">Close</button>
+            </div>
           </div>
-          <div class="subs-player-actions">
-            <button id="subs-player-theater" type="button" class="home-button subs-player-btn">Theater Mode</button>
-            <a id="subs-player-open" class="home-button subs-player-btn" href="#" target="_blank" rel="noopener noreferrer">Open on YouTube <span aria-hidden="true">↗</span></a>
-            <button id="subs-player-close" type="button" class="home-button subs-player-btn">Close</button>
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       <section class="card subs-panel">
         <h2 class="home-box-title">
@@ -99,6 +104,6 @@
     </footer>
   </div>
   <script src="../assets/js/script.js"></script>
-  <script type="module" src="./assets/media-inline.js?v=20260722scroll1"></script>
+  <script type="module" src="./assets/media-inline.js?v=20260722pip2"></script>
 </body>
 </html>
