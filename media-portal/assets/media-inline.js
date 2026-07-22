@@ -7,9 +7,8 @@
 //   moment the import finishes — nothing here holds a live Google session.
 //
 //   What those channels have uploaded is public, so it needs no session at all.
-//   Every visit reads it with an API key restricted by HTTP referrer. The key
-//   ships in config.js so the page works on arrival; a key saved in this browser
-//   overrides it, which is how a different one gets used without a commit.
+//   Every visit reads it with an API key restricted by HTTP referrer, shipped in
+//   config.js so the page works on arrival with nothing to set up.
 //
 // The alternative was asking for a Google sign-in on every visit, because the
 // implicit flow this site uses issues no refresh token and Google's access
@@ -20,7 +19,6 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
   const SUBS_KEY = 'ccSubsChannels:v1';
   const VIDEOS_KEY = 'ccSubsVideos:v1';
   const OAUTH_STATE_KEY = 'ccSubsOAuthState';
-  const API_KEY_KEY = 'ccSubsApiKey:v1';
   const VIDEO_CACHE_TTL_MS = 30 * 60 * 1000;
   const REQUEST_TIMEOUT_MS = 12000;
   const MAX_CARDS = 60;
@@ -53,10 +51,6 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
   const playerCloseEl = el('subs-player-close');
   const playerTheaterEl = el('subs-player-theater');
   const playerTheaterExitEl = el('subs-theater-exit');
-  const keyBtn = el('subs-key');
-  const keyFormEl = el('subs-key-form');
-  const keyInputEl = el('subs-key-input');
-  const keyClearBtn = el('subs-key-clear');
 
   let channels = readJson(SUBS_KEY) || [];
   let videos = [];
@@ -79,37 +73,6 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
       localStorage.setItem(key, JSON.stringify(value));
     } catch (_) {
       /* quota or private mode — the feed still works, it just re-fetches */
-    }
-  }
-
-  /* ---------------- api key ---------------- */
-
-  // A key saved in this browser wins over the one shipped in config.js, so a
-  // different key can be swapped in without editing or redeploying anything.
-  function getApiKey() {
-    try {
-      return localStorage.getItem(API_KEY_KEY) || YOUTUBE_API_KEY || '';
-    } catch (_) {
-      return YOUTUBE_API_KEY || '';
-    }
-  }
-
-  const hasOwnKey = () => {
-    try {
-      return Boolean(localStorage.getItem(API_KEY_KEY));
-    } catch (_) {
-      return false;
-    }
-  };
-
-  function showKeyForm(open) {
-    keyFormEl.hidden = !open;
-    if (open) {
-      keyInputEl.value = '';
-      keyInputEl.placeholder = hasOwnKey()
-        ? 'A key is saved in this browser — type a new one to replace it'
-        : 'AIzaSy… (overrides the key built into the site)';
-      keyInputEl.focus();
     }
   }
 
@@ -396,7 +359,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
       part: 'snippet,contentDetails',
       playlistId,
       maxResults: String(PER_CHANNEL),
-      key: getApiKey()
+      key: YOUTUBE_API_KEY
     });
 
     return (data.items || []).map((item) => ({
@@ -421,7 +384,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
       const data = await apiGet('videos', {
         part: 'contentDetails,snippet,liveStreamingDetails',
         id: batch.join(','),
-        key: getApiKey()
+        key: YOUTUBE_API_KEY
       });
       (data.items || []).forEach((item) => {
         const video = byId.get(item.id);
@@ -449,14 +412,11 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
   async function loadVideos({ force = false } = {}) {
     if (!channels.length) return;
 
-    if (!getApiKey()) {
+    if (!YOUTUBE_API_KEY) {
       showState(
-        'API key needed',
-        'Uploads are public, but Google still wants a key naming who is asking, and this build ships without one. Enter a key through the control above — it is kept in this browser only and goes nowhere but Google.',
-        [
-          { label: 'Enter a key', onClick: () => showKeyForm(true) },
-          { label: 'Google Cloud credentials ↗', href: 'https://console.cloud.google.com/apis/credentials' }
-        ]
+        'No API key configured',
+        'Uploads are public, but Google still wants a key naming who is asking. Set YOUTUBE_API_KEY in assets/js/config.js, restricted by HTTP referrer to this site.',
+        [{ label: 'Google Cloud credentials ↗', href: 'https://console.cloud.google.com/apis/credentials' }]
       );
       return;
     }
@@ -682,12 +642,10 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
   function showDisconnected() {
     closePlayer();
     gridEl.replaceChildren();
-    const actions = [{ label: 'Connect YouTube', onClick: startImport }];
-    if (!getApiKey()) actions.push({ label: 'Enter API key', onClick: () => showKeyForm(true) });
     showState(
       'Not connected',
-      'Sign in with Google once to import the list of channels you subscribe to. The list is stored in this browser only, and the sign-in is discarded straight after — the videos themselves are public and need no account, just a key naming who is asking.',
-      actions
+      'Sign in with Google once to import the list of channels you subscribe to. The list is stored in this browser only, and the sign-in is discarded straight after — the videos themselves are public and need no account.',
+      [{ label: 'Connect YouTube', onClick: startImport }]
     );
   }
 
@@ -719,52 +677,6 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_API_KEY, YOUTUBE_SUBS_REDIRECT_URI } from '.
     if (event.key !== 'Escape') return;
     if (inTheater()) setTheater(false);
     else if (!playerEl.hidden) closePlayer();
-  });
-
-  keyBtn.addEventListener('click', () => showKeyForm(keyFormEl.hidden));
-
-  keyFormEl.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const value = keyInputEl.value.trim();
-    if (!value) return;
-
-    // Format-checked rather than trusted: a mistyped key comes back from Google
-    // as a generic 403, which reads as "the site is broken" instead of "that is
-    // not a key". Google's browser keys are AIza + 35 url-safe characters.
-    if (!/^AIza[0-9A-Za-z_-]{35}$/.test(value)) {
-      showState('That does not look like an API key',
-        'A YouTube Data API key starts with AIza and is 39 characters long. Nothing was saved.',
-        [{ label: 'Try again', onClick: () => showKeyForm(true) }]);
-      return;
-    }
-
-    try {
-      localStorage.setItem(API_KEY_KEY, value);
-    } catch (_) {
-      showState('Could not save the key', 'This browser is blocking local storage, so the key cannot be kept between visits.');
-      return;
-    }
-
-    keyInputEl.value = '';
-    showKeyForm(false);
-    clearState();
-    if (channels.length) loadVideos({ force: true });
-    else showDisconnected();
-  });
-
-  // Clears this browser's override; the key shipped in config.js takes over again.
-  keyClearBtn.addEventListener('click', () => {
-    try { localStorage.removeItem(API_KEY_KEY); } catch (_) { /* nothing stored */ }
-    keyInputEl.value = '';
-    showKeyForm(false);
-    videos = [];
-    fetchedAt = null;
-    gridEl.replaceChildren();
-    renderChrome();
-    // Forced, not cached: the cache was filled by the key being cleared, and the
-    // point of clearing is usually that that key was the wrong one.
-    if (channels.length) loadVideos({ force: true });
-    else showDisconnected();
   });
 
   refreshBtn.addEventListener('click', () => loadVideos({ force: true }));

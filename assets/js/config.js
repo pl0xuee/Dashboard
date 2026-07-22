@@ -17,9 +17,6 @@ export const YOUTUBE_REDIRECT_URI = 'https://pl0xuee.com/stream/';
 // repo. The alert is accepted rather than a false positive: the worst a taker
 // can do is spend the daily quota, at which point the feed stops loading until
 // this is regenerated. Nothing about the account is reachable with it.
-//
-// The media page also reads localStorage['ccSubsApiKey:v1'] first, so a
-// different key can be used in one browser without touching this file.
 export const YOUTUBE_API_KEY = 'AIzaSyB8fSLKN41rjFhbWR5LluY-7cpfTZaTCbw';
 
 // The subscription import returns here. Google rejects any redirect_uri not
