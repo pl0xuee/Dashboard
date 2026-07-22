@@ -3,20 +3,22 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://unpkg.com https://s3.tradingview.com https://widgets.tradingview-widget.com; style-src 'self' 'unsafe-inline'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src 'self' https://player.twitch.tv https://www.twitch.tv https://www.youtube.com https://tv.youtube.com https://clips.twitch.tv https://s3.tradingview.com https://s.tradingview.com https://www.tradingview.com https://widgets.tradingview-widget.com https://www.tradingview-widget.com https://tradingview-widget.com; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://s3.tradingview.com https://widgets.tradingview-widget.com; style-src 'self' 'unsafe-inline'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-src 'self' https://s3.tradingview.com https://s.tradingview.com https://www.tradingview.com https://widgets.tradingview-widget.com https://www.tradingview-widget.com https://tradingview-widget.com; media-src 'self'; worker-src 'self'; manifest-src 'self'; form-action 'self'" />
   <meta name="theme-color" content="#0d1116" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Dashboard - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260721ui1" />
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260722shell1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
-  <!-- Include the library for the charts -->
-  <script defer src="https://unpkg.com/lightweight-charts@5.0.9/dist/lightweight-charts.standalone.production.js" integrity="sha384-6/iv/tWhS2LqjhNmDWcisQfhsuS0IqxtaOo1ZnA8dzgpK1sYsn8Al1icSvt0qirp" crossorigin="anonymous"></script>
+  <!-- The charting library is shipped with the site. Loading it from unpkg meant
+       the one page that is nothing but charts went blank whenever a CDN we do not
+       control was unreachable, and the service worker could not precache it. -->
+  <script defer src="./assets/vendor/lightweight-charts.standalone.production.js?v=5.0.9"></script>
   <script defer src="../assets/js/script.js"></script>
-    <script defer src="./assets/dashboard-widgets.js?v=20260721timeout1"></script>
+  <script defer src="./assets/dashboard-widgets.js?v=20260722shell1"></script>
 </head>
-<body class="home-page">
+<body class="site-page dashboard-page">
   <div class="page">
     <header class="dashboard-header">
       <a href="../" class="brand" aria-label="Command Center home">
@@ -24,20 +26,24 @@
         <span class="brand-name">Command Center</span>
       </a>
       <div class="header-left">
-        <a href="../" class="home-button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path></svg></span><span class="nav-text">Home</span></a>
-        <a href="../dashboard/" class="home-button" aria-current="page"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"></rect><rect x="13" y="3" width="8" height="5" rx="1.5"></rect><rect x="13" y="10" width="8" height="11" rx="1.5"></rect><rect x="3" y="13" width="8" height="8" rx="1.5"></rect></svg></span><span class="nav-text">Dashboard</span></a>
-        <a href="../stream/" class="home-button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="m10 9 6 3-6 3z"></path></svg></span><span class="nav-text">Stream</span></a>
-        <a href="../media-portal/" class="home-button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"></rect><path d="M8 20h8"></path><path d="M12 17v3"></path></svg></span><span class="nav-text">Media</span></a>
-        <a href="../web-games/" class="home-button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 10h10a4 4 0 0 1 4 4v1a3 3 0 0 1-3 3h-2l-2-2h-4l-2 2H6a3 3 0 0 1-3-3v-1a4 4 0 0 1 4-4Z"></path><path d="M8 13h2"></path><path d="M9 12v2"></path><circle cx="16.5" cy="13.5" r="1"></circle><circle cx="18.5" cy="15.5" r="1"></circle></svg></span><span class="nav-text">Games</span></a>
-        <a href="../repos/" class="home-button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="7" cy="6" r="2"></circle><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="8" r="2"></circle><path d="M7 8v8"></path><path d="M17 10a4 4 0 0 1-4 4H9"></path></svg></span><span class="nav-text">Repos</span></a>
-      </div>
-      <!-- Stock Ticker Container -->
-      <div class="ticker-container">
-        <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js"></script>
-        <tv-ticker-tape symbols="AAPL,MSFT,NVDA,AMZN,GOOGL,META,BRK.B,TSLA,AVGO,LLY,JPM,V,JNJ,WMT,UNH,XOM,MA,PG,HD,CVX,BTCUSD,ETHUSD,BNBUSDT,SOLUSD,XRPUSDT,ADAUSDT,DOGEUSDT,AVAXUSDT,DOTUSDT,TRXUSDT,LINKUSDT,BCHUSDT,MATICUSDT,NEARUSDT,LTCUSDT,SHIBUSDT,DAIUSDT,ATOMUSDT,UNIUSDT,XLMUSDT" theme="dark" display-mode="compact" show-symbol-logo="false"></tv-ticker-tape>
+        <a href="../" class="home-button">Home</a>
+        <a href="../dashboard/" class="home-button" aria-current="page">Dashboard</a>
+        <a href="../stream/" class="home-button">Stream</a>
+        <a href="../media-portal/" class="home-button">Media</a>
+        <a href="../web-games/" class="home-button">Games</a>
+        <a href="../repos/" class="home-button">Repos</a>
       </div>
     </header>
+    <!-- The tape reads across the full width rather than sharing the header bezel.
+         Inside the header it forced this one page's header to 88px against 58px
+         everywhere else, and at tablet width it was crushed to a sliver clipped
+         mid-price. -->
+    <div class="ticker-strip">
+      <script type="module" src="https://widgets.tradingview-widget.com/w/en/tv-ticker-tape.js"></script>
+      <tv-ticker-tape symbols="AAPL,MSFT,NVDA,AMZN,GOOGL,META,BRK.B,TSLA,AVGO,LLY,JPM,V,JNJ,WMT,UNH,XOM,MA,PG,HD,CVX,BTCUSD,ETHUSD,BNBUSDT,SOLUSD,XRPUSDT,ADAUSDT,DOGEUSDT,AVAXUSDT,DOTUSDT,TRXUSDT,LINKUSDT,BCHUSDT,MATICUSDT,NEARUSDT,LTCUSDT,SHIBUSDT,DAIUSDT,ATOMUSDT,UNIUSDT,XLMUSDT" theme="dark" display-mode="compact" show-symbol-logo="false"></tv-ticker-tape>
+    </div>
     <main class="main">
+      <h1 class="visually-hidden">Dashboard</h1>
       <div class="tradingview-grid" id="tradingviewGrid">
         <button id="dashboardTheaterExitBtn" type="button" class="home-button dashboard-theater-exit">Default View</button>
         <div id="dashboardTheaterMenu" class="dashboard-theater-menu" hidden>
@@ -46,7 +52,7 @@
         </div>
         <div class="tv-panel">
           <div class="tv-panel-header">
-            <input id="tvTicker0" type="text" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
+            <input id="tvTicker0" type="text" class="tv-ticker-input" aria-label="Chart 1 ticker symbol or YouTube/Twitch URL" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
             <button type="button" data-panel="0" data-action="theater" class="dashboard-theater-toggle-btn">Theater Mode</button>
             <button type="button" id="tvTickerSelect0" class="ticker-select-trigger" data-panel="0" data-action="ticker-menu" aria-haspopup="listbox" aria-expanded="false">Select ticker</button>
             <button type="button" data-panel="0" data-action="add-ticker" class="ticker-add-btn">Add Ticker</button>
@@ -55,7 +61,7 @@
         </div>
         <div class="tv-panel">
           <div class="tv-panel-header">
-            <input id="tvTicker1" type="text" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
+            <input id="tvTicker1" type="text" class="tv-ticker-input" aria-label="Chart 2 ticker symbol or YouTube/Twitch URL" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
             <button type="button" data-panel="1" data-action="theater" class="dashboard-theater-toggle-btn">Theater Mode</button>
             <button type="button" id="tvTickerSelect1" class="ticker-select-trigger" data-panel="1" data-action="ticker-menu" aria-haspopup="listbox" aria-expanded="false">Select ticker</button>
             <button type="button" data-panel="1" data-action="add-ticker" class="ticker-add-btn">Add Ticker</button>
@@ -64,7 +70,7 @@
         </div>
         <div class="tv-panel">
           <div class="tv-panel-header">
-            <input id="tvTicker2" type="text" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
+            <input id="tvTicker2" type="text" class="tv-ticker-input" aria-label="Chart 3 ticker symbol or YouTube/Twitch URL" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
             <button type="button" data-panel="2" data-action="theater" class="dashboard-theater-toggle-btn">Theater Mode</button>
             <button type="button" id="tvTickerSelect2" class="ticker-select-trigger" data-panel="2" data-action="ticker-menu" aria-haspopup="listbox" aria-expanded="false">Select ticker</button>
             <button type="button" data-panel="2" data-action="add-ticker" class="ticker-add-btn">Add Ticker</button>
@@ -73,7 +79,7 @@
         </div>
         <div class="tv-panel">
           <div class="tv-panel-header">
-            <input id="tvTicker3" type="text" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
+            <input id="tvTicker3" type="text" class="tv-ticker-input" aria-label="Chart 4 ticker symbol or YouTube/Twitch URL" placeholder="Ticker symbol or YouTube/Twitch URL" value="" />
             <button type="button" data-panel="3" data-action="theater" class="dashboard-theater-toggle-btn">Theater Mode</button>
             <button type="button" id="tvTickerSelect3" class="ticker-select-trigger" data-panel="3" data-action="ticker-menu" aria-haspopup="listbox" aria-expanded="false">Select ticker</button>
             <button type="button" data-panel="3" data-action="add-ticker" class="ticker-add-btn">Add Ticker</button>
@@ -82,6 +88,19 @@
         </div>
       </div>
     </main>
+    <footer class="site-footer">
+      <a href="../" class="footer-plate" aria-label="Command Center home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 5 28 27H4Z" fill="#a9762a"/></svg></span>
+        <span class="footer-plate-text">
+          <span class="footer-plate-name">Command Center</span>
+          <span class="footer-plate-stamp">pl0xuee.com</span>
+        </span>
+      </a>
+      <nav class="footer-nav" aria-label="Site information">
+        <a href="../griddown/privacy/">GridDown privacy</a>
+        <a href="https://github.com/pl0xuee/Dashboard" target="_blank">Source</a>
+      </nav>
+    </footer>
   </div>
 </body>
 </html>

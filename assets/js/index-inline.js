@@ -152,10 +152,11 @@
       const requestId = ++newsRequestSeq;
       container.textContent = 'Loading...';
 
-      // Three transports with their own deadlines can legitimately outlast this, so
-      // the watchdog reports that the wait is unusual rather than ending it. It used
-      // to swap in canned copy here, which is why the panel could show invented
-      // headlines while the real feed was still on its way.
+      // A healthy fetch lands in well under a second, so this never fires. It
+      // reports that the wait has become unusual rather than ending it: a slow
+      // network is not a failed one. It used to swap in canned copy here, which is
+      // why the panel could show invented headlines while the real feed was still
+      // on its way.
       const loadingWatchdog = window.setTimeout(() => {
         if (requestId !== newsRequestSeq) return;
         if (String(container.textContent || '').trim() !== 'Loading...') return;
@@ -163,27 +164,7 @@
       }, NEWS_LOADING_TIMEOUT_MS);
 
       try {
-        let feedUrl = '';
-
-        // Set RSS feeds based on category. Google News aggregates across
-        // publishers rather than pinning each category to a single outlet.
-        // Item titles arrive as "Headline - Publisher", which renderNews
-        // already splits to show the originating source.
-        const GNEWS_REGION = 'hl=en-US&gl=US&ceid=US:en';
-        const gnewsTopic = (topic) =>
-          `https://news.google.com/rss/headlines/section/topic/${topic}?${GNEWS_REGION}`;
-
-        if (type === 'usa') {
-          feedUrl = gnewsTopic('NATION');
-        } else if (type === 'world') {
-          feedUrl = gnewsTopic('WORLD');
-        } else if (type === 'finance') {
-          feedUrl = gnewsTopic('BUSINESS');
-        } else {
-          feedUrl = `https://news.google.com/rss?${GNEWS_REGION}`;
-        }
-
-        let data = await fetchNewsWithCache(feedUrl, type);
+        const data = await fetchNewsWithCache(type);
         if (requestId !== newsRequestSeq) return;
 
         allNewsItems = Array.isArray(data?.items) ? data.items : [];
@@ -218,7 +199,7 @@
       renderNewsTimestamp();
     }
 
-    async function fetchNewsWithCache(feedUrl, cacheKey) {
+    async function fetchNewsWithCache(cacheKey) {
       // Check if cache exists and is still valid
       if (newsCache[cacheKey]) {
         const cached = newsCache[cacheKey];
@@ -238,10 +219,9 @@
         return persisted.data;
       }
 
-      // Cache miss or expired - fetch fresh data
-      // cacheKey is the tab name, which the direct-publisher transport needs to pick
-      // the right section feeds
-      const data = await fetchNewsWithRetry(feedUrl, cacheKey);
+      // Cache miss or expired - fetch fresh data. cacheKey is the tab name, which
+      // is what picks the section feeds.
+      const data = await fetchNewsDirect(cacheKey);
       
       // Store in cache
       newsCache[cacheKey] = {
@@ -254,9 +234,18 @@
       return data;
     }
 
-    // Publishers that serve RSS with an open CORS header, so the browser can read
-    // them with no proxy and no converter in the way. This is the transport of last
-    // resort, and the reason the panel no longer has to fall back to invented copy.
+    // Publishers that serve RSS with an open CORS header, so the browser reads them
+    // with no proxy and no converter in the way. This is now the only transport.
+    //
+    // It used to be the last of three, behind allorigins-proxied Google News and
+    // three rss2json attempts, which is why the panel sat on "Loading..." for 25-30
+    // seconds while the feeds that answer in 0.1s waited their turn. rss2json's host
+    // no longer resolves at all. allorigins is still up but unusable — measured over
+    // three consecutive calls it returned 500, then timed out at 19.5s, then took
+    // 5.8s — so every load it lost the race and left a CORS failure in the console
+    // for nothing. Google News aggregates more publishers than the two below, so if
+    // a dependable proxy turns up it is worth racing again; an undependable one is
+    // not worth the request.
     const DIRECT_NEWS_FEEDS = {
       usa: [
         { url: 'https://rss.nytimes.com/services/xml/rss/nyt/US.xml', source: 'The New York Times' },
@@ -283,9 +272,9 @@
           return node && node.textContent ? node.textContent.trim() : '';
         };
 
-        // Google names the publisher in <source> and repeats it as a " - Publisher"
-        // suffix on the headline; direct feeds carry neither and take the label we
-        // already know. Either way the suffix is removed exactly once.
+        // A feed that names the publisher in <source> often repeats it as a
+        // " - Publisher" suffix on the headline; these feeds carry neither and take
+        // the label we already know. Either way the suffix is removed exactly once.
         const source = text('source') || sourceLabel || '';
         let title = text('title');
         if (source && title.endsWith(` - ${source}`)) {
@@ -304,34 +293,10 @@
       }).filter((item) => item.title);
     }
 
-    // Read the feed's own XML rather than a JSON conversion of it.
-    //
-    // rss2json caps free callers at 10 items (`count` needs a paid key) and keeps
-    // failing to follow the redirect Google puts in front of its topic feeds,
-    // answering 422 or "not a valid RSS feed". Google sends no CORS header, so this
-    // still needs a proxy; allorigins is the one the sentiment fetch already uses.
-    async function fetchNewsAsXml(feedUrl) {
-      const controller = new AbortController();
-      const timeoutId = window.setTimeout(() => controller.abort(), NEWS_REQUEST_TIMEOUT_MS);
-
-      try {
-        const response = await fetch(
-          'https://api.allorigins.win/raw?url=' + encodeURIComponent(feedUrl),
-          { signal: controller.signal }
-        );
-        if (!response.ok) throw new Error(`Feed proxy answered ${response.status}`);
-
-        const items = parseRssItems(await response.text());
-        if (items.length === 0) throw new Error('Feed carried no items');
-        debugLog(`Parsed ${items.length} news items from XML`);
-        return { items };
-      } finally {
-        clearTimeout(timeoutId);
-      }
-    }
-
     // Every publisher is fetched concurrently and one going dark just thins the
-    // list, so this only fails when none of them answer.
+    // list, so this only fails when none of them answer. Throwing on that is what
+    // keeps the failure out of the cache - an empty result written there would be
+    // served for CACHE_DURATION even after the feeds recovered.
     async function fetchNewsDirect(newsType) {
       const feeds = DIRECT_NEWS_FEEDS[newsType] || DIRECT_NEWS_FEEDS.usa;
 
@@ -365,76 +330,12 @@
       return { items };
     }
 
-    async function fetchNewsWithRetry(feedUrl, newsType, maxRetries = 3) {
-      // Preferred: the whole Google News feed, aggregated across publishers and
-      // uncapped. Needs the proxy, which has been unreliable, so it is only the
-      // first of three transports rather than the only one.
-      try {
-        return await fetchNewsAsXml(feedUrl);
-      } catch (e) {
-        console.warn('Proxied feed read failed:', e.message);
-      }
-
-      for (let attempt = 0; attempt < maxRetries; attempt++) {
-        try {
-          // Use RSS2JSON API to convert RSS to JSON
-          const controller = new AbortController();
-          const timeoutId = window.setTimeout(() => controller.abort(), NEWS_REQUEST_TIMEOUT_MS);
-          const response = await fetch(
-            'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl),
-            { signal: controller.signal }
-          );
-          clearTimeout(timeoutId);
-          
-          if (!response.ok) {
-            console.warn(`HTTP ${response.status} on attempt ${attempt + 1}`);
-            if (attempt < maxRetries - 1) {
-              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-              continue;
-            }
-            throw new Error(`HTTP ${response.status}`);
-          }
-          
-          const data = await response.json();
-          
-          if (data.status === 'error') {
-            console.warn(`API error: ${data.message} on attempt ${attempt + 1}`);
-            if (attempt < maxRetries - 1) {
-              await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-              continue;
-            }
-            throw new Error(data.message || 'API returned error');
-          }
-          
-          if (data.items && Array.isArray(data.items) && data.items.length > 0) {
-            debugLog(`Successfully fetched ${data.items.length} news items`);
-            return data;
-          }
-          
-          throw new Error('No items in response');
-        } catch (e) {
-          console.warn(`rss2json attempt ${attempt + 1} failed:`, e.message);
-          if (attempt === maxRetries - 1) break;
-        }
-      }
-
-      // Last resort: publishers that need neither proxy nor converter. This still
-      // throws if they all fail, which is what keeps the failure out of the cache -
-      // an empty or placeholder result written here would be served for
-      // CACHE_DURATION even after the real feed recovered.
-      return fetchNewsDirect(newsType);
-    }
-
-    // The transports disagree about how a publication date is written, and one of
-    // them is ambiguous in a way that reads as a bug on screen.
-    //
-    // The XML feeds carry RFC-822 dates with an explicit zone ("Tue, 21 Jul 2026
-    // 23:36:00 GMT"), which Date.parse handles. rss2json instead normalises to
-    // "2026-07-21 23:36:00" - UTC, but with nothing on the string that says so, so
-    // the browser reads it as local time. West of Greenwich that pushes every
+    // RSS feeds carry RFC-822 dates with an explicit zone ("Tue, 21 Jul 2026
+    // 23:36:00 GMT"), which Date.parse handles. A feed that instead emits
+    // "2026-07-21 23:36:00" means UTC but says nothing on the string that says so,
+    // so the browser reads it as local time. West of Greenwich that pushes every
     // headline into the future: a story filed at 23:36 UTC showed as 11:36 PM on a
-    // panel stamped 7:03 PM. Zone-less stamps are therefore read as UTC, which is
-    // what rss2json actually means by them.
+    // panel stamped 7:03 PM. Zone-less stamps are therefore read as UTC.
     const ZONELESS_STAMP = /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/;
 
     function parseNewsDate(pubDate) {

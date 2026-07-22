@@ -162,47 +162,13 @@ function hardenNewTabTargets(root = document) {
   });
 }
 
-// ---------- press-to-test ----------
-// The footer's panel control, wired site-wide because the footer is part of the
-// chassis rather than of any one page. Force-lights every annunciator lamp for a
-// beat so a dark lamp can be trusted to mean "waiting on data" and not "broken".
-// The button is only authored onto pages that actually carry lamps; elsewhere
-// there is no #lamp-test and this does nothing.
-function enableLampTest() {
-  const testButton = document.getElementById('lamp-test');
-  if (!testButton) return;
-
-  const LAMP_TEST_HOLD_MS = 1600;
-  let holdTimer = null;
-
-  function endTest() {
-    holdTimer = null;
-    document.body.classList.remove('lamp-test');
-    testButton.setAttribute('aria-pressed', 'false');
-  }
-
-  testButton.addEventListener('click', () => {
-    if (holdTimer) clearTimeout(holdTimer);
-    // reset both signals before the reflow so the strike replays on a repeat
-    // press instead of the browser treating it as an unchanged animation
-    document.body.classList.remove('lamp-test');
-    testButton.setAttribute('aria-pressed', 'false');
-    void document.body.offsetWidth;
-    document.body.classList.add('lamp-test');
-    testButton.setAttribute('aria-pressed', 'true');
-    holdTimer = window.setTimeout(endTest, LAMP_TEST_HOLD_MS);
-  });
-}
-
 registerAppServiceWorker();
 enableStandaloneSameWindowLinks();
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', () => {
-    hardenNewTabTargets();
-    enableLampTest();
-  });
+  // Wrapped, not passed by reference: the listener is handed an Event, which
+  // would arrive as this function's `root` parameter and shadow `document`.
+  document.addEventListener('DOMContentLoaded', () => hardenNewTabTargets());
 } else {
   hardenNewTabTargets();
-  enableLampTest();
 }
 

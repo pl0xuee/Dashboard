@@ -3,13 +3,19 @@
    legends. Machined edges, etched labels, recessed data wells, tabular figures. The one
    signature element is the annunciator lamp: it lights only when a panel holds live data. */
 
+/* The three families below are shipped with the site rather than assumed to be
+   installed. Naming them in a font stack alone meant the whole typographic
+   system — condensed legends, tabular mono figures — silently collapsed to
+   system defaults on any machine without Fira, which is nearly all of them. */
+@import url('fonts.css?v=20260722shell1');
+
 :root {
   color-scheme: dark;
 
   /* type — condensed legends, plain body, mono for every number */
   --font-sans: 'Fira Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-legend: 'Fira Sans Condensed', 'Roboto Condensed', 'Archivo Narrow', 'Segoe UI Variable Display', system-ui, sans-serif;
-  --font-mono: 'Hack', 'JetBrains Mono', 'Noto Sans Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
+  --font-mono: 'JetBrains Mono', 'Hack', 'Noto Sans Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 
   /* surfaces — cold blue-steel chassis */
   --bg: #0d1116;
@@ -84,8 +90,8 @@ html::-webkit-scrollbar-thumb, body::-webkit-scrollbar-thumb {
 }
 html::-webkit-scrollbar-thumb:hover, body::-webkit-scrollbar-thumb:hover { background: var(--surface-hover); }
 
-html:has(body.home-page) { scrollbar-gutter: stable; }
-body.home-page { scrollbar-gutter: stable; }
+html:has(body.site-page) { scrollbar-gutter: stable; }
+body.site-page { scrollbar-gutter: stable; }
 
 body {
   font-family: var(--font-sans);
@@ -121,6 +127,19 @@ h2 {
 }
 
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* Every page needs one h1 naming it, but the chassis says what page you are on
+   with the lit nav button rather than a title bar — so the heading is carried
+   for the document outline and read only by assistive tech. */
+.visually-hidden {
+  position: absolute;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
 
 /* ---------- buttons + inputs ---------- */
 button, .home-button, .dropbtn {
@@ -204,11 +223,14 @@ input[type="text"]:focus, input[type="search"]:focus, select:focus {
   min-height: 0;
 }
 
-/* home / media / games: natural page scroll */
-body.home-page {
+/* Every page carries .site-page for the shared chassis, plus one class naming
+   itself. The base used to be .home-page, which the dashboard, media, games and
+   repos pages all had to claim they were; the dashboard was then singled out
+   with body:has(.dashboard-header) because it plainly was not the home page. */
+body.site-page {
   overflow-y: auto;
 }
-body.home-page .page {
+body.site-page .page {
   height: auto;
   /* tall enough to reach the bottom of the viewport so the footer seats there on
      short pages (the media portal) instead of floating mid-screen; .main takes
@@ -217,17 +239,17 @@ body.home-page .page {
 }
 
 /* dashboard: fixed viewport, preserved 82% width */
-body:has(.dashboard-header) {
+body.dashboard-page {
   height: 100vh;
   overflow: hidden;
 }
-body:has(.dashboard-header) .page {
+body.dashboard-page .page {
   width: 82%;
   max-width: 82%;
   height: 100vh;
   overflow: hidden;
 }
-body:has(.dashboard-header) .main {
+body.dashboard-page .main {
   flex: 1;
   overflow: hidden;
   min-height: 0;
@@ -305,12 +327,18 @@ header::after {
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
 }
 
+/* The nav seats against the brand on every page and takes the slack, so whatever
+   a page hangs on the right — status rail, ticker, stream controls — is pushed to
+   the far edge rather than deciding where the nav lands. It must not shrink or
+   wrap: it used to be the only flexible item in the row, so on the stream page it
+   absorbed every pixel the controls demanded and stacked one link per line. */
 .header-left {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  flex-wrap: wrap;
-  min-width: 0;
+  flex: 0 0 auto;
+  flex-wrap: nowrap;
+  margin-right: auto;
 }
 
 /* ---------- status rail ----------
@@ -321,7 +349,6 @@ body.home-page .status-rail {
   display: inline-flex;
   align-items: center;
   gap: 14px;
-  margin-left: auto;
   flex: 0 0 auto;
   padding: 5px 12px;
   background: var(--well);
@@ -362,9 +389,17 @@ body.home-page .rail-reading {
   gap: 7px;
 }
 body.home-page .rail-countdown { color: var(--text-muted); font-size: 0.76rem; }
-/* the chip is fixed at 26px in the index rows, where it only ever reads
-   Live/Last - here it has to hold "Closed", so let it size to its text */
-body.home-page .status-rail .market-index-state { width: auto; padding: 2px 6px; }
+/* Same chip class, but not the same reading: the index rows report whether a
+   quote is Live or Last, the rail reports whether the market is Open or Closed.
+   Two words on one instrument means the rail has to look unlike the rows, so it
+   is drawn as an outline rather than a filled lens - and it has to size to its
+   text, since the rows are pinned at 26px for "Live"/"Last". */
+body.home-page .status-rail .market-index-state {
+  width: auto;
+  padding: 2px 7px;
+  background: transparent;
+  letter-spacing: 0.1em;
+}
 
 .header-left .home-button {
   position: relative;
@@ -397,29 +432,41 @@ body.home-page .status-rail .market-index-state { width: auto; padding: 2px 6px;
   background: var(--accent);
   box-shadow: 0 0 7px var(--accent-glow);
 }
-.header-left .home-button .nav-icon { display: none; }
 
 .controls {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
   flex-wrap: wrap;
   justify-content: flex-end;
+  min-width: 0;
 }
+
+/* A header carrying page controls holds three unshrinkable blocks — brand, nav,
+   controls — that together need about 1500px. Rather than pick a breakpoint to
+   move the controls at, let the row wrap: the controls take the second line the
+   moment they stop fitting on the first, at whatever width that happens to be.
+   Without this the two blocks simply overlapped, and the stream nav printed
+   underneath the URL field. */
+header:has(.controls) { flex-wrap: wrap; row-gap: 8px; padding-top: 8px; padding-bottom: 8px; }
+header .controls { flex: 1 1 auto; }
 
 /* plain secondary header used by stream / media / games */
 .page-header { min-height: 58px; }
 
-/* dashboard header + ticker tape */
-.dashboard-header {
-  height: 88px;
-  flex-direction: row;
-}
-.dashboard-header .ticker-container {
-  flex: 1;
-  height: 88px;
-  margin-left: 16px;
+/* dashboard header — same 58px bezel as every other page. The ticker tape used
+   to live inside it, which forced the header to 88px here and nowhere else, and
+   at tablet width squeezed the widget into a 60px sliver clipped mid-number. It
+   is a full-width reading, so it gets its own strip under the header. */
+.ticker-strip {
+  flex: 0 0 auto;
+  /* The widget lays out at 104px: symbol row, price row, then TradingView's
+     attribution line. 80px is the first height that shows the symbol and the
+     price whole — below it the price row is sliced, which is how it looked
+     inside the old 88px header too. The attribution stays clipped, as it was
+     before; showing it costs another 30px of chart height. */
+  height: 80px;
+  margin-bottom: 14px;
   overflow: hidden;
   display: flex;
   align-items: center;
@@ -429,9 +476,8 @@ body.home-page .status-rail .market-index-state { width: auto; padding: 2px 6px;
   background: var(--well);
   box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
 }
-.dashboard-header .ticker-container tv-ticker-tape { border-radius: var(--r-sm); overflow: hidden; }
+.ticker-strip tv-ticker-tape { flex: 1; border-radius: var(--r-sm); overflow: hidden; }
 
-.ticker-container { flex: 1; min-width: 0; height: 70px; overflow: hidden; display: flex; align-items: center; }
 tv-ticker-tape { width: 100%; height: 100%; }
 
 /* ---------- panel (card) ---------- */
@@ -511,28 +557,6 @@ tv-ticker-tape { width: 100%; height: 100%; }
 @keyframes lamp-breathe {
   0%, 100% { box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent); }
   50% { box-shadow: 0 0 12px var(--accent-glow), 0 0 3px var(--accent); }
-}
-
-/* lamp test: every lamp on the panel strikes at once, held for a beat by the
-   footer control. Must stay below the unlit rules it overrides. Only real lamps
-   respond — a plate with no lamp never gets `content`, so no pseudo-element
-   exists to light. The media portal's status lamp is listed too; it is the same
-   signature element, just reporting a server instead of a panel. */
-body.lamp-test .card > .home-box-title:first-child::before {
-  background: var(--accent);
-  opacity: 1;
-  box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent);
-  animation: lamp-strike 0.55s var(--ease) both;
-}
-/* The media portal's lens is the same signature element at instrument scale, so
-   press-to-test has to strike it too - that control exists precisely to prove a
-   dark lamp is dark because the server is unreachable, not because it is dead.
-   Amber here regardless of state: this is the lamp under test, not a reading. */
-body.lamp-test .media-lamp {
-  background: var(--accent);
-  opacity: 1;
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.45), 0 0 18px var(--accent-glow), 0 0 4px var(--accent);
-  animation: lamp-strike 0.55s var(--ease) both;
 }
 
 /* ---------- boot sequence ----------
@@ -703,25 +727,28 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 .news-plate-label { flex: 1 1 auto; min-width: 0; }
 /* staleness readout doubles as the refresh control: the feed caches for an hour,
    so the timestamp is the thing you want to act on when it looks old */
+/* Reads as the same stamp every other panel carries — it is the same reading,
+   and boxing this one made the news panel look like it wore a control the others
+   were missing. It is still a button; the underline on hover is what says so. */
 .news-asof {
   flex: 0 0 auto;
   height: auto;
-  padding: 3px 8px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  border-radius: 0;
   background: transparent;
   color: var(--text-faint);
   font-family: var(--font-mono);
-  font-size: 0.66rem;
+  font-size: 0.62rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   font-variant-numeric: tabular-nums;
   cursor: pointer;
-  /* a secondary control on a legend plate: no bezel, no lift */
   box-shadow: none;
 }
 .news-asof:hover {
-  border-color: var(--accent-border);
+  border-bottom-color: var(--accent-border);
   color: var(--accent-strong);
   background: transparent;
   box-shadow: none;
@@ -1591,8 +1618,6 @@ body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
   align-items: center;
   gap: 10px;
   flex: 0 0 auto;
-  padding-right: 20px;
-  border-right: 1px solid var(--border);
   color: var(--text-muted);
 }
 .footer-plate:hover { color: var(--text); }
@@ -1614,13 +1639,15 @@ body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
   letter-spacing: 0.04em;
 }
 
-/* only the destinations the top nav does not carry */
+/* only the destinations the top nav does not carry; pushed to the far edge so
+   the bezel reads as a plate with a zone at each end */
 .footer-nav {
   display: inline-flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 4px 20px;
   min-width: 0;
+  margin-left: auto;
 }
 .footer-nav a {
   font-family: var(--font-legend);
@@ -1634,72 +1661,42 @@ body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
   transition: color 0.16s ease, border-color 0.16s ease;
 }
 .footer-nav a:hover { color: var(--accent-strong); border-bottom-color: var(--accent-border); }
-/* Pages with no lamps carry no test control — pressing one that lights nothing
-   would break the very contract the control exists to prove. With the right zone
-   empty, the links take it so the bezel still reads as a balanced plate. */
-.site-footer:not(:has(.footer-test)) .footer-nav { margin-left: auto; }
-/* the divider separates two adjacent zones; with the links pushed to the far
-   edge it would hang off the plate with nothing beside it, so it goes */
-.site-footer:not(:has(.footer-test)) .footer-plate { padding-right: 0; border-right: 0; }
-
-/* press-to-test: a recessed panel control, not a link */
-.footer-test {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-left: auto;
-  flex: 0 0 auto;
-  height: 30px;
-  padding: 0 13px;
-  border: 1px solid var(--border);
-  border-radius: var(--r-sm);
-  background: var(--well);
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
-  color: var(--text-muted);
-  font-family: var(--font-legend);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: color 0.16s ease, border-color 0.16s ease;
-}
-.footer-test:hover { color: var(--text); border-color: var(--border-strong); }
-.footer-test:active { box-shadow: inset 0 3px 7px rgba(0, 0, 0, 0.6); }
-/* the control carries a lamp of its own — it is the one panel that always has
-   something to report, because pressing it is the report */
-.footer-test-lamp {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 7px;
-  border-radius: 50%;
-  background: var(--accent-dim);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.55);
-  opacity: 0.5;
-}
-.footer-test[aria-pressed="true"] {
-  color: var(--accent-strong);
-  border-color: var(--accent-border);
-}
-.footer-test[aria-pressed="true"] .footer-test-lamp {
-  background: var(--accent);
-  opacity: 1;
-  box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent);
-  animation: lamp-strike 0.55s var(--ease) both;
-}
 
 /* ---------- responsive ---------- */
 @media (max-width: 1200px) {
   .home-columns { flex-direction: column; }
   .home-links-col, .home-news-col, .home-stats-col { max-width: none; }
   .home-news-col { flex: 1 1 auto; width: auto; }
+  /* Home only: the stream and dashboard pages keep their own preserved widths. */
   body.home-page .page { width: 100%; max-width: none; }
-  body.home-page { padding: 12px; }
+  body.site-page { padding: 12px; }
 }
 
 @media (max-width: 900px) {
   .tradingview-grid { grid-template-columns: 1fr; }
-  body:has(.dashboard-header) .page { width: 100%; max-width: 100%; }
+  body.dashboard-page .page { width: 100%; max-width: 100%; }
+
+  /* One column of four charts cannot share a locked 100vh: each panel was left
+     with less height than its own header, so the charts were clipped away to
+     nothing. Below this the page scrolls like every other page on the site and
+     each chart gets a height it can actually be read at. */
+  body.dashboard-page { height: auto; min-height: 100vh; overflow-y: auto; }
+  body.dashboard-page .page { height: auto; min-height: calc(100vh - 36px); overflow: visible; }
+  body.dashboard-page .main { overflow: visible; }
+  .tradingview-grid { height: auto; grid-auto-rows: auto; }
+  .tv-panel { height: auto; min-height: 380px; }
+  /* The tape is 40 symbols scrolling past in a strip; at phone width it is a
+     blur that costs a third of the viewport. The charts are the instrument. */
+  .ticker-strip { display: none; }
+
+  /* The four controls need ~470px on one line. Held on one line they did not
+     shrink evenly - the input collapsed to an empty 24px box and Add Ticker was
+     cut off the right edge - so below this they wrap into rows instead. */
+  .tv-panel-header { flex-wrap: wrap; }
+  .tv-panel-header input { flex: 1 1 100%; min-width: 140px; }
+  .tv-panel-header .ticker-select-trigger { flex: 1 1 auto; max-width: none; min-width: 140px; }
+  .tv-panel-header .dashboard-theater-toggle-btn,
+  .tv-panel-header .ticker-add-btn { flex: 1 1 auto; }
 }
 
 @media (max-width: 760px) {
@@ -1712,10 +1709,9 @@ body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
     gap: 8px;
   }
   .brand { justify-content: center; margin-right: 0; padding-right: 0; border-right: 0; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
-  .header-left { justify-content: center; width: 100%; }
+  .header-left { justify-content: center; width: 100%; flex-wrap: wrap; margin-right: 0; }
   .header-left .home-button { flex: 1 1 28%; padding: 0 8px; }
-  .controls { width: 100%; justify-content: center; }
-  .dashboard-header .ticker-container { height: 52px; margin-left: 0; width: 100%; }
+  header .controls { width: 100%; justify-content: center; }
   .quick-links-list { grid-template-columns: 1fr; }
   .weather-summary { grid-template-columns: 1fr; }
   /* one story per row once the column is phone-width */
@@ -1730,8 +1726,9 @@ body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
     border-bottom: 1px solid var(--border);
   }
   .footer-plate-text { align-items: center; }
-  .footer-nav { justify-content: center; }
-  .footer-test { margin-left: auto; margin-right: auto; }
+  /* the auto margin sends the links to the far end of the main axis, which is
+     down the page once the bezel stacks — drop it so they centre instead */
+  .footer-nav { justify-content: center; margin-left: 0; }
 }
 
 /* Brand + six nav buttons + the rail need roughly 900px on one line. Below that,
@@ -1759,7 +1756,6 @@ body.stream-theater-mode .stream-container:focus-within .stream-theater-exit {
   body.home-page .home-search-wrap,
   .home-main .card,
   .site-footer,
-  .footer-test-lamp,
   .card > .home-box-title:first-child::before { animation: none !important; }
   .sentiment-mark { transition: none !important; }
 }

@@ -1,0 +1,103 @@
+/* GridDown privacy policy — document typography on the Command Center chassis.
+   This page used to ship its own light-themed design with no header and no way
+   back, which made the one footer link on every page of the site land somewhere
+   that did not look like the site. It now borrows the shared tokens; only the
+   long-form reading rules that no other page needs live here. */
+
+.legal-main {
+  padding: 0 0 24px;
+}
+
+.legal-doc {
+  max-width: 74ch;
+  margin: 0 auto;
+  padding: 26px 30px 34px;
+}
+
+.legal-kicker {
+  display: block;
+  font-family: var(--font-legend);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.legal-title {
+  font-family: var(--font-legend);
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+  margin: 0 0 4px;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+}
+
+.legal-stamp {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-faint);
+  margin: 0 0 22px;
+}
+
+/* The summary is the one thing most readers will read, so it sits in a well and
+   is the only element on the page the amber picks out. */
+.legal-tldr {
+  margin: 0 0 26px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent);
+  border-radius: var(--r-md);
+  background: var(--well);
+  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+}
+.legal-tldr strong { color: var(--accent-strong); }
+
+.legal-doc h2 {
+  font-family: var(--font-legend);
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin: 30px 0 8px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.legal-doc p { margin: 0 0 12px; color: var(--text-muted); }
+.legal-doc ul { margin: 0 0 12px; padding-left: 20px; }
+.legal-doc li { margin-bottom: 7px; color: var(--text-muted); }
+.legal-doc b, .legal-doc strong { color: var(--text); font-weight: 600; }
+.legal-doc a { color: var(--accent-strong); border-bottom: 1px solid var(--accent-border); }
+.legal-doc a:hover { color: var(--accent); }
+
+.legal-doc code {
+  font-family: var(--font-mono);
+  font-size: 0.86em;
+  background: var(--well);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 1px 5px;
+}
+
+.legal-colophon {
+  margin: 34px 0 0;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  line-height: 1.7;
+  color: var(--text-faint);
+}
+
+@media (max-width: 760px) {
+  .legal-doc { padding: 20px 16px 26px; }
+  .legal-title { font-size: 1.35rem; }
+}

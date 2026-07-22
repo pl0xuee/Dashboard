@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' https://unpkg.com; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
   <meta name="theme-color" content="#0d1116" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Home - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="assets/css/styles.css?v=20260721ui1" />
+  <link rel="stylesheet" href="assets/css/styles.css?v=20260722shell1" />
   <link rel="icon" type="image/svg+xml" href="assets/icons/favicon.svg" />
 </head>
-<body class="home-page">
+<body class="site-page home-page">
   <div class="page">
     <header>
       <a href="./" class="brand" aria-label="Command Center home">
@@ -47,11 +47,12 @@
       </div>
     </header>
     <main class="main home-main">
+      <h1 class="visually-hidden">Command Center</h1>
       <div class="welcome home-welcome">
         <div class="welcome-inner home-welcome-inner">
           <div class="home-search-wrap">
             <form action="https://search.brave.com/search" method="get" target="_blank" class="home-search-form">
-              <input type="text" name="q" placeholder="🔎 Search Brave..." class="home-search-input">
+              <input type="text" name="q" aria-label="Search the web with Brave" placeholder="🔎 Search Brave..." class="home-search-input">
             </form>
           </div>
           <div class="home-container home-columns">
@@ -107,7 +108,7 @@
                    environmental readouts on the right. -->
               <section class="card info-card">
                 <h2 class="home-box-title">
-                  <span class="plate-label">🏁 Next NASCAR Race</span>
+                  <span class="plate-label">Next NASCAR Race</span>
                   <span id="nascar-asof" class="panel-asof"></span>
                 </h2>
                 <div class="nascar-tabs">
@@ -168,7 +169,7 @@
             <section class="home-news-col">
               <div class="card news-card">
                 <h2 class="home-box-title center">
-                  <span class="news-plate-label">📰 Live News Feed</span>
+                  <span class="news-plate-label">Live News Feed</span>
                   <button id="news-refresh" type="button" class="news-asof" title="Refresh headlines">
                     <span id="news-asof-text">As of --:--</span>
                   </button>
@@ -283,11 +284,10 @@
         </div>
       </div>
     </main>
-    <!-- Bottom bezel. Mirrors the header's three zones with the emphasis inverted:
-         a stamped nameplate on the left (etched metal, so it sits at --text-faint
-         and never competes with the backlit readings above), the destinations that
-         did not earn a slot in the top nav, and the panel control on the right —
-         under the header's status rail, because it is what tests those readings. -->
+    <!-- Bottom bezel. Mirrors the header with the emphasis inverted: a stamped
+         nameplate on the left (etched metal, so it sits at --text-faint and never
+         competes with the backlit readings above), and the destinations that did
+         not earn a slot in the top nav on the right. -->
     <footer class="site-footer">
       <a href="./" class="footer-plate" aria-label="Command Center home">
         <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 5 28 27H4Z" fill="#a9762a"/></svg></span>
@@ -300,17 +300,10 @@
         <a href="./griddown/privacy/">GridDown privacy</a>
         <a href="https://github.com/pl0xuee/Dashboard" target="_blank">Source</a>
       </nav>
-      <!-- Press-to-test: the control every annunciator panel carries. It force-lights
-           each lamp for a moment so a dark lamp can be trusted to mean "waiting on
-           data" rather than "broken" — the contract the rest of the site depends on. -->
-      <button id="lamp-test" type="button" class="footer-test" aria-pressed="false">
-        <span class="footer-test-lamp" aria-hidden="true"></span>
-        <span>Press to test</span>
-      </button>
     </footer>
   </div>
   <script src="assets/js/script.js"></script>
-  <script src="assets/js/index-inline.js?v=20260721ui1"></script>
+  <script src="assets/js/index-inline.js?v=20260722shell1"></script>
 </body>
 </html>
 

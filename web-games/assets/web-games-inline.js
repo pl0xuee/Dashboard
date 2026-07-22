@@ -1454,6 +1454,13 @@
           button.className = `minefield-cell${cell.revealed ? ' revealed' : ''}${cell.revealed && cell.mine ? ' mine' : ''}`;
           button.dataset.index = String(row * minefieldSize + col);
           button.textContent = cell.revealed ? (cell.mine ? 'X' : (cell.adjacent || '')) : (cell.flagged ? '!' : '');
+          // A revealed blank cell renders as an empty button, and a covered one
+          // always did, so the grid announced itself as 64-400 unnamed buttons.
+          // The label carries the coordinate and what the square is showing.
+          const square = `Row ${row + 1}, column ${col + 1}`;
+          button.setAttribute('aria-label', cell.revealed
+            ? (cell.mine ? `${square}: mine` : `${square}: ${cell.adjacent || 'no'} adjacent mines`)
+            : (cell.flagged ? `${square}: flagged` : `${square}: covered`));
           button.addEventListener('click', () => {
             if (activeGame !== 'minefield' || minefieldGameOver || cell.flagged || cell.revealed) return;
             if (cell.mine) {

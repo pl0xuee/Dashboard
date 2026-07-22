@@ -318,11 +318,19 @@
       actions.appendChild(live);
     }
 
-    const releases = el('a', 'repo-btn', 'Releases ↗');
-    releases.href = repo.html_url + '/releases';
-    releases.target = '_blank';
-    releases.rel = 'noopener noreferrer';
-    actions.appendChild(releases);
+    // Only where there is something to open. resolveVersion already falls back to
+    // a tag and then to a commit SHA when a repo has published no releases, and
+    // every card carried this button regardless — so on those repos it offered a
+    // trip to an empty GitHub releases page. The version badge beside the name is
+    // the honest control there, and it already points at the tag or the commit.
+    const hasReleases = repo.version && (repo.version.type === 'release' || repo.version.type === 'tag');
+    if (hasReleases) {
+      const releases = el('a', 'repo-btn', 'Releases ↗');
+      releases.href = repo.html_url + '/releases';
+      releases.target = '_blank';
+      releases.rel = 'noopener noreferrer';
+      actions.appendChild(releases);
+    }
 
     card.appendChild(actions);
     return card;

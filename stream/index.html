@@ -3,17 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' https://unpkg.com https://embed.twitch.tv https://player.twitch.tv https://static.twitchcdn.net; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https:; frame-src 'self' https://embed.twitch.tv https://player.twitch.tv https://www.twitch.tv https://www.youtube.com https://tv.youtube.com https://clips.twitch.tv; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://embed.twitch.tv https://player.twitch.tv https://static.twitchcdn.net; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https:; frame-src 'self' https://embed.twitch.tv https://player.twitch.tv https://www.twitch.tv https://www.youtube.com https://tv.youtube.com https://clips.twitch.tv; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self'" />
   <meta name="theme-color" content="#0d1116" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Stream - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260721ui1" />
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260722shell1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
-  <link rel="stylesheet" href="./assets/stream-inline.css?v=20260721autoplay6" />
+  <link rel="stylesheet" href="./assets/stream-inline.css?v=20260722shell1" />
 </head>
-<body class="stream-page">
+<body class="site-page stream-page">
   <div class="page">
     <header class="page-header">
       <a href="../" class="brand" aria-label="Command Center home">
@@ -21,17 +21,17 @@
         <span class="brand-name">Command Center</span>
       </a>
       <div class="header-left">
-        <a href="../" class="home-button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5"></path><path d="M5 9.5V20h14V9.5"></path></svg></span><span class="nav-text">Home</span></a>
-        <a href="../dashboard/" class="home-button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="8" height="8" rx="1.5"></rect><rect x="13" y="3" width="8" height="5" rx="1.5"></rect><rect x="13" y="10" width="8" height="11" rx="1.5"></rect><rect x="3" y="13" width="8" height="8" rx="1.5"></rect></svg></span><span class="nav-text">Dashboard</span></a>
-        <a href="../stream/" class="home-button" aria-current="page"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="m10 9 6 3-6 3z"></path></svg></span><span class="nav-text">Stream</span></a>
-        <a href="../media-portal/" class="home-button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="13" rx="2"></rect><path d="M8 20h8"></path><path d="M12 17v3"></path></svg></span><span class="nav-text">Media</span></a>
-        <a href="../web-games/" class="home-button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 10h10a4 4 0 0 1 4 4v1a3 3 0 0 1-3 3h-2l-2-2h-4l-2 2H6a3 3 0 0 1-3-3v-1a4 4 0 0 1 4-4Z"></path><path d="M8 13h2"></path><path d="M9 12v2"></path><circle cx="16.5" cy="13.5" r="1"></circle><circle cx="18.5" cy="15.5" r="1"></circle></svg></span><span class="nav-text">Games</span></a>
-        <a href="../repos/" class="home-button"><span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="7" cy="6" r="2"></circle><circle cx="7" cy="18" r="2"></circle><circle cx="17" cy="8" r="2"></circle><path d="M7 8v8"></path><path d="M17 10a4 4 0 0 1-4 4H9"></path></svg></span><span class="nav-text">Repos</span></a>
+        <a href="../" class="home-button">Home</a>
+        <a href="../dashboard/" class="home-button">Dashboard</a>
+        <a href="../stream/" class="home-button" aria-current="page">Stream</a>
+        <a href="../media-portal/" class="home-button">Media</a>
+        <a href="../web-games/" class="home-button">Games</a>
+        <a href="../repos/" class="home-button">Repos</a>
       </div>
 
       <!-- Controls moved back to the header on the right -->
       <div class="controls">
-        <input type="text" id="streamUrl" class="stream-url-input" placeholder="YouTube URL or Twitch Channel Name">
+        <input type="text" id="streamUrl" class="stream-url-input" aria-label="YouTube URL or Twitch channel name" placeholder="YouTube URL or Twitch Channel Name">
         <button id="loadStreamBtn" class="home-button">Load</button>
         <div class="stream-layout-group" role="group" aria-label="Number of streams">
           <span class="stream-layout-label">Streams</span>
@@ -59,6 +59,7 @@
       </div>
     </header>
     <main class="main">
+      <h1 class="visually-hidden">Stream</h1>
       <div class="stream-container">
         <button id="streamTheaterExitBtn" type="button" class="home-button stream-theater-exit">Default View</button>
         <div class="stream-grid" id="streamGrid" data-count="1">
@@ -102,11 +103,24 @@
         <div class="stream-chat" id="chat"></div>
       </div>
     </main>
+    <footer class="site-footer">
+      <a href="../" class="footer-plate" aria-label="Command Center home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 5 28 27H4Z" fill="#a9762a"/></svg></span>
+        <span class="footer-plate-text">
+          <span class="footer-plate-name">Command Center</span>
+          <span class="footer-plate-stamp">pl0xuee.com</span>
+        </span>
+      </a>
+      <nav class="footer-nav" aria-label="Site information">
+        <a href="../griddown/privacy/">GridDown privacy</a>
+        <a href="https://github.com/pl0xuee/Dashboard" target="_blank">Source</a>
+      </nav>
+    </footer>
   </div>
   <script src="../assets/js/script.js"></script>
-  <script type="module" src="./assets/config-inline.js?v=20260721cleanup1"></script>
+  <script type="module" src="./assets/config-inline.js?v=20260722shell1"></script>
 
-  <script src="./assets/stream-inline.js?v=20260721autoplay6"></script>
+  <script src="./assets/stream-inline.js?v=20260722shell1"></script>
 </body>
 </html>
 

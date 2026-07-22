@@ -43,20 +43,25 @@
     stampEl.textContent = `As of ${new Date(checkedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
   }
 
+  // A browser on HTTPS will not open a plain-http connection at all: the request is
+  // blocked as mixed content before it reaches the network, and the rejection is
+  // indistinguishable here from a server that is genuinely down. Reporting "Offline"
+  // for it meant the deployed site claimed the server was down at all times,
+  // including while it was serving.
+  //
+  // The deployed site is HTTPS, so this is the normal case rather than an edge one:
+  // the check cannot run at all, and every control built around it has to say so
+  // rather than sit there looking live. The launch button still works — navigating
+  // to http:// is not subject to the mixed-content rule.
+  const canCheck = !(window.location.protocol === 'https:' && jellyfinUrl.startsWith('http://'));
+
   async function checkServerStatus() {
     renderStatus('checking');
     stampCheck(NaN);
     if (recheckBtn) recheckBtn.disabled = true;
 
     try {
-      // A browser on HTTPS will not open a plain-http connection at all: the request
-      // is blocked as mixed content before it reaches the network, and the rejection
-      // is indistinguishable here from a server that is genuinely down. Reporting
-      // "Offline" for it meant the deployed site claimed the server was down at all
-      // times, including while it was serving. The check is impossible, so it says so
-      // rather than guessing - the launch button still works, since navigating to
-      // http:// is not subject to the mixed-content rule.
-      if (window.location.protocol === 'https:' && jellyfinUrl.startsWith('http://')) {
+      if (!canCheck) {
         renderStatus('unknown');
         return;
       }
@@ -82,11 +87,16 @@
 
       stampCheck(Date.now());
     } finally {
-      if (recheckBtn) recheckBtn.disabled = false;
+      if (recheckBtn) recheckBtn.disabled = !canCheck;
     }
   }
 
-  if (recheckBtn) recheckBtn.addEventListener('click', checkServerStatus);
+  if (recheckBtn) {
+    recheckBtn.addEventListener('click', checkServerStatus);
+    // Re-running a check that cannot run is not a check, so the control is
+    // removed rather than left enabled and inert.
+    if (!canCheck) recheckBtn.remove();
+  }
 
   checkServerStatus();
 })();

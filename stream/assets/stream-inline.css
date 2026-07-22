@@ -188,8 +188,13 @@
 
 iframe { width: 100%; height: 100%; border: none; display: block; }
 
-/* header controls: compact so the whole toolbar fits one row */
+/* header controls: compact so the whole toolbar fits one row where there is room
+   for one. Below ~1000px the toolbar alone is wider than the viewport, so the
+   nowrap has to lift or it drags the whole page into horizontal scroll. */
 .controls { gap: 6px; flex-wrap: nowrap; }
+@media (max-width: 1000px) {
+  .controls { flex-wrap: wrap; }
+}
 .controls .home-button,
 .controls button,
 .controls .dropbtn {
@@ -295,6 +300,16 @@ body.stream-theater-mode .stream-chat { border-radius: 0; border-top: 0; border-
   .stream-url-input { width: 100%; margin: 0; }
   .dropdown-content { min-width: 92vw; width: 92vw; }
   .stream-layout-group { order: 10; }
+}
+
+/* Below this the 460/400px autoplay floor is wider than the viewport itself, so
+   holding it can only push the whole page sideways — the grid was forcing a
+   480px document on a 390px phone. The floor is unreachable here whatever we do,
+   so drop it and let the tile fit: Twitch may need a tap to start rather than
+   autoplaying, which is a better trade than a page that scrolls horizontally. */
+@media (max-width: 520px) {
+  .stream-grid { min-width: 0; }
+  .stream-tile { min-width: 0; }
 }
 
 .stream-layout-group {

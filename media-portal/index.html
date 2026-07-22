@@ -3,16 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self' https://unpkg.com; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' https: http://192.168.1.212:8096; frame-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self' https://search.brave.com" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; script-src 'self'; style-src 'self'; style-src-attr 'unsafe-inline'; img-src 'self' data: blob: https:; font-src 'self' data:; connect-src 'self' https: http://192.168.1.212:8096; frame-src 'self'; media-src 'self' https:; worker-src 'self'; manifest-src 'self'; form-action 'self'" />
   <meta name="theme-color" content="#0d1116" />
   <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <title>Media Server - Command Center</title>
   <link rel="manifest" href="/manifest.webmanifest" />
-  <link rel="stylesheet" href="../assets/css/styles.css?v=20260721ui1" />
+  <link rel="stylesheet" href="../assets/css/styles.css?v=20260722shell1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
 </head>
-<body class="home-page media-page">
+<body class="site-page media-page">
   <div class="page">
     <header>
       <a href="../" class="brand" aria-label="Command Center home">
@@ -32,6 +32,7 @@
          7px lamp because eight lamps have to form a column; this page reports a
          single thing, so the lamp is the instrument rather than a marker on it. -->
     <main class="main media-main">
+      <h1 class="visually-hidden">Media Server</h1>
       <div class="media-console">
         <section class="card media-panel">
           <h2 class="home-box-title">
@@ -78,7 +79,7 @@
 
         <div class="media-grid">
           <!-- Numbered because this genuinely is an order: each step rules out a
-               cause the next one assumes, and the last proves the lamp itself. -->
+               cause the next one assumes. -->
           <section class="card media-panel">
             <h2 class="home-box-title">
               <span class="plate-label">Diagnostics</span>
@@ -86,8 +87,7 @@
             <ol class="media-steps">
               <li><span class="media-step-n">1</span><span>Check the server machine is powered on and awake.</span></li>
               <li><span class="media-step-n">2</span><span>Confirm this device is on the home network, not cellular.</span></li>
-              <li><span class="media-step-n">3</span><span>Away from the house, connect the VPN and check again.</span></li>
-              <li><span class="media-step-n">4</span><span>Still dark? Press to test in the footer lights every lamp, which tells you the lamp works and the server is genuinely down.</span></li>
+              <li><span class="media-step-n">3</span><span>Away from the house, connect the VPN and try the launch button.</span></li>
             </ol>
           </section>
 
@@ -104,9 +104,6 @@
         </div>
       </div>
     </main>
-    <!-- Bottom bezel. Carries the test control because this page has a lamp: the
-         lens above reports the Jellyfin server, and press-to-test proves it is
-         dark because the server is unreachable, not because the lamp is dead. -->
     <footer class="site-footer">
       <a href="../" class="footer-plate" aria-label="Command Center home">
         <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M16 5 28 27H4Z" fill="#a9762a"/></svg></span>
@@ -119,14 +116,10 @@
         <a href="../griddown/privacy/">GridDown privacy</a>
         <a href="https://github.com/pl0xuee/Dashboard" target="_blank">Source</a>
       </nav>
-      <button id="lamp-test" type="button" class="footer-test" aria-pressed="false">
-        <span class="footer-test-lamp" aria-hidden="true"></span>
-        <span>Press to test</span>
-      </button>
     </footer>
   </div>
   <script src="../assets/js/script.js"></script>
-  <script src="./assets/media-inline.js?v=20260721panel1"></script>
+  <script src="./assets/media-inline.js?v=20260722shell1"></script>
 </body>
 </html>
 
