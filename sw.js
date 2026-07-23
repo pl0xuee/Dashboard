@@ -1,4 +1,4 @@
-const CACHE_NAME = 'command-center-v104';
+const CACHE_NAME = 'command-center-v105';
 // These are cache keys, not file paths: the query string is part of the key, so an
 // entry whose ?v= does not match what the HTML actually requests is precached and
 // then never read. Offline, the request misses, the network leg fails, and
@@ -22,7 +22,7 @@ const APP_SHELL_FILES = [
   '/assets/icons/favicon.svg',
   '/dashboard/',
   '/dashboard/index.html',
-  '/dashboard/assets/dashboard-widgets.js?v=20260722shell1',
+  '/dashboard/assets/dashboard-widgets.js?v=20260723share1',
   '/dashboard/assets/vendor/lightweight-charts.standalone.production.js?v=5.0.9',
   '/stream/',
   '/stream/index.html',
@@ -31,7 +31,7 @@ const APP_SHELL_FILES = [
   '/stream/assets/stream-inline.js?v=20260722shell1',
   '/media-portal/',
   '/media-portal/index.html',
-  '/media-portal/assets/media-inline.js?v=20260722pip2',
+  '/media-portal/assets/media-inline.js?v=20260723share1',
   '/media-portal/assets/media.css?v=20260722pip1',
   '/repos/',
   '/repos/index.html',

@@ -1155,19 +1155,19 @@ if (!window.__dashboardWidgetsInitialized) {
         const youtubeSrc = getYouTubeEmbedUrl(media.id);
         if (youtubeSrc) {
           iframe.src = youtubeSrc;
-          iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
+          iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
           container.appendChild(iframe);
         }
       } else if (media.type === 'twitch') {
         const twitchSrc = getTwitchEmbedUrl(media);
         if (twitchSrc) {
           iframe.src = twitchSrc;
-          iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
+          iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
           container.appendChild(iframe);
         }
       } else if (media.type === 'youtube_tv') {
         iframe.src = `https://tv.youtube.com/watch/${media.id}`;
-        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen';
+        iframe.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen';
         container.appendChild(iframe);
       }
       return;

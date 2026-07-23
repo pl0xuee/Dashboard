@@ -587,7 +587,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
     // captions from the viewer's account preference; 0 does not.
     frame.src = `https://www.youtube.com/embed/${encodeURIComponent(video.id)}?autoplay=1&rel=0&modestbranding=1&playsinline=1&cc_load_policy=3`;
     frame.title = video.title;
-    frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+    frame.allow = 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture';
     frame.allowFullscreen = true;
     frame.referrerPolicy = 'strict-origin-when-cross-origin';
     playerFrameEl.appendChild(frame);
