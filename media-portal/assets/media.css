@@ -236,6 +236,35 @@
   color: var(--text-faint);
 }
 
+/* ---------- load more ---------- */
+
+/* The foot of the list rather than another control: it sits under a rule, away
+   from the three buttons at the top of the panel that all cost a request. This
+   one only draws cards that are already here. */
+.subs-more {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+/* The chassis gives every button and this row a display value of its own, and an
+   author declaration beats the browser's [hidden] rule whatever its specificity.
+   Anything hidden by attribute inside the panel has to say so again here. */
+.subs-more[hidden], .subs-panel button[hidden] { display: none; }
+.subs-more-btn { height: 34px; padding: 0 18px; font-size: 11px; letter-spacing: 0.1em; }
+.subs-more-count {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-faint);
+}
+
 /* ---------- player ---------- */
 
 /* Bounded by height rather than width. At full page width a 16:9 frame is about

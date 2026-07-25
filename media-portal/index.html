@@ -15,7 +15,7 @@
   <link rel="manifest" href="/manifest.webmanifest" />
   <link rel="stylesheet" href="../assets/css/styles.css?v=20260722shell1" />
   <link rel="icon" type="image/svg+xml" href="../assets/icons/favicon.svg" />
-  <link rel="stylesheet" href="./assets/media.css?v=20260722pip1" />
+  <link rel="stylesheet" href="./assets/media.css?v=20260724more1" />
 </head>
 <body class="site-page media-page">
   <div class="page">
@@ -87,6 +87,15 @@
         </div>
 
         <div id="subs-grid" class="subs-grid"></div>
+
+        <!-- Paging, not a second fetch: one refresh reads every subscription and
+             this only decides how much of that result is on screen. So the
+             button never waits on the network, and the count beside it can be
+             exact rather than a guess at what else might be out there. -->
+        <div id="subs-more" class="subs-more" hidden>
+          <button id="subs-more-btn" type="button" class="home-button subs-more-btn">Load more</button>
+          <p id="subs-more-count" class="subs-more-count"></p>
+        </div>
       </section>
     </main>
     <footer class="site-footer">
@@ -104,6 +113,6 @@
     </footer>
   </div>
   <script src="../assets/js/script.js"></script>
-  <script type="module" src="./assets/media-inline.js?v=20260723share1"></script>
+  <script type="module" src="./assets/media-inline.js?v=20260724more1"></script>
 </body>
 </html>

@@ -22,10 +22,17 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
   const OAUTH_STATE_KEY = 'ccSubsOAuthState';
   const VIDEO_CACHE_TTL_MS = 30 * 60 * 1000;
   const REQUEST_TIMEOUT_MS = 12000;
-  const MAX_CARDS = 60;
+  // How deep the feed goes. A longer feed is nearly free: reading a channel's
+  // uploads costs one quota unit however many rows come back, so the only extra
+  // cost is the details pass, which is one call per 50 videos.
+  const MAX_CARDS = 180;
   // Per channel. Enough that a channel posting a burst still lands in the merged
   // list in order, small enough that 100 subscriptions stay inside one refresh.
-  const PER_CHANNEL = 4;
+  const PER_CHANNEL = 6;
+  // How much of that feed is on screen at once, and how much each Load more
+  // adds. The whole feed is already in memory, so paging costs nothing but DOM
+  // — and the first screenful stays the length it has always been.
+  const PAGE_SIZE = 60;
   // A Short is <=60s. Duration is the only signal the API gives cheaply — the
   // vertical aspect ratio is not in the response — so this catches the odd short
   // non-Short too. Losing a 50-second clip is the better error.
@@ -54,11 +61,19 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
   const playerTheaterExitEl = el('subs-theater-exit');
   const playerSlotEl = el('subs-player-slot');
   const playerExpandEl = el('subs-player-expand');
+  const moreEl = el('subs-more');
+  const moreBtnEl = el('subs-more-btn');
+  const moreCountEl = el('subs-more-count');
 
   let channels = readJson(SUBS_KEY) || [];
   let videos = [];
   let fetchedAt = null;
   let busy = false;
+  // How many of `videos` are rendered, and which one the player is on. Both
+  // outlive a re-render: a refresh should not collapse a feed you have opened
+  // out, and it should not lose the mark on the card you are watching.
+  let shown = 0;
+  let playingId = '';
 
   /* ---------------- storage ---------------- */
 
@@ -386,16 +401,21 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
 
   // playlistItems carries no duration and no live flag, so the filtering the feed
   // promises can only happen here. 50 ids per call is the API's ceiling and one
-  // quota unit, so this costs 2 calls for a 60-video feed rather than 60.
+  // quota unit, so this costs a handful of calls for the whole feed rather than
+  // one per video. They go out together: a deep feed is a dozen of these, and a
+  // dozen round trips run end to end is a dozen round trips someone waits for.
   async function hydrateDetails(list) {
     const byId = new Map(list.map((v) => [v.id, v]));
     const ids = [...byId.keys()];
 
-    for (let i = 0; i < ids.length; i += 50) {
-      const batch = ids.slice(i, i + 50);
-      const data = await proxyGet('videos', {
-        id: batch.join(',')
-      });
+    const batches = [];
+    for (let i = 0; i < ids.length; i += 50) batches.push(ids.slice(i, i + 50));
+
+    const pages = await Promise.all(batches.map((batch) => proxyGet('videos', {
+      id: batch.join(',')
+    })));
+
+    pages.forEach((data) => {
       (data.items || []).forEach((item) => {
         const video = byId.get(item.id);
         if (!video) return;
@@ -404,7 +424,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
         video.hasLiveDetails = Boolean(item?.liveStreamingDetails);
         video.hydrated = true;
       });
-    }
+    });
 
     // A video the details pass never returned is deleted, private or region
     // blocked. Dropping it is right: it cannot be filtered or played.
@@ -443,7 +463,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
     busy = true;
     renderChrome();
     clearState();
-    if (!videos.length) gridEl.replaceChildren(loadingNote('Reading uploads…'));
+    if (!videos.length) clearGrid(loadingNote('Reading uploads…'));
 
     try {
       // One channel going dark thins the list rather than emptying it.
@@ -485,7 +505,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
       fetchedAt = cached.fetchedAt;
       renderGrid();
     } else {
-      gridEl.replaceChildren();
+      clearGrid();
     }
 
     if (err.reason === 'quotaExceeded' || err.reason === 'dailyLimitExceeded') {
@@ -524,15 +544,37 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
     return p;
   }
 
+  // One place empties the grid, so the Load more row can never be left behind
+  // under a note or an error, still offering a feed that is no longer there.
+  function clearGrid(note) {
+    gridEl.replaceChildren(...(note ? [note] : []));
+    shown = 0;
+    renderMore();
+  }
+
+  // The feed is fetched whole and rendered a page at a time. `shown` survives a
+  // re-render, so a refresh redraws however much was open rather than folding
+  // the list back to the first page under someone mid-scroll.
   function renderGrid() {
+    const target = Math.max(shown, PAGE_SIZE);
     gridEl.replaceChildren();
-    if (!videos.length) return;
+    shown = 0;
+    if (!videos.length) {
+      renderMore();
+      return;
+    }
+    appendCards(target);
+  }
+
+  function appendCards(count) {
+    const batch = videos.slice(shown, shown + count);
 
     const frag = document.createDocumentFragment();
-    videos.forEach((video) => {
+    batch.forEach((video) => {
       const card = document.createElement('button');
       card.type = 'button';
       card.className = 'subs-card';
+      if (video.id === playingId) card.classList.add('is-playing');
       card.dataset.videoId = video.id;
       card.setAttribute('aria-label', `Play ${video.title} from ${video.channelTitle}`);
 
@@ -572,7 +614,29 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
 
       frag.appendChild(card);
     });
+
     gridEl.appendChild(frag);
+    shown += batch.length;
+    renderMore();
+  }
+
+  // The row states what is left rather than just offering more, because the end
+  // of a 180-video feed is otherwise indistinguishable from a feed that stopped
+  // loading. It disappears entirely once there is nothing left to add.
+  function renderMore() {
+    const remaining = videos.length - shown;
+    moreEl.hidden = remaining <= 0;
+    if (remaining <= 0) return;
+    moreBtnEl.textContent = `Load ${Math.min(PAGE_SIZE, remaining)} more`;
+    moreCountEl.textContent = `${shown} of ${videos.length} shown`;
+  }
+
+  function loadMore() {
+    const first = shown;
+    appendCards(PAGE_SIZE);
+    // A keyboard user who empties the feed with the last click would otherwise
+    // be dropped back to the top of the document with the button gone.
+    if (moreEl.hidden) gridEl.children[first]?.focus();
   }
 
   /* ---------------- player ---------------- */
@@ -599,6 +663,9 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
     setPip(false);
     pipObserver.observe(playerSlotEl);
 
+    // Held as state as well as a class, so a card that only appears on a later
+    // page still comes up marked as the one playing.
+    playingId = video.id;
     gridEl.querySelectorAll('.subs-card.is-playing').forEach((c) => c.classList.remove('is-playing'));
     const card = gridEl.querySelector(`.subs-card[data-video-id="${CSS.escape(video.id)}"]`);
     if (card) card.classList.add('is-playing');
@@ -619,6 +686,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
     pipObserver.unobserve(playerSlotEl);
     playerFrameEl.replaceChildren();
     playerEl.hidden = true;
+    playingId = '';
     gridEl.querySelectorAll('.subs-card.is-playing').forEach((c) => c.classList.remove('is-playing'));
   }
 
@@ -674,13 +742,13 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
     busy = true;
     renderChrome();
     clearState();
-    gridEl.replaceChildren(loadingNote('Reading your subscriptions…'));
+    clearGrid(loadingNote('Reading your subscriptions…'));
 
     try {
       const imported = await importSubscriptions(token);
       if (!imported.length) {
         showState('No subscriptions found', 'That account is not subscribed to any channels, so there is nothing to build a feed from.');
-        gridEl.replaceChildren();
+        clearGrid();
         return;
       }
       channels = imported;
@@ -689,7 +757,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
       // Google session for a page that never needs one again.
       await loadVideos({ force: true });
     } catch (err) {
-      gridEl.replaceChildren();
+      clearGrid();
       if (err.status === 401) {
         showState('Sign-in expired', 'Google’s response was no longer valid by the time it was used. Connecting again should work.',
           [{ label: 'Connect YouTube', onClick: startImport }]);
@@ -705,7 +773,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
 
   function showDisconnected() {
     closePlayer();
-    gridEl.replaceChildren();
+    clearGrid();
     showState(
       'Not connected',
       'Sign in with Google once to import the list of channels you subscribe to. The list is stored in this browser only, and the sign-in is discarded straight after — the videos themselves are public and need no account.',
@@ -744,6 +812,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
     else if (!playerEl.hidden) closePlayer();
   });
 
+  moreBtnEl.addEventListener('click', loadMore);
   refreshBtn.addEventListener('click', () => loadVideos({ force: true }));
   resyncBtn.addEventListener('click', startImport);
   disconnectBtn.addEventListener('click', disconnect);
@@ -752,7 +821,7 @@ import { YOUTUBE_CLIENT_ID, YOUTUBE_PROXY_URL, YOUTUBE_SUBS_REDIRECT_URI } from 
   renderChrome();
 
   if (authResult && authResult.error) {
-    gridEl.replaceChildren();
+    clearGrid();
     showAuthError(authResult.error);
   } else if (authResult && authResult.token) {
     runImport(authResult.token);
