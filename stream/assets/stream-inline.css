@@ -39,7 +39,11 @@
   /* The header bar is a real row above the player rather than a layer on top of
      it, so the tile has to be tall enough for both: Twitch's 300px floor is on
      the video, and the bar is not part of the video. The +2px is this tile's own
-     top and bottom border, which the floor below is measured across. */
+     top and bottom border, which the floor below is measured across.
+     The room stays reserved even though the bar spends most of its life
+     collapsed — hover reopens it at any moment, and a tile sized for the closed
+     bar would drop the video under the floor the instant it did. Closed, the
+     player simply runs 30px taller than its minimum. */
   --tile-header-h: 30px;
   --tile-video-floor: 300px;
   display: none;
@@ -106,19 +110,47 @@
    afterwards, pausing if anything covers the video. As an absolutely positioned
    strip this bar was exactly that — so it had to hide itself, and appearing on
    hover meant it lay over the video every time the pointer crossed the tile you
-   were watching. In the flow it is outside the video box altogether: the label
-   and the close button can stay up permanently, and the player is never covered.
-   The legend plate the panels elsewhere on the site carry, at tile scale. */
+   were watching. In the flow it is outside the video box altogether, so the
+   player is never covered whether the bar is up or down.
+   The legend plate the panels elsewhere on the site carry, at tile scale.
+
+   At rest the bar collapses to nothing and the player takes the space back: the
+   row still exists, it is simply zero tall, and .stream-tile-body is the only
+   flex child left with height to claim. Hovering the tile opens it again. This
+   is a resize of the video, not a layer over it — the distinction the whole
+   Twitch problem turns on — so the embed keeps playing through it. The border
+   collapses with the height because a border-box element cannot go below its
+   own border: left at 1px it would leave a hairline ruled across the picture. */
 .stream-tile-header {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: 8px;
-  height: var(--tile-header-h);
+  height: 0;
   padding: 0 10px;
+  overflow: hidden;
   background: var(--well);
-  border-bottom: 1px solid var(--border);
-  transition: border-color 0.2s var(--ease);
+  border-bottom: 0 solid var(--border);
+  transition: height 0.18s var(--ease), border-bottom-width 0.18s var(--ease), border-color 0.2s var(--ease);
+}
+
+/* focus-within, not hover alone: collapsed, the close button is still in the tab
+   order, and a bar that stayed shut would put keyboard focus on a control nobody
+   can see. */
+.stream-tile:hover .stream-tile-header,
+.stream-tile:focus-within .stream-tile-header {
+  height: var(--tile-header-h);
+  border-bottom-width: 1px;
+}
+
+/* Nothing hovers on a touchscreen, and the close button is the only way to clear
+   a tile — on a device with no pointer the bar stays up for good rather than
+   sealing the stream in. */
+@media (hover: none) {
+  .stream-tile-header {
+    height: var(--tile-header-h);
+    border-bottom-width: 1px;
+  }
 }
 
 /* One tile carries the sound. The bar says which without a word: an amber rule
