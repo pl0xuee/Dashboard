@@ -132,16 +132,31 @@
   background: var(--well);
   border-bottom: 0 solid var(--border);
   transition: height 0.18s var(--ease), border-bottom-width 0.18s var(--ease), border-color 0.2s var(--ease);
+  /* Closing waits longer than opening, so sweeping the pointer back across a
+     tile you just left costs nothing. See the note below on why both wait. */
+  transition-delay: 0.22s;
 }
 
 /* focus-within, not hover alone: collapsed, the close button is still in the tab
    order, and a bar that stayed shut would put keyboard focus on a control nobody
-   can see. */
+   can see.
+
+   The delay is the point, not the polish. Opening the bar resizes the embed, and
+   a pointer flicked in and out of a tile resizes it again on every crossing —
+   which Twitch's player answers by pausing, while one deliberate hover it sits
+   through happily. A delay makes the two cases the same case: while it is
+   running the height simply holds its old value, so a crossing shorter than the
+   delay is cancelled before the first pixel moves and the video is never
+   resized at all. Slow hover behaves exactly as before, a hair later.
+   Keyboard focus is deliberate by nature and opens immediately. */
 .stream-tile:hover .stream-tile-header,
 .stream-tile:focus-within .stream-tile-header {
   height: var(--tile-header-h);
   border-bottom-width: 1px;
+  transition-delay: 0.14s;
 }
+
+.stream-tile:focus-within .stream-tile-header { transition-delay: 0s; }
 
 /* Nothing hovers on a touchscreen, and the close button is the only way to clear
    a tile — on a device with no pointer the bar stays up for good rather than
