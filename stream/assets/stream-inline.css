@@ -36,6 +36,12 @@
 .stream-grid[data-count="4"] { grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; }
 
 .stream-tile {
+  /* The header bar is a real row above the player rather than a layer on top of
+     it, so the tile has to be tall enough for both: Twitch's 300px floor is on
+     the video, and the bar is not part of the video. The +2px is this tile's own
+     top and bottom border, which the floor below is measured across. */
+  --tile-header-h: 30px;
+  --tile-video-floor: 300px;
   display: none;
   flex-direction: column;
   position: relative;
@@ -50,7 +56,7 @@
   box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
   transition: border-color 0.24s var(--ease), box-shadow 0.24s var(--ease);
   min-width: 400px;
-  min-height: 300px;
+  min-height: calc(var(--tile-video-floor) + var(--tile-header-h) + 2px);
 }
 
 .stream-tile.is-visible { display: flex; }
@@ -94,65 +100,88 @@
 .stream-tile.is-empty:hover .stream-tile-placeholder-label,
 .stream-tile.is-empty.is-focused .stream-tile-placeholder-label { color: var(--accent-strong); }
 
-.stream-tile-header {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 5;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  background: linear-gradient(180deg, rgba(5, 7, 10, 0.85), rgba(5, 7, 10, 0));
-  opacity: 0;
-  transition: opacity 0.15s;
-  pointer-events: none;
-}
-/* Hover only - deliberately NOT `.is-focused`.
+/* Above the player, never over it.
    Twitch refuses to autoplay an embed it considers obscured ("minimum
    requirements for autoplay were not met: style visibility") and keeps checking
-   afterwards, pausing if something covers the video. Slot 0 is focused from the
-   moment it mounts, so revealing the bar on `.is-focused` put a permanent 32px
-   strip over the top of the one tile you actually watch. On hover it is only up
-   while you are pointing at that tile, which is also when you want the label and
-   the close button. */
-.stream-tile:hover .stream-tile-header { opacity: 1; }
-.stream-tile-header > * { pointer-events: auto; }
+   afterwards, pausing if anything covers the video. As an absolutely positioned
+   strip this bar was exactly that — so it had to hide itself, and appearing on
+   hover meant it lay over the video every time the pointer crossed the tile you
+   were watching. In the flow it is outside the video box altogether: the label
+   and the close button can stay up permanently, and the player is never covered.
+   The legend plate the panels elsewhere on the site carry, at tile scale. */
+.stream-tile-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: var(--tile-header-h);
+  padding: 0 10px;
+  background: var(--well);
+  border-bottom: 1px solid var(--border);
+  transition: border-color 0.2s var(--ease);
+}
 
-.stream-tile-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--text-faint); }
-.stream-tile[data-platform="twitch"] .stream-tile-dot { background: #a970ff; }
-.stream-tile[data-platform="youtube"] .stream-tile-dot { background: #ff6a4a; }
+/* One tile carries the sound. The bar says which without a word: an amber rule
+   under the focused tile and an amber label, the same lit-legend signal the
+   panels on the other pages use for live data. */
+.stream-tile.is-focused .stream-tile-header { border-bottom-color: var(--accent-border); }
+.stream-tile.is-focused .stream-tile-label { color: var(--accent-strong); }
+
+/* The annunciator lamp, at tile scale: lit in the platform's colour, with the
+   glow that tells it apart from a printed dot. */
+.stream-tile-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--text-faint);
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+}
+.stream-tile[data-platform="twitch"] .stream-tile-dot {
+  background: #a970ff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 0 8px rgba(169, 112, 255, 0.75);
+}
+.stream-tile[data-platform="youtube"] .stream-tile-dot {
+  background: #ff6a4a;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 0 8px rgba(255, 106, 74, 0.75);
+}
 
 .stream-tile-label {
   flex: 1;
   min-width: 0;
+  font-family: var(--font-legend);
   font-size: 11px;
   font-weight: 700;
-  color: #fff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.2s var(--ease);
 }
 
 .stream-tile-close {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  background: rgba(0, 0, 0, 0.4);
-  color: #fff;
-  font-size: 13px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface-raised);
+  color: var(--text-faint);
+  font-size: 14px;
   line-height: 1;
   cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.stream-tile-close:hover { background: var(--danger); border-color: var(--danger); }
+.stream-tile-close:hover {
+  border-color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 18%, var(--surface-raised));
+  color: var(--danger);
+}
 
 .stream-chat {
   flex: 0 0 390px;
