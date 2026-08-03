@@ -97,6 +97,13 @@
   --danger: var(--hangup);
   --warn: var(--tally);
 
+  /* the brush marks in the chassis — see `body::before`. Strength is one
+     number on purpose: it is the only thing here worth taste-testing, and it
+     wants to sit just below the threshold where you notice it as a texture. */
+  --grain-strength: 0.34;
+  --grain-falloff: radial-gradient(ellipse 1300px 820px at 50% -10%,
+    rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.5) 46%, rgba(0, 0, 0, 0) 80%);
+
   /* machined chamfers, not rounded cards */
   --r-sm: 2px;
   --r-md: 3px;
@@ -158,6 +165,58 @@ body {
     linear-gradient(180deg, #0a0f12 0%, #0f151a 42%, #141c22 100%);
   background-attachment: fixed;
 }
+
+/* ---------- the chassis grain ----------
+   The palette argues that a surface bottoming out at near-black stops looking
+   like metal and starts looking like a hole. A flat ramp still reads that way,
+   so the chassis gets the one thing that makes blued steel legible as a
+   material: the brush marks left in it.
+
+   Three decisions, all of them the reason this isn't a noise overlay:
+
+   The grain is anisotropic. `baseFrequency` runs slow across x and fast down y,
+   which stretches every feature into a horizontal streak — the direction a rack
+   panel is actually brushed. Isotropic noise is film grain, and film grain sits
+   *in front of* a page rather than in it.
+
+   The grain is warm. `feColorMatrix` throws away the turbulence's own colour and
+   paints it in @light, keeping only the noise as alpha — and the alpha is offset
+   by -0.5, so only the half of the noise above the midpoint survives. It adds
+   light and never subtracts it, which is what a brush mark does.
+
+   The grain is lit rather than tiled on. It carries the same radial mask as the
+   wash above, centred on the same lamp, so it is strongest under the light and
+   gone by the footer. Texture that covers everything evenly is wallpaper; this
+   is the chassis catching one source, which is the rule the whole palette runs on.
+
+   `background-size: 100%` is load-bearing, not a shortcut. `stitchTiles` is
+   supposed to make the noise wrap, and vertically it does — measured, the wrap
+   discontinuity matches the interior. Across x it does not: the seam came out
+   26x the interior step, which at this streak length reads as a set of panels
+   butted together rather than one sheet. Stretching a single tile to the
+   viewport width removes the horizontal repeat entirely, so the only tiling
+   left is the vertical one that actually wraps. The streaks stretch with it,
+   which costs nothing — they are already long, and the fine detail this
+   depends on is in y. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--grain-strength);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='1600' height='400'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.012 0.9' numOctaves='2' seed='11' stitchTiles='stitch' result='t'/%3E%3CfeColorMatrix in='t' type='matrix' values='0 0 0 0 0.949 0 0 0 0 0.906 0 0 0 0 0.827 1 0 0 0 -0.5'/%3E%3C/filter%3E%3Crect width='1600' height='400' filter='url(%23g)'/%3E%3C/svg%3E");
+  background-size: 100% 400px;
+  background-repeat: repeat-y;
+  -webkit-mask-image: var(--grain-falloff);
+  mask-image: var(--grain-falloff);
+}
+
+/* Full-bleed video and charts are the content, not the chassis — the grain has
+   no panel to sit behind there, so it would just be noise over a picture. */
+body.dashboard-theater-mode::before,
+body.stream-theater-mode::before,
+body.subs-theater-mode::before { display: none; }
 
 /* Links rest in plain text and light on hover, so the lift *is* the focus.
    They used to sit in amber at rest, which spent the signal colour on every
