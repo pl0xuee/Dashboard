@@ -49,7 +49,7 @@
     .games-lead {
       margin: 0;
       font-size: 0.9rem;
-      color: var(--accent-strong);
+      color: var(--light);
       letter-spacing: 0.16em;
       text-transform: uppercase;
       font-weight: 700;
@@ -83,7 +83,7 @@
     }
 
     .games-toolbar-note strong {
-      color: var(--gold-strong);
+      color: var(--light);
       font-weight: 700;
     }
 
@@ -121,11 +121,11 @@
       min-height: 0;
       padding: 11px 16px 12px;
       border-radius: 18px;
-      border: 1px solid var(--accent-border);
+      border: 1px solid var(--light-border);
       background:
         linear-gradient(180deg, var(--surface-raised), var(--surface)),
-        radial-gradient(circle at top left, var(--accent-soft), transparent 56%),
-        radial-gradient(circle at 90% 120%, var(--gold-soft), transparent 46%);
+        radial-gradient(circle at top left, var(--light-soft), transparent 56%),
+        radial-gradient(circle at 90% 120%, var(--light-soft), transparent 46%);
       color: var(--text);
       font-size: 0.88rem;
       line-height: 1.3;
@@ -165,14 +165,14 @@
       max-width: 100%;
       padding: 4px 10px;
       border-radius: 999px;
-      border: 1px solid var(--gold-border);
-      background: var(--gold-soft);
-      color: var(--gold-strong);
+      border: 1px solid var(--light-border);
+      background: var(--light-soft);
+      color: var(--light);
       font-size: 0.68rem;
       font-weight: 800;
       letter-spacing: 0.18em;
       text-transform: uppercase;
-      box-shadow: inset 0 1px 0 rgba(255, 245, 220, 0.08), 0 6px 14px rgba(0, 0, 0, 0.16);
+      box-shadow: inset 0 1px 0 rgba(255, 245, 220, 0.08), 0 6px 14px rgba(5, 10, 13, 0.16);
     }
 
     .game-toolbar-hint-title {
@@ -224,12 +224,12 @@
     /* Arcade hub identity */
     .games-page .games-shell { max-width: 1480px; gap: 20px; }
     .games-page .games-toolbar-copy { border-color: var(--border); background: linear-gradient(160deg, var(--surface-raised), var(--surface)); box-shadow: none; }
-    .games-page .games-lead { color: var(--accent-strong); letter-spacing: .2em; }
+    .games-page .games-lead { color: var(--light); letter-spacing: .2em; }
     .games-page .games-sublead { color: var(--text-muted); }
     .games-page .game-picker { gap: 16px; }
     .games-page .game-picker-btn { min-height: 112px; border-radius: 20px; border-color: var(--border); background: linear-gradient(160deg, var(--surface-raised), var(--surface)); box-shadow: none; }
     .games-page .game-picker-btn:hover { transform: translateY(-2px); border-color: var(--border-strong); box-shadow: none; }
-    .games-page .game-picker-btn[aria-pressed='true'], .games-page .game-picker-btn.active { border-color: var(--accent-border); background: linear-gradient(160deg, color-mix(in srgb, var(--accent) 18%, var(--surface-raised)), var(--surface)); }
+    .games-page .game-picker-btn[aria-pressed='true'], .games-page .game-picker-btn.active { border-color: var(--light-border); background: linear-gradient(160deg, color-mix(in srgb, var(--light) 18%, var(--surface-raised)), var(--surface)); }
 
     .games-page .games-card,
     .games-page .game-picker-btn,
@@ -330,9 +330,9 @@
     }
 
     .back-btn {
-      border-color: var(--accent-border);
-      background: var(--accent-soft);
-      color: var(--accent-strong);
+      border-color: var(--light-border);
+      background: var(--light-soft);
+      color: var(--light);
     }
 
     .game-toolbar-actions .home-button {
@@ -355,14 +355,14 @@
 
     .game-toolbar-actions .home-button:focus-visible,
     .game-picker-btn:focus-visible {
-      outline: 2px solid var(--accent-border);
+      outline: 2px solid var(--light-border);
       outline-offset: 2px;
     }
 
     .game-toolbar-actions .back-btn {
       margin-left: auto;
-      border-color: var(--accent-border);
-      background: var(--accent-soft);
+      border-color: var(--light-border);
+      background: var(--light-soft);
       box-shadow: none;
     }
 
@@ -416,8 +416,8 @@
       align-items: center;
       padding: 3px 7px;
       border-radius: 999px;
-      background: var(--accent-soft);
-      color: var(--accent-strong);
+      background: var(--light-soft);
+      color: var(--light);
       font-size: 0.62rem;
       font-weight: 700;
       letter-spacing: 0.1em;
@@ -496,7 +496,7 @@
     .game-picker-btn:not(.game-picker-btn-hero):hover {
       transform: translateY(-2px);
       border-color: rgba(200,210,220,.32);
-      background: #192028;
+      background: var(--tile-lit);
       box-shadow: none;
       filter: none;
     }
@@ -542,13 +542,13 @@
     }
 
     .game-picker-btn.featured .game-picker-label {
-      color: #f5ead2;
+      color: var(--light);
       font-size: 1rem;
     }
 
     .game-picker-btn.featured .game-picker-kicker {
       background: rgba(216, 189, 132, 0.16);
-      color: #f0dcb0;
+      color: var(--light);
     }
 
 
@@ -560,7 +560,7 @@
       background:
         linear-gradient(180deg, rgba(64, 86, 146, 0.96), rgba(36, 52, 98, 0.96)),
         radial-gradient(circle at top left, rgba(145, 188, 255, 0.24), transparent 55%);
-      color: #fff;
+      color: var(--light);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 16px 30px rgba(18, 32, 64, 0.34), 0 0 0 1px rgba(123, 178, 255, 0.28);
     }
 
@@ -578,7 +578,7 @@
 
     .game-picker-btn:not(.game-picker-btn-hero).active .game-picker-kicker {
       background: rgba(182, 214, 255, 0.24);
-      color: #e6f4ff;
+      color: var(--text);
     }
 
     .game-picker-btn.active .game-picker-art {
@@ -739,7 +739,7 @@
     #tetrisBoard {
       max-width: 100%;
       border-radius: 8px;
-      background: #0a0f1a;
+      background: var(--field);
       box-shadow: inset 0 0 0 1px rgba(130, 152, 200, 0.2);
       image-rendering: pixelated;
       display: block;
@@ -760,7 +760,7 @@
 
     #gameStatus {
       margin: 4px 0 0;
-      color: #d9e7ff;
+      color: var(--text);
       min-height: 40px;
       line-height: 1.35;
       font-size: 0.88rem;
@@ -779,7 +779,7 @@
       border: 1px solid rgba(167, 188, 255, 0.25);
       border-radius: 12px;
       background: rgba(255, 255, 255, 0.02);
-      color: #d8e5ff;
+      color: var(--text);
       font-size: 0.82rem;
       line-height: 1.35;
     }
@@ -800,7 +800,7 @@
       height: auto;
       max-height: 70vh;
       display: block;
-      background: #0a0f1a;
+      background: var(--field);
       border: 1px solid rgba(130, 152, 200, 0.2);
       border-radius: 10px;
       image-rendering: pixelated;
@@ -846,7 +846,7 @@
       height: min(78vh, calc(100vh - 260px));
       border: 0;
       display: block;
-      background: #070b12;
+      background: var(--shadow-ink);
     }
 
     #retroDoomPanel.active #retroDoomFrame {
@@ -881,7 +881,7 @@
       border: 0;
       border-radius: 12px;
       display: block;
-      background: #080b10;
+      background: var(--shadow-ink);
     }
 
     #rpgPanel {
@@ -989,7 +989,7 @@
       border-radius: 0;
       border: 0;
       padding: 0;
-      background: #070b12;
+      background: var(--shadow-ink);
       display: grid;
       grid-template-rows: minmax(0, 1fr);
     }
@@ -1073,7 +1073,7 @@
       border-radius: 0;
       border: 0;
       padding: 0;
-      background: #070b12;
+      background: var(--shadow-ink);
       display: grid;
       grid-template-rows: minmax(0, 1fr);
       gap: 0;
@@ -1223,13 +1223,13 @@
        shared, the colour belongs to whichever world the banner is showing. */
     .game-picker-btn-hero[data-game='rpg'] .game-picker-kicker {
       background: rgba(35, 46, 31, 0.78);
-      color: #dce7c9;
+      color: var(--text);
     }
 
     /* Dreadkeep's own HUD palette: soot plate, brass lettering. */
     .game-picker-btn-hero[data-game='retrodoom'] .game-picker-kicker {
       background: rgba(28, 18, 12, 0.82);
-      color: #d9a54f;
+      color: var(--tally);
     }
 
     .game-picker-btn-hero .game-picker-label {
@@ -1346,7 +1346,7 @@
     .minefield-control {
       display: grid;
       gap: 8px;
-      color: #dce8ff;
+      color: var(--text);
       font-size: 0.8rem;
       font-weight: 700;
       letter-spacing: 0.06em;
@@ -1363,7 +1363,7 @@
       border-radius: 12px;
       border: 1px solid var(--border);
       background: rgba(255, 255, 255, 0.04);
-      color: #eef4ff;
+      color: var(--text);
       font: inherit;
       font-size: 0.92rem;
       font-weight: 600;
@@ -1382,7 +1382,7 @@
     .minefield-slider-row output {
       min-width: 64px;
       text-align: right;
-      color: var(--accent);
+      color: var(--light);
       font-size: 0.84rem;
       font-weight: 700;
       letter-spacing: normal;
@@ -1422,7 +1422,7 @@
       max-width: 920px;
       height: auto;
       border-radius: 10px;
-      background: #0a0f1a;
+      background: var(--field);
       border: 1px solid rgba(130, 152, 200, 0.2);
       image-rendering: pixelated;
       display: block;
@@ -1436,7 +1436,7 @@
     #simonStatus,
     #whackStatus {
       margin: 10px 0 0;
-      color: #d9e7ff;
+      color: var(--text);
       min-height: 22px;
       font-size: 0.86rem;
     }
@@ -1469,7 +1469,7 @@
       border: 1px solid var(--border);
       border-radius: 14px;
       background: rgba(255, 255, 255, 0.04);
-      color: #eef4ff;
+      color: var(--text);
       font: inherit;
       cursor: pointer;
       transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
@@ -1493,7 +1493,7 @@
       font-weight: 800;
       letter-spacing: 0.08em;
       text-transform: uppercase;
-      color: #eef6ff;
+      color: var(--text);
       isolation: isolate;
     }
 
@@ -1533,7 +1533,7 @@
 
     .memory-card.revealed,
     .memory-card.matched {
-      color: #08111d;
+      color: var(--field);
       text-shadow: none;
       transform: translateY(-2px);
     }
@@ -1559,7 +1559,7 @@
         radial-gradient(circle at top left, rgba(255, 255, 255, 0.76), transparent 48%);
       border-color: rgba(140, 241, 138, 0.42);
       box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.26), 0 14px 28px rgba(12, 28, 16, 0.2);
-      color: #102313;
+      color: var(--field);
     }
 
     .memory-card:disabled {
@@ -1572,7 +1572,7 @@
       border: 1px solid rgba(150, 214, 255, 0.18);
       border-radius: 14px;
       background: linear-gradient(180deg, rgba(18, 27, 39, 0.88), rgba(11, 17, 28, 0.9));
-      color: #e1edff;
+      color: var(--text);
       min-height: 52px;
       display: flex;
       align-items: center;
@@ -1640,7 +1640,7 @@
 
     #snakeStatus {
       margin: 10px 0 0;
-      color: #d9e7ff;
+      color: var(--text);
       min-height: 22px;
       font-size: 0.86rem;
     }
@@ -1648,7 +1648,7 @@
     .rules-list {
       margin: 0;
       padding-left: 18px;
-      color: #dbe7fb;
+      color: var(--text);
     }
 
     .rules-list li {
@@ -1818,7 +1818,7 @@
   right: auto;
   width: 3px;
   height: auto;
-  background: var(--accent);
+  background: var(--light);
   opacity: 0.35;
   transition: opacity 0.16s ease;
   z-index: 1;
@@ -1834,13 +1834,13 @@
 .games-page .game-picker-btn:not(.game-picker-btn-hero):hover::after { opacity: 0.8; }
 .games-page .game-picker-btn[aria-pressed='true'],
 .games-page .game-picker-btn.active {
-  border-color: var(--accent-border);
+  border-color: var(--light-border);
   background: var(--surface-raised);
 }
 .games-page .game-picker-btn:not(.game-picker-btn-hero)[aria-pressed='true']::after,
 .games-page .game-picker-btn:not(.game-picker-btn-hero).active::after {
   opacity: 1;
-  box-shadow: 0 0 10px var(--accent-glow);
+  box-shadow: 0 0 10px var(--light-glow);
 }
 
 .games-page .game-toolbar-actions .home-button { border-radius: var(--r-md); }
@@ -1861,19 +1861,19 @@
    the same on every tile. */
 .games-page .game-picker-kicker {
   background: rgba(8, 11, 16, 0.86);
-  border: 1px solid var(--accent-border);
-  color: var(--accent-strong);
+  border: 1px solid var(--light-border);
+  color: var(--light);
 }
 .games-page .game-picker-btn.featured .game-picker-kicker {
   border-color: rgba(216, 189, 132, 0.5);
-  color: #f0dcb0;
+  color: var(--light);
 }
 .games-page .game-toolbar-hint {
   border-radius: var(--r-lg);
   background: var(--surface);
   border-color: var(--border);
 }
-.games-page .game-picker-art { border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.4); }
+.games-page .game-picker-art { border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px rgba(5, 10, 13, 0.4); }
 .games-page .game-picker-label { font-family: var(--font-legend); letter-spacing: 0.04em; }
 
 /* scoreboards are instrument readouts: recessed wells, mono tabular figures */
@@ -1881,7 +1881,7 @@
   border-radius: var(--r-sm);
   background: var(--well);
   border-color: var(--border);
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 2px 5px rgba(5, 10, 13, 0.45);
 }
 /* game panel titles: sized explicitly rather than left to element defaults. Every
    panel title is an h2 now — Tetris used to carry the page's only h1, which made
@@ -1933,14 +1933,14 @@
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 2px 5px rgba(5, 10, 13, 0.45);
 }
 .games-page #minefieldPanel select:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--light);
   outline-offset: 2px;
 }
 .games-page #minefieldPanel input[type='range'] {
-  accent-color: var(--accent);
+  accent-color: var(--light);
 }
 
 /* ---------- the game bar ----------
@@ -1956,7 +1956,7 @@
   border-radius: var(--r-md);
   background: var(--well);
   border: 1px solid var(--border);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.4);
+  box-shadow: inset 0 2px 6px rgba(5, 10, 13, 0.4);
 }
 .game-bar .games-title { margin: 0; flex: 0 0 auto; font-size: 1.15rem; }
 
@@ -1984,14 +1984,14 @@
   font-variant-numeric: tabular-nums;
   font-size: 1rem;
   font-weight: 700;
-  color: var(--accent-strong);
+  color: var(--light);
 }
 /* Next is a picture rather than a figure, so it centres on the row instead of
    sitting on the numerals' baseline */
 .readout-next { align-items: center; }
 
 .game-help { flex: 0 0 auto; height: 30px; padding: 0 12px; font-size: 11px; margin: 0; }
-.game-help[aria-expanded='true'] { border-color: var(--accent-border); color: var(--accent-strong); }
+.game-help[aria-expanded='true'] { border-color: var(--light-border); color: var(--light); }
 
 .game-help-panel { display: grid; gap: 10px; }
 .game-help-panel[hidden] { display: none; }

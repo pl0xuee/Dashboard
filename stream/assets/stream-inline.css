@@ -5,7 +5,7 @@
    player treats that bleed as its video being occluded and refuses to
    autoplay ("style visibility" error) — tighten it on this page only. */
 .page-header {
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 6px rgba(5, 10, 13, 0.3);
 }
 
 .stream-container {
@@ -57,7 +57,7 @@
      adjacent panel. Twitch's player treats that bleed as its video being
      occluded and refuses to autoplay ("style visibility" error) — keep the
      blur radius tighter than the gap so it can't reach across. */
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 6px rgba(5, 10, 13, 0.3);
   transition: border-color 0.24s var(--ease), box-shadow 0.24s var(--ease);
   min-width: 400px;
   min-height: calc(var(--tile-video-floor) + var(--tile-header-h) + 2px);
@@ -72,7 +72,7 @@
    so this landed on exactly the tile you watch. Keep the shadow inside the gap. */
 .stream-tile.is-focused {
   border-color: var(--border-strong);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 6px rgba(5, 10, 13, 0.3);
 }
 
 .stream-tile.is-empty.is-focused { box-shadow: none; }
@@ -91,7 +91,7 @@
 }
 .stream-tile.is-empty { border-style: dashed; }
 .stream-tile.is-empty .stream-tile-placeholder { display: flex; }
-.stream-tile.is-empty:hover { border-color: var(--accent-border); }
+.stream-tile.is-empty:hover { border-color: var(--light-border); }
 .stream-tile.is-empty .stream-tile-header { display: none; }
 
 .stream-tile-placeholder-label {
@@ -102,7 +102,7 @@
   transition: color 0.15s;
 }
 .stream-tile.is-empty:hover .stream-tile-placeholder-label,
-.stream-tile.is-empty.is-focused .stream-tile-placeholder-label { color: var(--accent-strong); }
+.stream-tile.is-empty.is-focused .stream-tile-placeholder-label { color: var(--light); }
 
 /* Above the player, never over it.
    Twitch refuses to autoplay an embed it considers obscured ("minimum
@@ -171,8 +171,8 @@
 /* One tile carries the sound. The bar says which without a word: an amber rule
    under the focused tile and an amber label, the same lit-legend signal the
    panels on the other pages use for live data. */
-.stream-tile.is-focused .stream-tile-header { border-bottom-color: var(--accent-border); }
-.stream-tile.is-focused .stream-tile-label { color: var(--accent-strong); }
+.stream-tile.is-focused .stream-tile-header { border-bottom-color: var(--light-border); }
+.stream-tile.is-focused .stream-tile-label { color: var(--light); }
 
 /* The annunciator lamp, at tile scale: lit in the platform's colour, with the
    glow that tells it apart from a printed dot. */
@@ -182,15 +182,15 @@
   border-radius: 50%;
   flex-shrink: 0;
   background: var(--text-faint);
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 0 0 2px rgba(5, 10, 13, 0.35);
 }
 .stream-tile[data-platform="twitch"] .stream-tile-dot {
   background: #a970ff;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 0 8px rgba(169, 112, 255, 0.75);
+  box-shadow: 0 0 0 2px rgba(5, 10, 13, 0.35), 0 0 8px rgba(169, 112, 255, 0.75);
 }
 .stream-tile[data-platform="youtube"] .stream-tile-dot {
   background: #ff6a4a;
-  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.35), 0 0 8px rgba(255, 106, 74, 0.75);
+  box-shadow: 0 0 0 2px rgba(5, 10, 13, 0.35), 0 0 8px rgba(255, 106, 74, 0.75);
 }
 
 .stream-tile-label {
@@ -238,7 +238,7 @@
   border-radius: var(--r-lg);
   overflow: hidden;
   border: 1px solid var(--border);
-  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 3px 6px rgba(5, 10, 13, 0.3);
   position: relative;
   transition: border-color 0.24s var(--ease);
 }
@@ -281,11 +281,11 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
 .stream-url-input { width: 260px; height: 36px; font-size: 12px; padding: 0 12px; flex: 0 1 260px; min-width: 120px; }
 
 #loadStreamBtn {
-  border-color: var(--accent-border);
-  background: linear-gradient(180deg, color-mix(in srgb, var(--accent) 22%, var(--surface-raised)), var(--surface));
+  border-color: var(--light-border);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--light) 22%, var(--surface-raised)), var(--surface));
   color: var(--text);
 }
-#loadStreamBtn:hover { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent-soft), 0 10px 22px rgba(0, 0, 0, 0.3); }
+#loadStreamBtn:hover { border-color: var(--light); box-shadow: 0 0 0 1px var(--light-soft), 0 10px 22px rgba(5, 10, 13, 0.3); }
 
 .dropdown-content { width: min(88vw, 480px); min-width: min(420px, 88vw); max-width: 480px; max-height: 70vh; overflow-y: auto; overflow-x: hidden; }
 .dropdown-content::-webkit-scrollbar { width: 4px; }
@@ -294,8 +294,8 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
 .dropdown.force-closed .dropdown-content { display: none !important; }
 
 .streamer-dropdown-title { padding: 4px 6px 2px; font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-faint); }
-.streamer-dropdown-subtitle { padding: 0 6px 6px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-strong); }
-.youtube-scan-status { padding: 0 6px 6px; font-size: 10px; color: var(--accent-strong); min-height: 14px; }
+.streamer-dropdown-subtitle { padding: 0 6px 6px; font-size: 10px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--light); }
+.youtube-scan-status { padding: 0 6px 6px; font-size: 10px; color: var(--light); min-height: 14px; }
 .streamer-divider { border-top: 1px solid var(--border); margin: 6px 0 4px; }
 
 .streamer-action {
@@ -311,8 +311,8 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
   color: var(--text);
   transition: background 0.15s, border-color 0.15s;
 }
-.streamer-action:hover { background: var(--surface-hover); border-color: var(--accent-border); color: #fff; }
-.streamer-action-add { color: var(--accent-strong); }
+.streamer-action:hover { background: var(--surface-hover); border-color: var(--light-border); color: var(--light); }
+.streamer-action-add { color: var(--light); }
 .streamer-action-twitch { color: #cab7ff; }
 .streamer-action-youtube { color: #ffac98; }
 
@@ -333,7 +333,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
   border-radius: var(--r-sm);
   transition: border-color 0.15s;
 }
-.stream-live-row:hover { border-color: var(--accent-border); }
+.stream-live-row:hover { border-color: var(--light-border); }
 
 .stream-open-link { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--text); flex-grow: 1; min-width: 0; }
 .stream-live-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; font-weight: 600; text-transform: capitalize; }
@@ -345,11 +345,11 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
 .stream-live-empty, .stream-list-empty { padding: 8px; font-size: 12px; color: var(--text-faint); text-align: center; }
 
 /* theater mode */
-body.stream-theater-mode { background: #05070a; }
+body.stream-theater-mode { background: #050a0d; }
 body.stream-theater-mode > .page { margin: 0; padding: 0; max-width: none !important; width: 100vw; height: 100dvh; }
 body.stream-theater-mode > .page > .page-header { display: none; }
 body.stream-theater-mode .main { overflow: visible; margin: 0; padding: 0; }
-body.stream-theater-mode .stream-container { position: fixed; inset: 0; gap: 0; border-radius: 0; background: #05070a; z-index: 30; }
+body.stream-theater-mode .stream-container { position: fixed; inset: 0; gap: 0; border-radius: 0; background: #050a0d; z-index: 30; }
 body.stream-theater-mode .stream-grid,
 body.stream-theater-mode .stream-chat { height: 100dvh; }
 body.stream-theater-mode .stream-tile { border-radius: 0; border-top: 0; border-bottom: 0; }
@@ -419,9 +419,9 @@ body.stream-theater-mode .stream-chat { border-radius: 0; border-top: 0; border-
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, color 0.15s;
 }
-.stream-layout-btn:hover { border-color: var(--accent-border); color: var(--text); }
+.stream-layout-btn:hover { border-color: var(--light-border); color: var(--text); }
 .stream-layout-btn.is-active {
-  border-color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 22%, var(--surface-raised));
-  color: #fff;
+  border-color: var(--light);
+  background: color-mix(in srgb, var(--light) 22%, var(--surface-raised));
+  color: var(--light);
 }

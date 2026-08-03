@@ -280,7 +280,7 @@ if (!window.__dashboardWidgetsInitialized) {
       : NaN;
     const isUp = Number.isFinite(change) && change > 0;
     const isDown = Number.isFinite(change) && change < 0;
-    const textColor = isUp ? '#64fbcf' : isDown ? '#ff8a85' : '#e1f2ff';
+    const textColor = isUp ? '#86c97e' : isDown ? '#e06c60' : '#e9eef1';
 
     toolTip.innerHTML = '';
 
@@ -1196,8 +1196,8 @@ if (!window.__dashboardWidgetsInitialized) {
     const chart = LightweightCharts.createChart(chartDiv, {
       width: chartDiv.clientWidth,
       height: chartDiv.clientHeight,
-      layout: { background: { type: 'solid', color: '#161a1d' }, textColor: '#c7d5e8', attributionLogo: false },
-      grid: { vertLines: { color: '#2a3339' }, horzLines: { color: '#2a3339' } },
+      layout: { background: { type: 'solid', color: '#1a232a' }, textColor: '#7d8890', attributionLogo: false },
+      grid: { vertLines: { color: '#2a343b' }, horzLines: { color: '#2a343b' } },
       crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
       handleScroll: {
         mouseWheel: true,
@@ -1233,15 +1233,15 @@ if (!window.__dashboardWidgetsInitialized) {
     dashboardChartsByPanel.set(index, { chart, chartDiv });
 
     const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
-      upColor: '#22d6bf',
-      downColor: '#ff7e79',
+      upColor: '#86c97e',
+      downColor: '#e06c60',
       borderVisible: false,
-      wickUpColor: '#22d6bf',
-      wickDownColor: '#ff7e79'
+      wickUpColor: '#86c97e',
+      wickDownColor: '#e06c60'
     });
 
     const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
-      color: '#22d6bf',
+      color: '#86c97e',
       priceFormat: { type: 'volume' },
       priceScaleId: 'volume'
     });
@@ -1458,8 +1458,8 @@ if (!window.__dashboardWidgetsInitialized) {
       notification.style.top = '0';
       notification.style.left = '0';
       notification.style.right = '0';
-      notification.style.background = 'rgba(20, 34, 48, 0.92)';
-      notification.style.color = '#dff1ff';
+      notification.style.background = 'rgba(26, 35, 42, 0.92)';
+      notification.style.color = '#e9eef1';
       notification.style.padding = '10px';
       notification.style.fontSize = '12px';
       notification.style.zIndex = '20';

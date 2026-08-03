@@ -515,14 +515,14 @@
           const age = Date.now() - cachedAt;
           // If cache is fresh enough, show it and skip the network call entirely
           if (age < SENTIMENT_CACHE_TTL) {
-            applysentiment(el, cached.valueText, cached.color || '#ffffff', cachedAt, false);
+            applysentiment(el, cached.valueText, cached.color || '#f2e7d3', cachedAt, false);
             return;
           }
           // Stale but still worth showing: display it flagged while we revalidate.
           // Beyond the stale limit it is not shown at all - the fetch below either
           // replaces it or the panel ends up reading Unavailable.
           if (age < SENTIMENT_STALE_LIMIT) {
-            applysentiment(el, `${cached.valueText}`, cached.color || '#ffffff', cachedAt, true);
+            applysentiment(el, `${cached.valueText}`, cached.color || '#f2e7d3', cachedAt, true);
             hadCache = true;
           }
         }
@@ -595,12 +595,15 @@
           const rounded = Math.round(score);
           const label = rating.replace(/\b\w/g, c => c.toUpperCase());
 
-          let color = '#ffffff';
-          if (rounded <= 25) color = '#ff4f4f';
-          else if (rounded <= 45) color = '#ff9c4f';
-          else if (rounded < 55) color = '#ffffff';
-          else if (rounded < 75) color = '#9eff6b';
-          else color = '#6dff85';
+          // The scale diverges through the light rather than through white:
+          // hangup at one end, fresh at the other, and the filament in the
+          // middle where the reading is saying nothing in particular.
+          let color = '#f2e7d3';
+          if (rounded <= 25) color = '#e06c60';
+          else if (rounded <= 45) color = '#f0a93c';
+          else if (rounded < 55) color = '#f2e7d3';
+          else if (rounded < 75) color = '#a9cf5b';
+          else color = '#86c97e';
 
           const valueText = `${rounded} (${label})`;
           const updatedAt = Date.now();

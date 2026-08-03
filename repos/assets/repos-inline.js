@@ -279,7 +279,7 @@
     if (repo.language) {
       const langItem = el('span', 'repo-meta-item');
       const dot = el('span', 'repo-lang-dot');
-      dot.style.background = LANG_COLORS[repo.language] || 'var(--accent)';
+      dot.style.background = LANG_COLORS[repo.language] || 'var(--light)';
       langItem.appendChild(dot);
       langItem.appendChild(el('span', null, repo.language));
       meta.appendChild(langItem);

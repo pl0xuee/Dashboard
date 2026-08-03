@@ -41,10 +41,10 @@
   padding: 16px;
   margin-bottom: 14px;
   border: 1px solid var(--border);
-  border-left: 2px solid var(--accent);
+  border-left: 2px solid var(--light);
   border-radius: var(--r-md);
   background: var(--well);
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 2px 5px rgba(5, 10, 13, 0.45);
 }
 .subs-state-title {
   margin: 0 0 6px;
@@ -53,7 +53,7 @@
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--accent-strong);
+  color: var(--light);
 }
 .subs-state-note {
   margin: 0;
@@ -120,7 +120,7 @@
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   background: var(--well);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 2px 6px rgba(5, 10, 13, 0.5);
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 .subs-card-shot img {
@@ -133,12 +133,12 @@
   filter: brightness(0.92) saturate(0.96);
   transition: filter 0.2s var(--ease);
 }
-.subs-card:hover .subs-card-shot { border-color: var(--accent-border); }
+.subs-card:hover .subs-card-shot { border-color: var(--light-border); }
 .subs-card:hover .subs-card-shot img { filter: brightness(1.04) saturate(1.04); }
 .subs-card:focus-visible { outline: none; }
 .subs-card:focus-visible .subs-card-shot {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-color: var(--light);
+  box-shadow: 0 0 0 2px var(--light-soft);
 }
 .subs-card:focus-visible .subs-card-shot img { filter: brightness(1.04) saturate(1.04); }
 
@@ -154,7 +154,7 @@
   right: 10px;
   bottom: 0;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  background: linear-gradient(90deg, transparent, var(--light), transparent);
   opacity: 0;
   transform: scaleX(0.3);
   transition: opacity 0.18s var(--ease), transform 0.26s var(--ease);
@@ -165,8 +165,8 @@
 .subs-card.is-playing .subs-card-shot::after { opacity: 1; transform: scaleX(1); }
 
 .subs-card.is-playing .subs-card-shot {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent-border);
+  border-color: var(--light);
+  box-shadow: 0 0 0 1px var(--light-border);
 }
 .subs-card.is-playing .subs-card-shot img { filter: brightness(1) saturate(1); }
 
@@ -182,8 +182,8 @@
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--accent);
-  box-shadow: 0 0 0 3px rgba(8, 11, 16, 0.72), 0 0 9px var(--accent-glow), 0 0 2px var(--accent);
+  background: var(--tally);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--shadow-ink) 72%, transparent), 0 0 9px var(--tally-glow), 0 0 2px var(--tally);
   animation: lamp-strike 0.55s var(--ease) both, lamp-breathe 3.4s var(--ease) 0.55s infinite;
 }
 
@@ -194,7 +194,7 @@
   bottom: 5px;
   padding: 1px 5px;
   border-radius: var(--r-sm);
-  background: rgba(8, 11, 16, 0.86);
+  background: color-mix(in srgb, var(--shadow-ink) 86%, transparent);
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 0.64rem;
@@ -213,7 +213,7 @@
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.subs-card:hover .subs-card-title { color: var(--accent-strong); }
+.subs-card:hover .subs-card-title { color: var(--light); }
 
 .subs-card-channel {
   margin-top: 4px;
@@ -367,7 +367,7 @@ body.subs-pip .subs-player-btn { height: 28px; padding: 0 10px; font-size: 10px;
 /* ---------- theater mode ----------
    A class on the body and nothing else, so the iframe is never touched. Rebuilding
    it to go fullscreen would restart the video from zero every time you toggled. */
-body.subs-theater-mode { background: #05070a; padding: 0; overflow: hidden; }
+body.subs-theater-mode { background: #050a0d; padding: 0; overflow: hidden; }
 body.subs-theater-mode > .page {
   margin: 0;
   padding: 0;
@@ -393,7 +393,7 @@ body.subs-theater-mode .subs-player {
   justify-content: center;
   border: 0;
   border-radius: 0;
-  background: #05070a;
+  background: #050a0d;
   box-shadow: none;
 }
 /* Letterboxed rather than stretched: bounded by whichever of the two viewport

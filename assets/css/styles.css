@@ -1,7 +1,12 @@
 /* Command Center — design system. One source of truth: tokens, base, components, pages.
-   Direction: "Annunciator" — a cold blue-steel instrument chassis lit by warm sodium-amber
-   legends. Machined edges, etched labels, recessed data wells, tabular figures. The one
-   signature element is the annunciator lamp: it lights only when a panel holds live data. */
+   Direction: "Annunciator" — a gunmetal instrument chassis lit by one warm lamp. Machined
+   edges, etched labels, recessed data wells, tabular figures. The one signature element is
+   the annunciator lamp: it lights only when a panel holds live data.
+
+   The chassis used to be cold blue-steel with sodium amber spent on everything — links,
+   hover, focus rings, borders — which left the lamp saying nothing the rest of the page
+   wasn't already saying. Now light means focus and colour means a message, so amber marks
+   live data and nothing else. See the palette block below. */
 
 /* The three families below are shipped with the site rather than assumed to be
    installed. Naming them in a font stack alone meant the whole typographic
@@ -17,39 +22,80 @@
   --font-legend: 'Fira Sans Condensed', 'Roboto Condensed', 'Archivo Narrow', 'Segoe UI Variable Display', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Hack', 'Noto Sans Mono', ui-monospace, 'SFMono-Regular', Menlo, Consolas, monospace;
 
-  /* surfaces — cold blue-steel chassis */
-  --bg: #0d1116;
-  --surface: #151b23;
-  --surface-raised: #1c232c;
-  --surface-hover: #242d38;
-  --well: #0a0e13;
-  --border: rgba(150, 172, 198, 0.13);
-  --border-strong: rgba(150, 172, 198, 0.26);
+  /* ── The ladder ──────────────────────────────────────────────────────────
+     Dark gunmetal surfaces, one warm light. Two rules hold the scheme
+     together, and everything below is derived from them:
 
-  /* text — cold cast, matched to the chassis */
-  --text: #dce3ec;
-  --text-muted: #8794a5;
-  --text-faint: #58636f;
+       Light means focus.      Interaction is the lamp landing on a thing.
+       Colour means a message. Every hue left over is saying something.
 
-  /* accent — sodium amber, the panel backlight */
-  --accent: #ffb000;
-  --accent-strong: #ffc957;
-  --accent-dim: #a9762a;
-  --accent-soft: rgba(255, 176, 0, 0.12);
-  --accent-border: rgba(255, 176, 0, 0.45);
-  --accent-contrast: #0d1116;
-  --accent-glow: rgba(255, 176, 0, 0.55);
+     That second rule is why focus is no longer a hue. Amber spent on "you
+     hovered" is amber that can't mean "this panel is holding live data" —
+     and the lamp is the one signature this design has. So focus is @light,
+     a warm near-white, and it reads as a lamp because every surface it
+     lands on is cool. The hues that remain are free to mean things.
 
-  /* gold — retained token, folded into the amber family */
-  --gold: #ffb000;
-  --gold-strong: #ffc957;
-  --gold-soft: rgba(255, 176, 0, 0.12);
-  --gold-border: rgba(255, 176, 0, 0.4);
+     What makes the ramp gunmetal rather than graphite is a faint teal cast:
+     green sits a point or two above the midpoint of red and blue on every
+     rung. A ramp whose green sits exactly on that midpoint is a neutral
+     blue-grey, and it reads as ink — a colour of absence. The cast widens as
+     the ladder climbs, because a fixed offset is a smaller and smaller
+     fraction of the channel values as they lighten. */
+  --field:    #0a0f12; /* the floor: wells, legend plates, inputs */
+  --rack:     #0f151a; /* the page itself */
+  --tile:     #1a232a; /* panel body: gunmetal proper */
+  --tile-lit: #1f282f; /* header, buttons, raised rows */
+  --chip:     #2a343b; /* hover */
+  --hairline: #34404a; /* rules and dividers */
+  --edge:     #47555f; /* the strongest rule: button and input borders */
 
-  /* semantic — market colours stay legible and conventional */
-  --success: #35d6a0;
-  --danger: #ff5f56;
-  --warn: #f2b84b;
+  /* The ink every shadow here is cast in, and deliberately not black.
+     Gunmetal has teal in it, and a shadow with none goes muddy against it.
+     This is the ladder carried two rungs below where the ladder stops,
+     which is also why it isn't on it: nothing is ever painted this colour. */
+  --shadow-ink: #050a0d;
+
+  /* structural names, pointed at the ladder — one edit above moves the site */
+  --bg: var(--rack);
+  --surface: var(--tile);
+  --surface-raised: var(--tile-lit);
+  --surface-hover: var(--chip);
+  --well: var(--field);
+  --border: var(--hairline);
+  --border-strong: var(--edge);
+
+  /* text — warm-neutral, so it reads as lit rather than as a cooler grey */
+  --text: #e9eef1;
+  --text-muted: #7d8890;
+  --text-faint: #5b666d;
+
+  /* ── The light ───────────────────────────────────────────────────────────
+     Warm on purpose: a neutral white lights nothing, it just looks like a
+     brighter grey, and the whole point is that the thing under the cursor
+     looks lit rather than ticked. Focus, hover, selection, active states. */
+  --light: #f2e7d3;
+
+  /* ── The three things worth saying in colour ────────────────────────────
+     Tints derive from the two hexes above with color-mix() rather than
+     hand-mixed hex, so a change to either carries through every hover,
+     ring and lamp in one edit instead of a dozen. */
+  --tally: #f0a93c;  /* a panel holds live data; a reading has gone stale */
+  --fresh: #86c97e;  /* live, up, calm */
+  --hangup: #e06c60; /* destroys, down, storm */
+
+  --light-soft:   color-mix(in srgb, var(--light) 10%, transparent);
+  --light-border: color-mix(in srgb, var(--light) 38%, transparent);
+  --light-glow:   color-mix(in srgb, var(--light) 45%, transparent);
+  --tally-soft:   color-mix(in srgb, var(--tally) 12%, transparent);
+  --tally-border: color-mix(in srgb, var(--tally) 45%, transparent);
+  --tally-glow:   color-mix(in srgb, var(--tally) 55%, transparent);
+  /* the unlit lamp: the same amber sunk most of the way into the plate */
+  --tally-dim:    color-mix(in srgb, var(--tally) 62%, var(--field));
+
+  /* retained aliases — the semantic names the pages already speak */
+  --success: var(--fresh);
+  --danger: var(--hangup);
+  --warn: var(--tally);
 
   /* machined chamfers, not rounded cards */
   --r-sm: 2px;
@@ -58,11 +104,14 @@
   --r-xl: 6px;
   --r-pill: 999px;
 
-  /* panels sit on the chassis rather than floating above it */
-  --shadow-sm: 0 1px 0 rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 2px 0 rgba(0, 0, 0, 0.5), 0 10px 26px rgba(0, 0, 0, 0.34);
-  --shadow-lg: 0 20px 52px rgba(0, 0, 0, 0.62);
-  --bezel: inset 0 1px 0 rgba(190, 210, 235, 0.07);
+  /* panels sit on the chassis rather than floating above it, and the shadow
+     they sit in is cast in @shadow-ink rather than black */
+  --shadow-sm: 0 1px 0 color-mix(in srgb, var(--shadow-ink) 50%, transparent);
+  --shadow-md: 0 2px 0 color-mix(in srgb, var(--shadow-ink) 50%, transparent),
+               0 10px 26px color-mix(in srgb, var(--shadow-ink) 34%, transparent);
+  --shadow-lg: 0 20px 52px color-mix(in srgb, var(--shadow-ink) 62%, transparent);
+  /* the top chamfer catches the same warm lamp every other highlight does */
+  --bezel: inset 0 1px 0 color-mix(in srgb, var(--light) 7%, transparent);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   --site-gutter-visual-width: 12px;
@@ -75,7 +124,7 @@ html, body {
   margin: 0;
   padding: 0;
   scrollbar-width: thin;
-  scrollbar-color: rgba(150, 172, 198, 0.26) transparent;
+  scrollbar-color: var(--edge) transparent;
 }
 
 html::-webkit-scrollbar, body::-webkit-scrollbar {
@@ -102,15 +151,23 @@ body {
   box-sizing: border-box;
   min-height: 100vh;
   background-color: var(--bg);
-  /* a single warm wash from above: the panel is lit from one source */
+  /* a single warm wash from above: the chassis is lit from one source, and
+     it is the same source every highlight on the page borrows */
   background-image:
-    radial-gradient(ellipse 1100px 460px at 50% -12%, rgba(255, 176, 0, 0.05), transparent 68%),
-    linear-gradient(180deg, #0b0f14 0%, #0d1116 42%, #11161d 100%);
+    radial-gradient(ellipse 1100px 460px at 50% -12%, color-mix(in srgb, var(--light) 5%, transparent), transparent 68%),
+    linear-gradient(180deg, #0a0f12 0%, #0f151a 42%, #141c22 100%);
   background-attachment: fixed;
 }
 
-a { color: var(--accent-strong); text-decoration: none; }
-a:hover { color: var(--accent); }
+/* Links rest in plain text and light on hover, so the lift *is* the focus.
+   They used to sit in amber at rest, which spent the signal colour on every
+   headline in the news list before anything had happened. */
+a { color: var(--text); text-decoration: none; }
+a:hover { color: var(--light); }
+
+/* selection is the light mixed into whatever surface it lands on, at a share
+   low enough that selected text keeps its own colour */
+::selection { background: color-mix(in srgb, var(--light) 24%, var(--tile)); }
 
 h1, h2, h3 { margin: 0; color: var(--text); }
 
@@ -123,10 +180,10 @@ h2 {
   letter-spacing: 0.2em;
   color: var(--text-muted);
   margin: 0 0 14px;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 0 rgba(5, 10, 13, 0.6);
 }
 
-:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--light); outline-offset: 2px; }
 
 /* Every page needs one h1 naming it, but the chassis says what page you are on
    with the lit nav button rather than a title bar — so the heading is carried
@@ -167,15 +224,15 @@ button, .home-button, .dropbtn {
 }
 
 button:hover, .home-button:hover, .dropbtn:hover {
-  border-color: var(--accent-border);
+  border-color: var(--light-border);
   background: var(--surface-hover);
-  color: var(--accent-strong);
-  box-shadow: var(--bezel), 0 0 0 1px var(--accent-soft);
+  color: var(--light);
+  box-shadow: var(--bezel), 0 0 0 1px var(--light-soft);
 }
 
 button:active, .home-button:active, .dropbtn:active {
   background: var(--well);
-  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 2px 4px rgba(5, 10, 13, 0.5);
 }
 
 button:disabled, .home-button:disabled {
@@ -196,14 +253,14 @@ input[type="text"], input[type="search"], input[type="range"], select, textarea 
   font-weight: 500;
   letter-spacing: 0.01em;
   outline: none;
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 2px 5px rgba(5, 10, 13, 0.45);
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 input[type="text"]::placeholder, input[type="search"]::placeholder { color: var(--text-faint); font-weight: 500; }
 input[type="text"]:focus, input[type="search"]:focus, select:focus {
-  border-color: var(--accent-border);
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45), 0 0 0 3px var(--accent-soft);
+  border-color: var(--light-border);
+  box-shadow: inset 0 2px 5px rgba(5, 10, 13, 0.45), 0 0 0 3px var(--light-soft);
 }
 
 /* ---------- layout shell ---------- */
@@ -295,7 +352,7 @@ header::after {
   position: absolute;
   left: 12px; right: 12px; bottom: -1px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent-border), transparent);
+  background: linear-gradient(90deg, transparent, var(--light-border), transparent);
   opacity: 0.7;
 }
 
@@ -324,7 +381,7 @@ header::after {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   white-space: nowrap;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 0 rgba(5, 10, 13, 0.6);
 }
 
 /* The nav seats against the brand on every page and takes the slack, so whatever
@@ -354,7 +411,7 @@ body.home-page .status-rail {
   background: var(--well);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 2px 5px rgba(5, 10, 13, 0.45);
 }
 body.home-page .rail-cell {
   display: flex;
@@ -415,22 +472,22 @@ body.home-page .status-rail .market-index-state {
 }
 .header-left .home-button:hover {
   color: var(--text);
-  background: rgba(150, 172, 198, 0.06);
+  background: color-mix(in srgb, var(--light) 6%, transparent);
   border-color: transparent;
   box-shadow: none;
 }
 /* active section reads as a lit indicator, not a filled pill */
 .header-left .home-button[aria-current='page'] {
-  color: var(--accent-strong);
-  background: var(--accent-soft);
+  color: var(--light);
+  background: var(--light-soft);
 }
 .header-left .home-button[aria-current='page']::after {
   content: '';
   position: absolute;
   left: 9px; right: 9px; bottom: 3px;
   height: 2px;
-  background: var(--accent);
-  box-shadow: 0 0 7px var(--accent-glow);
+  background: var(--light);
+  box-shadow: 0 0 7px var(--light-glow);
 }
 
 .controls {
@@ -474,7 +531,7 @@ header .controls { flex: 1 1 auto; }
   border-radius: var(--r-md);
   border: 1px solid var(--border);
   background: var(--well);
-  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.5);
+  box-shadow: inset 0 2px 6px rgba(5, 10, 13, 0.5);
 }
 .ticker-strip tv-ticker-tape { flex: 1; border-radius: var(--r-sm); overflow: hidden; }
 
@@ -527,8 +584,8 @@ tv-ticker-tape { width: 100%; height: 100%; }
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--accent-dim);
-  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.55);
+  background: var(--tally-dim);
+  box-shadow: inset 0 0 0 1px rgba(5, 10, 13, 0.55);
   opacity: 0.5;
 }
 /* lit: the panel is holding real, current data */
@@ -549,16 +606,16 @@ tv-ticker-tape { width: 100%; height: 100%; }
 .card:has(.hn-list) > .home-box-title:first-child::before,
 .card:has(.quake-empty) > .home-box-title:first-child::before,
 .card:has(.subs-card) > .home-box-title:first-child::before {
-  background: var(--accent);
+  background: var(--tally);
   opacity: 1;
-  box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent);
+  box-shadow: 0 0 8px var(--tally-glow), 0 0 2px var(--tally);
   /* strikes once when the data lands, then settles into the idle breath */
   animation: lamp-strike 0.55s var(--ease) both, lamp-breathe 3.4s var(--ease) 0.55s infinite;
 }
 
 @keyframes lamp-breathe {
-  0%, 100% { box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent); }
-  50% { box-shadow: 0 0 12px var(--accent-glow), 0 0 3px var(--accent); }
+  0%, 100% { box-shadow: 0 0 8px var(--tally-glow), 0 0 2px var(--tally); }
+  50% { box-shadow: 0 0 12px var(--tally-glow), 0 0 3px var(--tally); }
 }
 
 /* ---------- boot sequence ----------
@@ -574,11 +631,13 @@ tv-ticker-tape { width: 100%; height: 100%; }
   to { opacity: 1; transform: none; }
 }
 
-/* a lamp does not fade up — it overshoots, then settles */
+/* A lamp does not fade up — it overshoots, then settles. The overshoot is
+   @light itself: the lamp strikes with the same filament that lights the rest
+   of the page, then cools into the amber that means it is holding data. */
 @keyframes lamp-strike {
-  0% { background: var(--accent-dim); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.55); }
-  35% { background: #fff4d9; box-shadow: 0 0 18px var(--accent), 0 0 6px #fff; }
-  100% { background: var(--accent); box-shadow: 0 0 8px var(--accent-glow), 0 0 2px var(--accent); }
+  0% { background: var(--tally-dim); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--shadow-ink) 55%, transparent); }
+  35% { background: var(--light); box-shadow: 0 0 18px var(--tally), 0 0 6px var(--light); }
+  100% { background: var(--tally); box-shadow: 0 0 8px var(--tally-glow), 0 0 2px var(--tally); }
 }
 
 header { animation: boot-in 0.42s var(--ease) both; }
@@ -610,12 +669,12 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   border-radius: var(--r-lg);
   border: 1px solid var(--border-strong);
   background: var(--well);
-  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.55), var(--bezel);
+  box-shadow: inset 0 3px 8px rgba(5, 10, 13, 0.55), var(--bezel);
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 .home-search-wrap:focus-within {
-  border-color: var(--accent-border);
-  box-shadow: inset 0 3px 8px rgba(0, 0, 0, 0.55), 0 0 0 3px var(--accent-soft), 0 0 18px rgba(255, 176, 0, 0.12);
+  border-color: var(--light-border);
+  box-shadow: inset 0 3px 8px color-mix(in srgb, var(--shadow-ink) 55%, transparent), 0 0 0 3px var(--light-soft), 0 0 18px var(--light-soft);
 }
 .home-search-form { margin: 0; width: 100%; display: flex; justify-content: center; }
 .home-search-input {
@@ -750,8 +809,8 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   box-shadow: none;
 }
 .news-asof:hover {
-  border-bottom-color: var(--accent-border);
-  color: var(--accent-strong);
+  border-bottom-color: var(--light-border);
+  color: var(--light);
   background: transparent;
   box-shadow: none;
 }
@@ -759,7 +818,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 .news-asof.is-loading { opacity: 0.5; cursor: progress; }
 .news-controls { display: flex; gap: 6px; margin-bottom: 12px; justify-content: flex-start; flex-wrap: wrap; }
 .news-controls .home-button { height: 32px; padding: 0 11px; font-size: 11px; }
-.news-controls .home-button.active { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-strong); }
+.news-controls .home-button.active { border-color: var(--light-border); background: var(--light-soft); color: var(--light); }
 .news-container, #news-container { text-align: left; overflow: visible; }
 .news-list { padding-left: 0; margin: 0; list-style: none; }
 /* text-align is explicit: the home column centres its children, so a status line
@@ -777,7 +836,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 .news-item-card:first-child { border-top: 0; }
 .news-item-card:hover { background: var(--surface-raised); }
 .news-item-link { color: var(--text); text-decoration: none; font-size: 0.98rem; line-height: 1.45; font-weight: 400; display: block; }
-.news-item-link:hover { color: var(--accent-strong); }
+.news-item-link:hover { color: var(--light); }
 .news-item-meta {
   font-size: 0.7rem;
   color: var(--text-faint);
@@ -794,7 +853,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   font-size: 1.5rem;
   margin: 4px 0 6px;
   font-weight: 700;
-  color: var(--accent-strong);
+  color: var(--light);
   line-height: 1.15;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
@@ -810,7 +869,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   background: var(--well);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 1px 3px rgba(5, 10, 13, 0.55);
   overflow: hidden;
 }
 .sentiment-zone {
@@ -828,8 +887,8 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   bottom: -1px;
   width: 3px;
   margin-left: -1.5px;
-  background: var(--accent);
-  box-shadow: 0 0 7px var(--accent-glow);
+  background: var(--tally);
+  box-shadow: 0 0 7px var(--tally-glow);
   opacity: 0;
   transition: left 0.5s var(--ease), opacity 0.3s ease;
 }
@@ -930,14 +989,14 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   background: var(--border);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.55);
+  box-shadow: inset 0 1px 3px rgba(5, 10, 13, 0.55);
   overflow: hidden;
 }
 .spacewx-cell { background: var(--well); transition: background 0.3s var(--ease); }
-.spacewx-cell.lit { background: var(--accent); }
+.spacewx-cell.lit { background: var(--tally); }
 /* Kp 5 is the G1 threshold - storm cells fill red, and the boundary is scored */
 .spacewx-cell.lit.storm { background: var(--danger); }
-.spacewx-cell:nth-child(5) { box-shadow: inset 1px 0 0 var(--accent-dim); }
+.spacewx-cell:nth-child(5) { box-shadow: inset 1px 0 0 var(--tally-dim); }
 .spacewx-legend {
   display: flex;
   justify-content: space-between;
@@ -999,7 +1058,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.hn-score.hot { color: var(--accent-strong); }
+.hn-score.hot { color: var(--tally); }
 .hn-title {
   display: block;
   font-size: 0.78rem;
@@ -1011,7 +1070,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
-.hn-cell:hover .hn-title { color: var(--accent-strong); }
+.hn-cell:hover .hn-title { color: var(--light); }
 /* One row, and the domain is the only part allowed to lose characters to it: the
    count and the age are short and fixed, so they always survive. */
 .hn-meta {
@@ -1067,7 +1126,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 .quake-mag.moderate { color: var(--warn); }
 .quake-mag.major { color: var(--danger); }
 .quake-place { display: block; font-size: 0.74rem; line-height: 1.3; color: var(--text); }
-.quake-link:hover .quake-place { color: var(--accent-strong); }
+.quake-link:hover .quake-place { color: var(--light); }
 .quake-time {
   display: block;
   margin-top: 3px;
@@ -1110,7 +1169,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 .weather-temp {
   font-family: var(--font-mono);
   font-size: 2.1rem; margin: 0; font-weight: 700;
-  color: var(--accent-strong); line-height: 1.05;
+  color: var(--light); line-height: 1.05;
   font-variant-numeric: tabular-nums;
 }
 .weather-range { font-family: var(--font-mono); font-size: 0.8rem; margin: 6px 0 4px; color: var(--text-muted); font-weight: 400; font-variant-numeric: tabular-nums; }
@@ -1167,7 +1226,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 .nascar-meta { display: grid; gap: 1px; margin-top: 0; background: var(--border); border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; }
 .nascar-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; margin: 2px 0 10px; }
 .nascar-tab-btn { height: 32px; padding: 0 5px; font-size: 10px; letter-spacing: 0.06em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: var(--r-sm); }
-.nascar-tab-btn.active { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-strong); }
+.nascar-tab-btn.active { border-color: var(--light-border); background: var(--light-soft); color: var(--light); }
 .nascar-line { display: grid; grid-template-columns: 74px 1fr; align-items: baseline; gap: 8px; padding: 8px 10px; border: 0; border-radius: 0; background: var(--well); text-align: left; }
 /* No reserved second line. `min-height: 2.7em` held two lines' worth so the card
    would not resize when a longer race name loaded on another series tab, but most
@@ -1246,8 +1305,8 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 }
 .tv-panel-header .ticker-select-trigger:focus,
 .tv-panel-header .ticker-select-trigger[aria-expanded='true'] {
-  border-color: var(--accent-border);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  border-color: var(--light-border);
+  box-shadow: 0 0 0 3px var(--light-soft);
 }
 
 .tv-widget {
@@ -1303,8 +1362,8 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   color: var(--danger); font-size: 12px; font-weight: 700; cursor: pointer;
 }
 .ticker-overlay-delete:hover { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 20%, var(--well)); }
-.ticker-overlay-option:hover { border-color: var(--accent-border); color: var(--accent-strong); }
-.ticker-overlay-option.is-active { border-color: var(--accent-border); background: var(--accent-soft); color: var(--accent-strong); }
+.ticker-overlay-option:hover { border-color: var(--light-border); color: var(--light); }
+.ticker-overlay-option.is-active { border-color: var(--light-border); background: var(--light-soft); color: var(--light); }
 
 .dashboard-theater-menu {
   position: fixed; z-index: 42;
@@ -1334,11 +1393,11 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   color: var(--text);
 }
 
-body.dashboard-theater-mode { background: #05070a; padding: 0; }
+body.dashboard-theater-mode { background: #050a0d; padding: 0; }
 body.dashboard-theater-mode > .page { margin: 0; padding: 0; width: 100vw !important; max-width: none !important; height: 100dvh; }
 body.dashboard-theater-mode > .page > .dashboard-header { display: none; }
 body.dashboard-theater-mode .main { margin: 0; padding: 0; overflow: visible; }
-body.dashboard-theater-mode .tradingview-grid { position: fixed; inset: 0; z-index: 30; gap: 0; padding: 0; background: #05070a; }
+body.dashboard-theater-mode .tradingview-grid { position: fixed; inset: 0; z-index: 30; gap: 0; padding: 0; background: #050a0d; }
 body.dashboard-theater-scope-panel .tradingview-grid { display: block !important; }
 body.dashboard-theater-scope-panel .tv-panel { display: none; }
 body.dashboard-theater-scope-panel .tv-panel.dashboard-theater-target { display: flex; width: 100vw; height: 100dvh; border-radius: 0; }
@@ -1373,7 +1432,7 @@ body.subs-theater-mode .subs-player:focus-within .subs-theater-exit {
 .dropdown:hover .dropdown-content, .dropdown:focus-within .dropdown-content, .dropdown.is-open .dropdown-content { display: block; }
 .dropdown.force-closed .dropdown-content { display: none !important; }
 .dropdown-content a { display: block; padding: 9px 11px; text-decoration: none; color: var(--text); border-radius: var(--r-sm); font-size: 13px; }
-.dropdown-content a:hover { background: var(--accent-soft); color: var(--accent-strong); }
+.dropdown-content a:hover { background: var(--light-soft); color: var(--light); }
 
 /* ---------- footer: the bottom bezel of the chassis ----------
    Same plate construction as the header, lit from the same source above (180deg),
@@ -1399,7 +1458,7 @@ body.subs-theater-mode .subs-player:focus-within .subs-theater-exit {
   position: absolute;
   left: 12px; right: 12px; top: -1px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--accent-border), transparent);
+  background: linear-gradient(90deg, transparent, var(--light-border), transparent);
   opacity: 0.7;
 }
 
@@ -1422,7 +1481,7 @@ body.subs-theater-mode .subs-player:focus-within .subs-theater-exit {
   letter-spacing: 0.2em;
   text-transform: uppercase;
   white-space: nowrap;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 0 rgba(5, 10, 13, 0.6);
 }
 .footer-plate-stamp {
   font-family: var(--font-mono);
@@ -1452,7 +1511,7 @@ body.subs-theater-mode .subs-player:focus-within .subs-theater-exit {
   border-bottom: 1px solid transparent;
   transition: color 0.16s ease, border-color 0.16s ease;
 }
-.footer-nav a:hover { color: var(--accent-strong); border-bottom-color: var(--accent-border); }
+.footer-nav a:hover { color: var(--light); border-bottom-color: var(--light-border); }
 
 /* ---------- responsive ---------- */
 @media (max-width: 1200px) {

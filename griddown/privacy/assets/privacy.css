@@ -21,7 +21,7 @@
   font-weight: 700;
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: var(--accent);
+  color: var(--light);
   margin-bottom: 6px;
 }
 
@@ -33,7 +33,7 @@
   text-transform: uppercase;
   color: var(--text);
   margin: 0 0 4px;
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.6);
+  text-shadow: 0 1px 0 rgba(5, 10, 13, 0.6);
 }
 
 .legal-stamp {
@@ -51,13 +51,13 @@
   margin: 0 0 26px;
   padding: 14px 16px;
   border: 1px solid var(--border);
-  border-left: 2px solid var(--accent);
+  border-left: 2px solid var(--light);
   border-radius: var(--r-md);
   background: var(--well);
-  box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 2px 5px rgba(5, 10, 13, 0.45);
   color: var(--text);
 }
-.legal-tldr strong { color: var(--accent-strong); }
+.legal-tldr strong { color: var(--light); }
 
 .legal-doc h2 {
   font-family: var(--font-legend);
@@ -75,8 +75,8 @@
 .legal-doc ul { margin: 0 0 12px; padding-left: 20px; }
 .legal-doc li { margin-bottom: 7px; color: var(--text-muted); }
 .legal-doc b, .legal-doc strong { color: var(--text); font-weight: 600; }
-.legal-doc a { color: var(--accent-strong); border-bottom: 1px solid var(--accent-border); }
-.legal-doc a:hover { color: var(--accent); }
+.legal-doc a { color: var(--light); border-bottom: 1px solid var(--light-border); }
+.legal-doc a:hover { color: var(--light); }
 
 .legal-doc code {
   font-family: var(--font-mono);
