@@ -11,6 +11,13 @@
     // v2: snapshots now carry an hourly strip, so older cached shapes are ignored
     const WEATHER_LAST_SNAPSHOT_KEY = 'homeWeatherLastSnapshot:v2';
     const WEATHER_APPROX_LOCATION_KEY = 'homeWeatherApproxLocation';
+    // Advisories move far faster than a forecast does, so they get their own much
+    // shorter TTL rather than riding the 15 minute one above.
+    const WEATHER_ALERTS_KEY = 'homeWeatherAlerts:v1';
+    const WEATHER_ALERTS_CACHE_TTL_MS = 5 * 60 * 1000;
+    // Three is what fits before the advisories outgrow the forecast they qualify.
+    // They are severity-sorted, so an overflow drops the least urgent.
+    const WEATHER_ALERT_MAX_ROWS = 3;
     const NASCAR_CACHE_PREFIX = 'homeNascarSchedule:';
     const NASCAR_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
     const DEBUG_LOGS = false;
@@ -496,10 +503,22 @@
     // the three carries over from a previous render.
     function clearSentiment(el) {
       el.textContent = 'Unavailable';
-      el.style.color = 'rgba(255,255,255,0.65)';
+      // @text-faint is what the rest of the page uses for "nothing to report", and a
+      // translucent pure white was neither that nor any other colour in the ramp.
+      el.style.color = paletteToken('--text-faint', '#737b81');
       stampPanel('sentiment-asof', null, false);
       const mark = document.getElementById('sentiment-mark');
       if (mark) mark.classList.remove('is-set');
+    }
+
+    // styles.css is the palette's one source of truth, so read the token rather
+    // than restating its hex here. The five stops below had drifted a full
+    // revision behind the stylesheet - the page was painting this reading in the
+    // previous ramp's colours - which is exactly what a duplicated palette does
+    // given time. The fallbacks are only for a stylesheet that failed to load.
+    function paletteToken(name, fallback) {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      return v || fallback;
     }
 
     async function fetchSentiment() {
@@ -515,14 +534,14 @@
           const age = Date.now() - cachedAt;
           // If cache is fresh enough, show it and skip the network call entirely
           if (age < SENTIMENT_CACHE_TTL) {
-            applysentiment(el, cached.valueText, cached.color || '#f2e7d3', cachedAt, false);
+            applysentiment(el, cached.valueText, cached.color || paletteToken('--light', '#f7ecd8'), cachedAt, false);
             return;
           }
           // Stale but still worth showing: display it flagged while we revalidate.
           // Beyond the stale limit it is not shown at all - the fetch below either
           // replaces it or the panel ends up reading Unavailable.
           if (age < SENTIMENT_STALE_LIMIT) {
-            applysentiment(el, `${cached.valueText}`, cached.color || '#f2e7d3', cachedAt, true);
+            applysentiment(el, `${cached.valueText}`, cached.color || paletteToken('--light', '#f7ecd8'), cachedAt, true);
             hadCache = true;
           }
         }
@@ -598,12 +617,12 @@
           // The scale diverges through the light rather than through white:
           // hangup at one end, fresh at the other, and the filament in the
           // middle where the reading is saying nothing in particular.
-          let color = '#f2e7d3';
-          if (rounded <= 25) color = '#e06c60';
-          else if (rounded <= 45) color = '#f0a93c';
-          else if (rounded < 55) color = '#f2e7d3';
-          else if (rounded < 75) color = '#a9cf5b';
-          else color = '#86c97e';
+          let color = paletteToken('--light', '#f7ecd8');
+          if (rounded <= 25) color = paletteToken('--hangup', '#ef6f61');
+          else if (rounded <= 45) color = paletteToken('--tally', '#f9b043');
+          else if (rounded < 55) color = paletteToken('--light', '#f7ecd8');
+          else if (rounded < 75) color = paletteToken('--fresh-lean', '#adc66e');
+          else color = paletteToken('--fresh', '#7fd489');
 
           const valueText = `${rounded} (${label})`;
           const updatedAt = Date.now();
@@ -1299,6 +1318,120 @@
         return `${WEATHER_LAST_SNAPSHOT_KEY}:${latitude.toFixed(2)},${longitude.toFixed(2)}`;
       }
 
+      // ---------- advisories ----------
+      // Open-Meteo carries no watches or warnings, so these come from the National
+      // Weather Service, queried at the same point the forecast above is for. NWS is
+      // US-only: outside its coverage the endpoint answers 200 with an empty feature
+      // list, which lands here as "no advisories" rather than as an error.
+      const ALERT_SEVERITY_RANK = { Extreme: 0, Severe: 1, Moderate: 2, Minor: 3, Unknown: 4 };
+
+      function alertSeverityBand(severity) {
+        if (severity === 'Extreme' || severity === 'Severe') return 'severe';
+        if (severity === 'Moderate') return 'moderate';
+        return 'minor';
+      }
+
+      // "Until 9:00 PM", or with a weekday once the end is past tonight - a bare
+      // clock time on a three-day warning reads as though it lifts this evening.
+      function formatAlertWindow(endsAt) {
+        const end = endsAt ? new Date(endsAt) : null;
+        if (!end || !Number.isFinite(end.getTime())) return 'Ongoing';
+        const time = end.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+        const sameDay = end.toDateString() === new Date().toDateString();
+        if (sameDay) return `Until ${time}`;
+        return `Until ${end.toLocaleDateString('en-US', { weekday: 'short' })} ${time}`;
+      }
+
+      function nwsPointUrl(latitude, longitude) {
+        return `https://forecast.weather.gov/MapClick.php?lat=${latitude.toFixed(4)}&lon=${longitude.toFixed(4)}`;
+      }
+
+      // Built as nodes rather than an innerHTML template on purpose: event names and
+      // headlines are strings the NWS supplies, and this file's rule is that external
+      // text reaches the page through textContent (see the news and quake lists). The
+      // forecast grids above can use templates because every value in them is either
+      // a number this code rounded or a fixed string from the conditions table.
+      function renderWeatherAlerts(alerts, latitude, longitude) {
+        const container = document.getElementById('weather-alerts');
+        if (!container) return;
+        container.textContent = '';
+
+        const moreInfoUrl = nwsPointUrl(latitude, longitude);
+
+        if (!alerts.length) {
+          const none = document.createElement('a');
+          none.className = 'weather-alert-none';
+          none.href = moreInfoUrl;
+          none.target = '_blank';
+          none.rel = 'noopener noreferrer';
+          none.textContent = 'No active advisories';
+          container.appendChild(none);
+          return;
+        }
+
+        alerts.slice(0, WEATHER_ALERT_MAX_ROWS).forEach((alert) => {
+          const link = document.createElement('a');
+          link.className = `weather-alert ${alertSeverityBand(alert.severity)}`;
+          link.href = moreInfoUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          // The headline is the full "issued ... until ... by NWS <office>" sentence,
+          // which is more than fits but is exactly what you want on hover.
+          if (alert.headline) link.title = alert.headline;
+
+          const body = document.createElement('span');
+          body.className = 'weather-alert-body';
+
+          const event = document.createElement('span');
+          event.className = 'weather-alert-event';
+          event.textContent = alert.event;
+
+          const when = document.createElement('span');
+          when.className = 'weather-alert-when';
+          when.textContent = formatAlertWindow(alert.ends);
+
+          body.appendChild(event);
+          body.appendChild(when);
+          link.appendChild(body);
+          container.appendChild(link);
+        });
+      }
+
+      async function loadWeatherAlerts(latitude, longitude) {
+        const cacheKey = `${WEATHER_ALERTS_KEY}:${latitude.toFixed(2)},${longitude.toFixed(2)}`;
+        const cached = readStorageJson(cacheKey);
+        if (cached && isFreshTimestamp(cached.updatedAt, WEATHER_ALERTS_CACHE_TTL_MS) && Array.isArray(cached.alerts)) {
+          renderWeatherAlerts(cached.alerts, latitude, longitude);
+          return;
+        }
+
+        // Show the last known set while revalidating: an advisory blinking out for the
+        // duration of a request is worse than one held a few seconds past its refresh.
+        if (cached && Array.isArray(cached.alerts)) {
+          renderWeatherAlerts(cached.alerts, latitude, longitude);
+        }
+
+        const res = await fetchWithTimeout(
+          `https://api.weather.gov/alerts/active?point=${latitude.toFixed(4)},${longitude.toFixed(4)}`,
+          { headers: { Accept: 'application/geo+json' } }
+        );
+        const data = await res.json();
+
+        const alerts = (Array.isArray(data.features) ? data.features : [])
+          .map((feature) => feature && feature.properties)
+          .filter((props) => props && props.event)
+          .map((props) => ({
+            event: String(props.event),
+            severity: String(props.severity || 'Unknown'),
+            headline: props.headline ? String(props.headline) : '',
+            ends: props.ends || props.expires || ''
+          }))
+          .sort((a, b) => (ALERT_SEVERITY_RANK[a.severity] ?? 4) - (ALERT_SEVERITY_RANK[b.severity] ?? 4));
+
+        renderWeatherAlerts(alerts, latitude, longitude);
+        writeStorageJson(cacheKey, { alerts, updatedAt: Date.now() });
+      }
+
       function persistWeatherSnapshot(cacheKey, snapshot, locationLabel, updatedAt) {
         const payload = {
           snapshot,
@@ -1315,6 +1448,15 @@
       }
 
       async function renderWeather(latitude, longitude, locationLabel) {
+        // Advisories are a separate feed on a separate cadence, so they are kicked off
+        // alongside the forecast rather than after it and are not awaited: a slow or
+        // unreachable NWS must not hold up the temperature. A failure here leaves the
+        // advisory strip as it was, which is why it is caught rather than thrown - the
+        // panel's job is the forecast, and it still has one.
+        loadWeatherAlerts(latitude, longitude).catch((err) => {
+          debugLog('weather alerts unavailable', err);
+        });
+
         const cacheKey = getWeatherCacheKey(latitude, longitude);
         const cached = readStorageJson(cacheKey);
         if (cached && isFreshTimestamp(cached.updatedAt, WEATHER_CACHE_TTL_MS) && cached.snapshot) {

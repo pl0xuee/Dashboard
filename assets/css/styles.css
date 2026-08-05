@@ -33,27 +33,47 @@
      hovered" is amber that can't mean "this panel is holding live data" —
      and the lamp is the one signature this design has. So focus is @light,
      a warm near-white, and it reads as a lamp because every surface it
-     lands on is cool. The hues that remain are free to mean things.
+     lands on is neutral. The hues that remain are free to mean things.
 
-     What makes the ramp gunmetal rather than graphite is a faint teal cast:
-     green sits a point or two above the midpoint of red and blue on every
-     rung. A ramp whose green sits exactly on that midpoint is a neutral
-     blue-grey, and it reads as ink — a colour of absence. The cast widens as
-     the ladder climbs, because a fixed offset is a smaller and smaller
-     fraction of the channel values as they lighten. */
-  --field:    #0a0f12; /* the floor: wells, legend plates, inputs */
-  --rack:     #0f151a; /* the page itself */
-  --tile:     #1a232a; /* panel body: gunmetal proper */
-  --tile-lit: #1f282f; /* header, buttons, raised rows */
-  --chip:     #2a343b; /* hover */
-  --hairline: #34404a; /* rules and dividers */
-  --edge:     #47555f; /* the strongest rule: button and input borders */
+     The chassis is grey. Not blue-grey, not gunmetal-with-a-teal-cast: steel
+     that has had the colour taken out of it, running from near-black at the
+     floor to a light machined grey at the top rung. Saturation stays between
+     5% and 9% the whole way up, which is low enough that no rung reads as a
+     hue — it reads as metal.
 
-  /* The ink every shadow here is cast in, and deliberately not black.
-     Gunmetal has teal in it, and a shadow with none goes muddy against it.
-     This is the ladder carried two rungs below where the ladder stops,
-     which is also why it isn't on it: nothing is ever painted this colour. */
-  --shadow-ink: #050a0d;
+     That is a deliberate reversal. This ramp briefly carried a real teal cast
+     (~199° at 22–40%), on the theory that a neutral dark grey reads as ink
+     rather than as a material. It does not; it reads as the inside of a rack,
+     which is the thing being drawn. And the cast cost more than it bought: the
+     one warm lamp is the entire signature here, and amber against blue-grey is
+     just two colours sharing a page. Amber against grey is a lamp.
+
+     So the colour budget goes where the second rule already says it should.
+     Nothing in the chassis is allowed a hue; @light and the three signal
+     colours below are the only chroma on the page, and every one of them is
+     louder for having a neutral field to sit on — @tally measures 8.62 against
+     a panel face here versus 7.93 against the old one.
+
+     What is NOT reverted is the ladder itself. Panels sit on the chassis by
+     being a different value from it, and the original rungs were spaced 5.3 and
+     2.0 luminance points apart at rack→tile and tile→tile-lit — the second one
+     below the threshold where an edge reads as an edge at all, which is most of
+     why this looked flat. Every step is now 3.9 points or wider, and the floor
+     is genuinely black (4.3%, against the 5.5% it used to bottom out at). Depth
+     comes from value and light, not from hue. */
+  --field:    #0a0b0c; /* the floor: wells, legend plates, inputs */
+  --rack:     #131517; /* the page itself */
+  --tile:     #1f2224; /* panel body: machined grey */
+  --tile-lit: #292d30; /* header, buttons, raised rows */
+  --chip:     #363b3e; /* hover */
+  --hairline: #414649; /* rules and dividers */
+  --edge:     #5c6266; /* the strongest rule: button and input borders */
+
+  /* The ink every shadow here is cast in. The ladder carried two rungs below
+     where the ladder stops, which is also why it isn't on it: nothing is ever
+     painted this colour. It is near-black and neutral like everything above it,
+     so a shadow deepens a surface instead of tinting it. */
+  --shadow-ink: #050607;
 
   /* structural names, pointed at the ladder — one edit above moves the site */
   --bg: var(--rack);
@@ -64,24 +84,39 @@
   --border: var(--hairline);
   --border-strong: var(--edge);
 
-  /* text — warm-neutral, so it reads as lit rather than as a cooler grey */
-  --text: #e9eef1;
-  --text-muted: #7d8890;
-  --text-faint: #5b666d;
+  /* text — neutral, like the metal it is etched into. The problem with the
+     originals was never their hue, it was that they were too dark to read:
+     @text-muted and @text-faint measured 4.40 and 2.71 against a panel face,
+     under the 4.5 floor for body text and, for @text-faint, under even the 3.0
+     one for UI text. They carry most of the words here — every legend, stamp,
+     scope line and meta row — so they are lifted to 6.03 and 3.72. Brighter,
+     not bluer. */
+  --text: #edeff1;
+  --text-muted: #98a0a6;
+  --text-faint: #737b81;
 
   /* ── The light ───────────────────────────────────────────────────────────
      Warm on purpose: a neutral white lights nothing, it just looks like a
      brighter grey, and the whole point is that the thing under the cursor
      looks lit rather than ticked. Focus, hover, selection, active states. */
-  --light: #f2e7d3;
+  --light: #f7ecd8;
 
   /* ── The three things worth saying in colour ────────────────────────────
      Tints derive from the two hexes above with color-mix() rather than
      hand-mixed hex, so a change to either carries through every hover,
-     ring and lamp in one edit instead of a dozen. */
-  --tally: #f0a93c;  /* a panel holds live data; a reading has gone stale */
-  --fresh: #86c97e;  /* live, up, calm */
-  --hangup: #e06c60; /* destroys, down, storm */
+     ring and lamp in one edit instead of a dozen.
+
+     Each is a stop brighter and a stop more saturated than it was. With the
+     chassis held at 5–9% saturation these three and @light are the only chroma
+     on the page, so they carry the whole colour budget and can afford to. */
+  --tally: #f9b043;  /* a panel holds live data; a reading has gone stale */
+  --fresh: #7fd489;  /* live, up, calm */
+  --hangup: #ef6f61; /* destroys, down, storm */
+  /* The Fear & Greed scale needs one stop between the filament and @fresh —
+     greed leaning green without having arrived. It lived in index-inline.js as
+     a loose hex, which is how the other four stops there fell a revision behind
+     the ramp; it belongs with the colours it sits between. */
+  --fresh-lean: #adc66e;
 
   --light-soft:   color-mix(in srgb, var(--light) 10%, transparent);
   --light-border: color-mix(in srgb, var(--light) 38%, transparent);
@@ -100,7 +135,7 @@
   /* the brush marks in the chassis — see `body::before`. Strength is one
      number on purpose: it is the only thing here worth taste-testing, and it
      wants to sit just below the threshold where you notice it as a texture. */
-  --grain-strength: 0.34;
+  --grain-strength: 0.42;
   --grain-falloff: radial-gradient(ellipse 1300px 820px at 50% -10%,
     rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.5) 46%, rgba(0, 0, 0, 0) 80%);
 
@@ -112,13 +147,22 @@
   --r-pill: 999px;
 
   /* panels sit on the chassis rather than floating above it, and the shadow
-     they sit in is cast in @shadow-ink rather than black */
-  --shadow-sm: 0 1px 0 color-mix(in srgb, var(--shadow-ink) 50%, transparent);
-  --shadow-md: 0 2px 0 color-mix(in srgb, var(--shadow-ink) 50%, transparent),
-               0 10px 26px color-mix(in srgb, var(--shadow-ink) 34%, transparent);
-  --shadow-lg: 0 20px 52px color-mix(in srgb, var(--shadow-ink) 62%, transparent);
-  /* the top chamfer catches the same warm lamp every other highlight does */
-  --bezel: inset 0 1px 0 color-mix(in srgb, var(--light) 7%, transparent);
+     they sit in is cast in @shadow-ink rather than black.
+
+     A panel at rest used to carry @shadow-sm alone, and @shadow-sm was a single
+     `0 1px 0` hairline — which is a drawn line, not a shadow. Nothing on the
+     page was ever cast into one until you hovered it, so the whole console read
+     as artwork printed on the chassis rather than parts bolted to it. Resting
+     panels now get a real penumbra; hover deepens it rather than introducing it. */
+  --shadow-sm: 0 1px 0 color-mix(in srgb, var(--shadow-ink) 60%, transparent),
+               0 4px 12px color-mix(in srgb, var(--shadow-ink) 42%, transparent);
+  --shadow-md: 0 2px 0 color-mix(in srgb, var(--shadow-ink) 60%, transparent),
+               0 12px 30px color-mix(in srgb, var(--shadow-ink) 52%, transparent);
+  --shadow-lg: 0 20px 52px color-mix(in srgb, var(--shadow-ink) 70%, transparent);
+  /* the top chamfer catches the same warm lamp every other highlight does. At 7%
+     it was below the threshold where a 1px line is visible at all, so no edge on
+     the page was actually catching the light the palette is built around. */
+  --bezel: inset 0 1px 0 color-mix(in srgb, var(--light) 14%, transparent);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   --site-gutter-visual-width: 12px;
@@ -159,10 +203,30 @@ body {
   min-height: 100vh;
   background-color: var(--bg);
   /* a single warm wash from above: the chassis is lit from one source, and
-     it is the same source every highlight on the page borrows */
+     it is the same source every highlight on the page borrows.
+
+     The linear underneath used to run #0a0f12 at the top to #141c22 at the
+     bottom — brightest at the floor, which is a chassis lit from below, and it
+     cancelled the lamp it sits under. Between the two the darkest band landed
+     across the middle of the page, where all the content is. It now falls away
+     downward from the lamp, so the gradient and the radial agree on where the
+     light is, and the panels sit against the brightest part of the chassis
+     instead of its dimmest. Both ends derive from the ramp — no loose hexes to
+     drift out of step with it.
+
+     The top stop is deliberately shy of the panel face. Carried up to 55% of the
+     way to @tile it matched the panels it sits behind — measured, 13.3% against
+     their 15.1% — and the cards nearest the lamp lost their edges into it, which
+     is the flatness this pass exists to remove, reintroduced at the top of the
+     page. The chassis stays under the panels everywhere; the lamp is carried by
+     the radial and by each panel's own lit top edge, not by washing out the
+     field they sit on. */
   background-image:
-    radial-gradient(ellipse 1100px 460px at 50% -12%, color-mix(in srgb, var(--light) 5%, transparent), transparent 68%),
-    linear-gradient(180deg, #0a0f12 0%, #0f151a 42%, #141c22 100%);
+    radial-gradient(ellipse 1200px 520px at 50% -10%, color-mix(in srgb, var(--light) 8%, transparent), transparent 70%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--tile) 22%, var(--rack)) 0%,
+      var(--rack) 40%,
+      color-mix(in srgb, var(--shadow-ink) 45%, var(--rack)) 100%);
   background-attachment: fixed;
 }
 
@@ -239,7 +303,7 @@ h2 {
   letter-spacing: 0.2em;
   color: var(--text-muted);
   margin: 0 0 14px;
-  text-shadow: 0 1px 0 rgba(5, 10, 13, 0.6);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--shadow-ink) 60%, transparent);
 }
 
 :focus-visible { outline: 2px solid var(--light); outline-offset: 2px; }
@@ -291,7 +355,7 @@ button:hover, .home-button:hover, .dropbtn:hover {
 
 button:active, .home-button:active, .dropbtn:active {
   background: var(--well);
-  box-shadow: inset 0 2px 4px rgba(5, 10, 13, 0.5);
+  box-shadow: inset 0 2px 4px color-mix(in srgb, var(--shadow-ink) 50%, transparent);
 }
 
 button:disabled, .home-button:disabled {
@@ -312,14 +376,14 @@ input[type="text"], input[type="search"], input[type="range"], select, textarea 
   font-weight: 500;
   letter-spacing: 0.01em;
   outline: none;
-  box-shadow: inset 0 2px 5px rgba(5, 10, 13, 0.45);
+  box-shadow: inset 0 2px 5px color-mix(in srgb, var(--shadow-ink) 45%, transparent);
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 input[type="text"]::placeholder, input[type="search"]::placeholder { color: var(--text-faint); font-weight: 500; }
 input[type="text"]:focus, input[type="search"]:focus, select:focus {
   border-color: var(--light-border);
-  box-shadow: inset 0 2px 5px rgba(5, 10, 13, 0.45), 0 0 0 3px var(--light-soft);
+  box-shadow: inset 0 2px 5px color-mix(in srgb, var(--shadow-ink) 45%, transparent), 0 0 0 3px var(--light-soft);
 }
 
 /* ---------- layout shell ---------- */
@@ -440,7 +504,7 @@ header::after {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   white-space: nowrap;
-  text-shadow: 0 1px 0 rgba(5, 10, 13, 0.6);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--shadow-ink) 60%, transparent);
 }
 
 /* The nav seats against the brand on every page and takes the slack, so whatever
@@ -470,7 +534,7 @@ body.home-page .status-rail {
   background: var(--well);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  box-shadow: inset 0 2px 5px rgba(5, 10, 13, 0.45);
+  box-shadow: inset 0 2px 5px color-mix(in srgb, var(--shadow-ink) 45%, transparent);
 }
 body.home-page .rail-cell {
   display: flex;
@@ -590,15 +654,25 @@ header .controls { flex: 1 1 auto; }
   border-radius: var(--r-md);
   border: 1px solid var(--border);
   background: var(--well);
-  box-shadow: inset 0 2px 6px rgba(5, 10, 13, 0.5);
+  box-shadow: inset 0 2px 6px color-mix(in srgb, var(--shadow-ink) 50%, transparent);
 }
 .ticker-strip tv-ticker-tape { flex: 1; border-radius: var(--r-sm); overflow: hidden; }
 
 tv-ticker-tape { width: 100%; height: 100%; }
 
 /* ---------- panel (card) ---------- */
+/* The face is a flat fill no longer. A panel is a piece of metal under a lamp
+   that is up and to the middle, so it catches that lamp along its top edge and
+   falls into its own shadow at the bottom — the same 180deg story the header,
+   the footer and the page background all tell. The travel is small (about two
+   rungs of the ladder end to end); at flat fill every panel was the same value
+   top to bottom, which is what a swatch looks like, not a surface. */
 .card {
-  background: var(--surface);
+  --plate-lamp: transparent;
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--light) 4%, var(--surface)) 0%,
+    var(--surface) 38%,
+    color-mix(in srgb, var(--shadow-ink) 22%, var(--surface)) 100%);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   padding: 16px;
@@ -619,9 +693,20 @@ tv-ticker-tape { width: 100%; height: 100%; }
   margin: 0 -16px 14px;
   padding: 10px 16px;
   text-align: left;
-  background: var(--well);
+  /* Sunk into the panel face rather than painted onto it: dark at the lip where
+     the metal turns down into the recess, easing to the well's own value. The
+     outer `0 1px 0` is the lit edge the plate casts onto the face below it —
+     the pair is what makes a recess read as depth rather than as a dark band.
+     @plate-lamp is the annunciator bleeding onto its own plate; it is
+     transparent until the panel's data lands. See the lamp block below. */
+  background:
+    radial-gradient(42px 24px at 17px 50%, var(--plate-lamp), transparent 72%),
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--shadow-ink) 60%, var(--well)) 0%,
+      var(--well) 72%);
   border-bottom: 1px solid var(--border);
   border-radius: var(--r-lg) var(--r-lg) 0 0;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--light) 6%, transparent);
 }
 /* .center is overridden deliberately: plates align left so lamps form a column */
 .card > .home-box-title.center:first-child { text-align: left; justify-content: flex-start; }
@@ -644,7 +729,7 @@ tv-ticker-tape { width: 100%; height: 100%; }
   height: 7px;
   border-radius: 50%;
   background: var(--tally-dim);
-  box-shadow: inset 0 0 0 1px rgba(5, 10, 13, 0.55);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--shadow-ink) 55%, transparent);
   opacity: 0.5;
 }
 /* lit: the panel is holding real, current data */
@@ -670,6 +755,34 @@ tv-ticker-tape { width: 100%; height: 100%; }
   box-shadow: 0 0 8px var(--tally-glow), 0 0 2px var(--tally);
   /* strikes once when the data lands, then settles into the idle breath */
   animation: lamp-strike 0.55s var(--ease) both, lamp-breathe 3.4s var(--ease) 0.55s infinite;
+}
+
+/* ---------- the lamp bleeds onto its plate ----------
+   A 7px dot glowing in a vacuum is a sticker. A real annunciator throws a little
+   light onto the metal around it, and that spill is most of what makes it read as
+   a lamp rather than a coloured dot — so the plate takes a soft amber wash from
+   the left, centred on the lamp, and the panel gains a signature you can see from
+   across the room instead of one you have to go looking for.
+
+   This is the same amount of boldness the design already spends, in the same
+   place: it is still amber, still only on a panel holding live data, still dark
+   until that data lands. No new hue, no second signal — the one signal simply
+   stops being 7px wide.
+
+   Set on the card, not the plate: custom properties inherit, so this is one
+   short selector list instead of the nine-selector `> .home-box-title:first-child`
+   version above, and the plate's own rule reads the value without knowing which
+   panel it is on. */
+.card:has(.market-index-state.live),
+.card:has(.market-index-state.last),
+.card:has(.news-list),
+.card:has(.weather-day),
+.card:has(.spacewx-scale.is-set),
+.card:has(.quake-list),
+.card:has(.hn-list),
+.card:has(.quake-empty),
+.card:has(.subs-card) {
+  --plate-lamp: color-mix(in srgb, var(--tally) 16%, transparent);
 }
 
 @keyframes lamp-breathe {
@@ -728,7 +841,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   border-radius: var(--r-lg);
   border: 1px solid var(--border-strong);
   background: var(--well);
-  box-shadow: inset 0 3px 8px rgba(5, 10, 13, 0.55), var(--bezel);
+  box-shadow: inset 0 3px 8px color-mix(in srgb, var(--shadow-ink) 55%, transparent), var(--bezel);
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
 .home-search-wrap:focus-within {
@@ -928,7 +1041,6 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   background: var(--well);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  box-shadow: inset 0 1px 3px rgba(5, 10, 13, 0.55);
   overflow: hidden;
 }
 .sentiment-zone {
@@ -1048,7 +1160,6 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   background: var(--border);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  box-shadow: inset 0 1px 3px rgba(5, 10, 13, 0.55);
   overflow: hidden;
 }
 .spacewx-cell { background: var(--well); transition: background 0.3s var(--ease); }
@@ -1273,6 +1384,87 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- weather advisories ----------
+   The same instrument as the seismic list: coded events, each one a link out. That
+   is deliberate reuse rather than a new shape — the site already has a way of
+   saying "here is a graded event you can go read about", and an advisory is one.
+
+   What it does not reuse is the magnitude column. A quake's number is the reading;
+   an advisory's severity is a band, not a value, so it is carried by a marker bar
+   down the left edge in the colour that band already means elsewhere on the page:
+   @hangup for Severe and Extreme, @tally for Moderate, and plain rule for the rest.
+   No new hue, and the strip stays legible if you cannot separate red from amber
+   because the event names itself.
+
+   Stays empty until the feed answers, so the panel never shows an empty bordered
+   box — the same :empty contract the two forecast grids keep. */
+.weather-alerts:empty { display: none; }
+.weather-alerts {
+  display: grid;
+  gap: 1px;
+  margin-top: 12px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--light) 7%, transparent);
+}
+.weather-alert {
+  --alert-accent: var(--border-strong);
+  position: relative;
+  display: block;
+  padding: 8px 10px 8px 15px;
+  background: var(--well);
+  text-align: left;
+  text-decoration: none;
+  transition: background 0.14s ease;
+}
+.weather-alert::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--alert-accent);
+}
+.weather-alert.severe { --alert-accent: var(--danger); }
+.weather-alert.moderate { --alert-accent: var(--warn); }
+.weather-alert:hover { background: var(--surface-raised); }
+.weather-alert-body { display: block; }
+.weather-alert-event {
+  display: block;
+  font-size: 0.76rem;
+  line-height: 1.3;
+  font-weight: 600;
+  color: var(--text);
+}
+.weather-alert.severe .weather-alert-event { color: var(--danger); }
+.weather-alert.moderate .weather-alert-event { color: var(--warn); }
+.weather-alert:hover .weather-alert-event { color: var(--light); }
+.weather-alert-when {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-faint);
+  font-variant-numeric: tabular-nums;
+}
+/* "Nothing active" is a reading the feed returned, not an empty state — the same
+   argument .quake-empty makes. It stays a link so the way out to the full NWS
+   page is in the same place whether or not anything is in force. */
+.weather-alert-none {
+  display: block;
+  padding: 7px 10px;
+  background: var(--well);
+  text-align: left;
+  text-decoration: none;
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  transition: color 0.14s ease, background 0.14s ease;
+}
+.weather-alert-none:hover { background: var(--surface-raised); color: var(--light); }
+
 .weather-summary:empty { display: none; }
 .weather-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin-top: 12px; background: var(--border); border: 1px solid var(--border); border-radius: var(--r-sm); overflow: hidden; padding: 0; text-align: left; }
 .weather-day { border: 0; background: var(--well); border-radius: 0; padding: 8px 9px; display: flex; flex-direction: column; gap: 3px; min-height: 64px; }
@@ -1314,12 +1506,16 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 }
 .tradingview-grid.show { display: grid; }
 
+/* same lit face as .card — a chart panel is the same piece of metal */
 .tv-panel {
   display: flex;
   flex-direction: column;
   border: 1px solid var(--border);
   border-radius: var(--r-md);
-  background: var(--surface);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--light) 4%, var(--surface)) 0%,
+    var(--surface) 38%,
+    color-mix(in srgb, var(--shadow-ink) 22%, var(--surface)) 100%);
   height: 100%;
   overflow: hidden;
   box-shadow: var(--bezel), var(--shadow-sm);
@@ -1452,11 +1648,11 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   color: var(--text);
 }
 
-body.dashboard-theater-mode { background: #050a0d; padding: 0; }
+body.dashboard-theater-mode { background: var(--shadow-ink); padding: 0; }
 body.dashboard-theater-mode > .page { margin: 0; padding: 0; width: 100vw !important; max-width: none !important; height: 100dvh; }
 body.dashboard-theater-mode > .page > .dashboard-header { display: none; }
 body.dashboard-theater-mode .main { margin: 0; padding: 0; overflow: visible; }
-body.dashboard-theater-mode .tradingview-grid { position: fixed; inset: 0; z-index: 30; gap: 0; padding: 0; background: #050a0d; }
+body.dashboard-theater-mode .tradingview-grid { position: fixed; inset: 0; z-index: 30; gap: 0; padding: 0; background: var(--shadow-ink); }
 body.dashboard-theater-scope-panel .tradingview-grid { display: block !important; }
 body.dashboard-theater-scope-panel .tv-panel { display: none; }
 body.dashboard-theater-scope-panel .tv-panel.dashboard-theater-target { display: flex; width: 100vw; height: 100dvh; border-radius: 0; }
@@ -1540,7 +1736,7 @@ body.subs-theater-mode .subs-player:focus-within .subs-theater-exit {
   letter-spacing: 0.2em;
   text-transform: uppercase;
   white-space: nowrap;
-  text-shadow: 0 1px 0 rgba(5, 10, 13, 0.6);
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--shadow-ink) 60%, transparent);
 }
 .footer-plate-stamp {
   font-family: var(--font-mono);
@@ -1571,6 +1767,25 @@ body.subs-theater-mode .subs-player:focus-within .subs-theater-exit {
   transition: color 0.16s ease, border-color 0.16s ease;
 }
 .footer-nav a:hover { color: var(--light); border-bottom-color: var(--light-border); }
+
+/* ---------- well recess ----------
+   Every data well on the site is a grid of cells in @well over a @border gap,
+   and every one of them sat perfectly flush with the panel face it is supposed
+   to be cut into. An inset shadow on the container buys nothing here — the cells
+   fill it edge to edge and paint straight over the inset. What actually sells a
+   recess is the far side of it: the lip of panel face just below the cut catches
+   the lamp, exactly as the legend plate's does. One `0 1px 0` in @light.
+
+   Lives down here, after every well is defined, because the two that already
+   carry their own inset would otherwise win on source order and drop the lip. */
+.market-index-list, .hn-list, .quake-list, .weather-hourly, .weather-summary,
+.nascar-meta, .panel-well {
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--light) 7%, transparent);
+}
+.spacewx-scale, .sentiment-track {
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--shadow-ink) 60%, transparent),
+              0 1px 0 color-mix(in srgb, var(--light) 7%, transparent);
+}
 
 /* ---------- responsive ---------- */
 @media (max-width: 1200px) {

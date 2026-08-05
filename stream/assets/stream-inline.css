@@ -5,7 +5,7 @@
    player treats that bleed as its video being occluded and refuses to
    autoplay ("style visibility" error) — tighten it on this page only. */
 .page-header {
-  box-shadow: 0 3px 6px rgba(5, 10, 13, 0.3);
+  box-shadow: 0 3px 6px color-mix(in srgb, var(--shadow-ink) 30%, transparent);
 }
 
 .stream-container {
@@ -57,7 +57,7 @@
      adjacent panel. Twitch's player treats that bleed as its video being
      occluded and refuses to autoplay ("style visibility" error) — keep the
      blur radius tighter than the gap so it can't reach across. */
-  box-shadow: 0 3px 6px rgba(5, 10, 13, 0.3);
+  box-shadow: 0 3px 6px color-mix(in srgb, var(--shadow-ink) 30%, transparent);
   transition: border-color 0.24s var(--ease), box-shadow 0.24s var(--ease);
   min-width: 400px;
   min-height: calc(var(--tile-video-floor) + var(--tile-header-h) + 2px);
@@ -72,7 +72,7 @@
    so this landed on exactly the tile you watch. Keep the shadow inside the gap. */
 .stream-tile.is-focused {
   border-color: var(--border-strong);
-  box-shadow: 0 3px 6px rgba(5, 10, 13, 0.3);
+  box-shadow: 0 3px 6px color-mix(in srgb, var(--shadow-ink) 30%, transparent);
 }
 
 .stream-tile.is-empty.is-focused { box-shadow: none; }
@@ -182,15 +182,15 @@
   border-radius: 50%;
   flex-shrink: 0;
   background: var(--text-faint);
-  box-shadow: 0 0 0 2px rgba(5, 10, 13, 0.35);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--shadow-ink) 35%, transparent);
 }
 .stream-tile[data-platform="twitch"] .stream-tile-dot {
   background: #a970ff;
-  box-shadow: 0 0 0 2px rgba(5, 10, 13, 0.35), 0 0 8px rgba(169, 112, 255, 0.75);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--shadow-ink) 35%, transparent), 0 0 8px rgba(169, 112, 255, 0.75);
 }
 .stream-tile[data-platform="youtube"] .stream-tile-dot {
   background: #ff6a4a;
-  box-shadow: 0 0 0 2px rgba(5, 10, 13, 0.35), 0 0 8px rgba(255, 106, 74, 0.75);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--shadow-ink) 35%, transparent), 0 0 8px rgba(255, 106, 74, 0.75);
 }
 
 .stream-tile-label {
@@ -238,7 +238,7 @@
   border-radius: var(--r-lg);
   overflow: hidden;
   border: 1px solid var(--border);
-  box-shadow: 0 3px 6px rgba(5, 10, 13, 0.3);
+  box-shadow: 0 3px 6px color-mix(in srgb, var(--shadow-ink) 30%, transparent);
   position: relative;
   transition: border-color 0.24s var(--ease);
 }
@@ -285,7 +285,7 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
   background: linear-gradient(180deg, color-mix(in srgb, var(--light) 22%, var(--surface-raised)), var(--surface));
   color: var(--text);
 }
-#loadStreamBtn:hover { border-color: var(--light); box-shadow: 0 0 0 1px var(--light-soft), 0 10px 22px rgba(5, 10, 13, 0.3); }
+#loadStreamBtn:hover { border-color: var(--light); box-shadow: 0 0 0 1px var(--light-soft), 0 10px 22px color-mix(in srgb, var(--shadow-ink) 30%, transparent); }
 
 .dropdown-content { width: min(88vw, 480px); min-width: min(420px, 88vw); max-width: 480px; max-height: 70vh; overflow-y: auto; overflow-x: hidden; }
 .dropdown-content::-webkit-scrollbar { width: 4px; }
@@ -345,11 +345,11 @@ iframe { width: 100%; height: 100%; border: none; display: block; }
 .stream-live-empty, .stream-list-empty { padding: 8px; font-size: 12px; color: var(--text-faint); text-align: center; }
 
 /* theater mode */
-body.stream-theater-mode { background: #050a0d; }
+body.stream-theater-mode { background: var(--shadow-ink); }
 body.stream-theater-mode > .page { margin: 0; padding: 0; max-width: none !important; width: 100vw; height: 100dvh; }
 body.stream-theater-mode > .page > .page-header { display: none; }
 body.stream-theater-mode .main { overflow: visible; margin: 0; padding: 0; }
-body.stream-theater-mode .stream-container { position: fixed; inset: 0; gap: 0; border-radius: 0; background: #050a0d; z-index: 30; }
+body.stream-theater-mode .stream-container { position: fixed; inset: 0; gap: 0; border-radius: 0; background: var(--shadow-ink); z-index: 30; }
 body.stream-theater-mode .stream-grid,
 body.stream-theater-mode .stream-chat { height: 100dvh; }
 body.stream-theater-mode .stream-tile { border-radius: 0; border-top: 0; border-bottom: 0; }

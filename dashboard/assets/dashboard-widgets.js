@@ -1,6 +1,31 @@
 if (!window.__dashboardWidgetsInitialized) {
   window.__dashboardWidgetsInitialized = true;
 
+  // The chart theme below is the site palette, and Lightweight Charts wants it as
+  // plain values rather than CSS. Read the tokens instead of restating them:
+  // these had drifted a full revision behind styles.css, so the charts were
+  // painting their surface, grid and axis text in the previous ramp while the
+  // panel around them wore the current one. Fallbacks cover a stylesheet that
+  // failed to load, nothing else.
+  function paletteToken(name, fallback) {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  }
+
+  // Same tokens, but as rgba(). Lightweight Charts parses colours with its own
+  // parser rather than the browser's, and that parser understands hex, rgb and
+  // rgba and nothing else — handing it a `color-mix(...)` string makes it throw
+  // "Failed to parse color" from inside the render loop, which takes down the
+  // whole series and leaves an empty chart. Anything going into the chart library
+  // has to come through here; DOM styles can use color-mix directly.
+  function paletteRgba(name, alpha, fallback) {
+    let hex = paletteToken(name, fallback).replace('#', '');
+    if (hex.length === 3) hex = hex.split('').map((c) => c + c).join('');
+    const int = Number.parseInt(hex, 16);
+    if (!Number.isFinite(int) || hex.length !== 6) return fallback;
+    return `rgba(${(int >> 16) & 255}, ${(int >> 8) & 255}, ${int & 255}, ${alpha})`;
+  }
+
   const defaultTvTickers = ['GOOGL', 'SPCX', 'SPY', 'BTCUSD'];
   const PACIFIC_TIME_ZONE = 'America/Los_Angeles';
   const CHART_WINDOW_SECONDS = 24 * 60 * 60;
@@ -11,7 +36,7 @@ if (!window.__dashboardWidgetsInitialized) {
   const YAHOO_REQUEST_SPACING_MS = 4500;
   const YAHOO_RATE_LIMIT_COOLDOWN_MS = 120 * 1000;
   const CHART_CACHE_TTL_MS = 15 * 60 * 1000;
-  const CHART_CACHE_KEY_PREFIX = 'dashboardChartCache:v3:';
+  const CHART_CACHE_KEY_PREFIX = 'dashboardChartCache:v4:';
   const CUSTOM_TICKERS_STORAGE_KEY = 'dashboardCustomTickers:v1';
   const INITIAL_VISIBLE_TICKER_OPTIONS = 6;
   const TOP_TICKER_OPTIONS = [
@@ -280,7 +305,9 @@ if (!window.__dashboardWidgetsInitialized) {
       : NaN;
     const isUp = Number.isFinite(change) && change > 0;
     const isDown = Number.isFinite(change) && change < 0;
-    const textColor = isUp ? '#86c97e' : isDown ? '#e06c60' : '#e9eef1';
+    const textColor = isUp
+      ? paletteToken('--fresh', '#7fd489')
+      : isDown ? paletteToken('--hangup', '#ef6f61') : paletteToken('--text', '#edeff1');
 
     toolTip.innerHTML = '';
 
@@ -289,7 +316,9 @@ if (!window.__dashboardWidgetsInitialized) {
     symbolLine.style.fontSize = '18px';
     symbolLine.style.fontWeight = '800';
     symbolLine.style.lineHeight = '1.15';
-    symbolLine.style.color = '#fff';
+    // The price directly beneath this is @text; pure white made the two lines of one
+    // tooltip read as two different inks.
+    symbolLine.style.color = paletteToken('--text', '#edeff1');
 
     const priceLine = document.createElement('div');
     priceLine.textContent = `${formatChartPrice(lastPrice)} ${formatChartChange(change, changePercent)}`;
@@ -765,6 +794,13 @@ if (!window.__dashboardWidgetsInitialized) {
 
     const candles = [];
     const volumes = [];
+    // Volume bars carry their colour per data point, and a point's own colour beats
+    // the series-level `color` option — so setting that option alone left every bar
+    // painting in Lightweight Charts' default teal and red, which belong to neither
+    // this palette nor the candles drawn directly above them. Resolved once here
+    // rather than per point: this loop runs over a full day of minute bars.
+    const volumeUp = paletteRgba('--fresh', 0.5, '#7fd489');
+    const volumeDown = paletteRgba('--hangup', 0.5, '#ef6f61');
     const recentRanges = [];
     const RECENT_RANGE_WINDOW = 30;
     let previousClose = NaN;
@@ -841,7 +877,7 @@ if (!window.__dashboardWidgetsInitialized) {
       volumes.push({
         time: Number(timestamp),
         value: Number.isFinite(volume) ? volume : 0,
-        color: close >= open ? 'rgba(38, 166, 154, 0.5)' : 'rgba(239, 83, 80, 0.5)'
+        color: close >= open ? volumeUp : volumeDown
       });
 
       previousClose = close;
@@ -1187,17 +1223,28 @@ if (!window.__dashboardWidgetsInitialized) {
     toolTip.style.pointerEvents = 'none';
     toolTip.style.padding = '8px 10px';
     toolTip.style.borderRadius = '12px';
-    toolTip.style.background = 'rgba(8, 14, 22, 0.72)';
+    // Was a blue-black wash with a blue-white hairline. On a neutral chassis that
+    // made the tooltip the only tinted object on the dashboard, so it is drawn from
+    // the ramp like everything else: the well it would sit in, and the same warm
+    // filament every other lit edge on the site borrows.
+    toolTip.style.background = `color-mix(in srgb, ${paletteToken('--field', '#0a0b0c')} 72%, transparent)`;
     toolTip.style.backdropFilter = 'blur(8px)';
-    toolTip.style.border = '1px solid rgba(184, 214, 255, 0.15)';
+    toolTip.style.border = `1px solid color-mix(in srgb, ${paletteToken('--light', '#f7ecd8')} 15%, transparent)`;
     updateChartTooltip(toolTip, symbol, [], null);
     container.appendChild(toolTip);
 
     const chart = LightweightCharts.createChart(chartDiv, {
       width: chartDiv.clientWidth,
       height: chartDiv.clientHeight,
-      layout: { background: { type: 'solid', color: '#1a232a' }, textColor: '#7d8890', attributionLogo: false },
-      grid: { vertLines: { color: '#2a343b' }, horzLines: { color: '#2a343b' } },
+      layout: {
+        background: { type: 'solid', color: paletteToken('--tile', '#1f2224') },
+        textColor: paletteToken('--text-muted', '#98a0a6'),
+        attributionLogo: false
+      },
+      grid: {
+        vertLines: { color: paletteToken('--chip', '#363b3e') },
+        horzLines: { color: paletteToken('--chip', '#363b3e') }
+      },
       crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
       handleScroll: {
         mouseWheel: true,
@@ -1232,16 +1279,19 @@ if (!window.__dashboardWidgetsInitialized) {
 
     dashboardChartsByPanel.set(index, { chart, chartDiv });
 
+    const up = paletteToken('--fresh', '#7fd489');
+    const down = paletteToken('--hangup', '#ef6f61');
+
     const candleSeries = chart.addSeries(LightweightCharts.CandlestickSeries, {
-      upColor: '#86c97e',
-      downColor: '#e06c60',
+      upColor: up,
+      downColor: down,
       borderVisible: false,
-      wickUpColor: '#86c97e',
-      wickDownColor: '#e06c60'
+      wickUpColor: up,
+      wickDownColor: down
     });
 
     const volumeSeries = chart.addSeries(LightweightCharts.HistogramSeries, {
-      color: '#86c97e',
+      color: up,
       priceFormat: { type: 'volume' },
       priceScaleId: 'volume'
     });
@@ -1458,8 +1508,8 @@ if (!window.__dashboardWidgetsInitialized) {
       notification.style.top = '0';
       notification.style.left = '0';
       notification.style.right = '0';
-      notification.style.background = 'rgba(26, 35, 42, 0.92)';
-      notification.style.color = '#e9eef1';
+      notification.style.background = `color-mix(in srgb, ${paletteToken('--tile', '#1f2224')} 92%, transparent)`;
+      notification.style.color = paletteToken('--text', '#edeff1');
       notification.style.padding = '10px';
       notification.style.fontSize = '12px';
       notification.style.zIndex = '20';

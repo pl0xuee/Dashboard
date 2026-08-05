@@ -172,7 +172,7 @@
       font-weight: 800;
       letter-spacing: 0.18em;
       text-transform: uppercase;
-      box-shadow: inset 0 1px 0 rgba(255, 245, 220, 0.08), 0 6px 14px rgba(5, 10, 13, 0.16);
+      box-shadow: inset 0 1px 0 rgba(255, 245, 220, 0.08), 0 6px 14px color-mix(in srgb, var(--shadow-ink) 16%, transparent);
     }
 
     .game-toolbar-hint-title {
@@ -1873,7 +1873,7 @@
   background: var(--surface);
   border-color: var(--border);
 }
-.games-page .game-picker-art { border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px rgba(5, 10, 13, 0.4); }
+.games-page .game-picker-art { border-radius: var(--r-sm); box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--shadow-ink) 40%, transparent); }
 .games-page .game-picker-label { font-family: var(--font-legend); letter-spacing: 0.04em; }
 
 /* scoreboards are instrument readouts: recessed wells, mono tabular figures */
@@ -1881,7 +1881,7 @@
   border-radius: var(--r-sm);
   background: var(--well);
   border-color: var(--border);
-  box-shadow: inset 0 2px 5px rgba(5, 10, 13, 0.45);
+  box-shadow: inset 0 2px 5px color-mix(in srgb, var(--shadow-ink) 45%, transparent);
 }
 /* game panel titles: sized explicitly rather than left to element defaults. Every
    panel title is an h2 now — Tetris used to carry the page's only h1, which made
@@ -1933,7 +1933,7 @@
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 0.78rem;
-  box-shadow: inset 0 2px 5px rgba(5, 10, 13, 0.45);
+  box-shadow: inset 0 2px 5px color-mix(in srgb, var(--shadow-ink) 45%, transparent);
 }
 .games-page #minefieldPanel select:focus-visible {
   outline: 2px solid var(--light);
@@ -1956,7 +1956,7 @@
   border-radius: var(--r-md);
   background: var(--well);
   border: 1px solid var(--border);
-  box-shadow: inset 0 2px 6px rgba(5, 10, 13, 0.4);
+  box-shadow: inset 0 2px 6px color-mix(in srgb, var(--shadow-ink) 40%, transparent);
 }
 .game-bar .games-title { margin: 0; flex: 0 0 auto; font-size: 1.15rem; }
 

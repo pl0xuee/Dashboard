@@ -1,4 +1,4 @@
-const CACHE_NAME = 'command-center-v109';
+const CACHE_NAME = 'command-center-v113';
 // These are cache keys, not file paths: the query string is part of the key, so an
 // entry whose ?v= does not match what the HTML actually requests is precached and
 // then never read. Offline, the request misses, the network leg fails, and
@@ -8,7 +8,7 @@ const CACHE_NAME = 'command-center-v109';
 const APP_SHELL_FILES = [
   '/',
   '/index.html',
-  '/assets/css/styles.css?v=20260722shell1',
+  '/assets/css/styles.css?v=20260805advisories1',
   // Reached by @import from styles.css, so it never appears as its own request in
   // the HTML — but it is still a separate fetch, and an unstyled-type page is what
   // an offline miss looks like here.
@@ -17,22 +17,22 @@ const APP_SHELL_FILES = [
   // Imported as a module by the stream shim and the media page, so it is a real
   // request that never appears as a <script src> in any HTML.
   '/assets/js/config.js',
-  '/assets/js/index-inline.js?v=20260722news2',
+  '/assets/js/index-inline.js?v=20260805advisories1',
   '/manifest.webmanifest',
   '/assets/icons/favicon.svg',
   '/dashboard/',
   '/dashboard/index.html',
-  '/dashboard/assets/dashboard-widgets.js?v=20260723share1',
+  '/dashboard/assets/dashboard-widgets.js?v=20260805advisories1',
   '/dashboard/assets/vendor/lightweight-charts.standalone.production.js?v=5.0.9',
   '/stream/',
   '/stream/index.html',
   '/stream/assets/config-inline.js?v=20260722shell1',
-  '/stream/assets/stream-inline.css?v=20260724autohide2',
+  '/stream/assets/stream-inline.css?v=20260805advisories1',
   '/stream/assets/stream-inline.js?v=20260722shell1',
   '/media-portal/',
   '/media-portal/index.html',
-  '/media-portal/assets/media-inline.js?v=20260723share1',
-  '/media-portal/assets/media.css?v=20260722pip1',
+  '/media-portal/assets/media-inline.js?v=20260724more1',
+  '/media-portal/assets/media.css?v=20260805advisories1',
   '/repos/',
   '/repos/index.html',
   '/repos/assets/repos-inline.css?v=20260722shell1',
