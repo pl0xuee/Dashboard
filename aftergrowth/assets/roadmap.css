@@ -1,9 +1,9 @@
 /* Aftergrowth roadmap page. Leans on the site shell (styles.css) for the page frame,
    header and .card; this file only shapes the roadmap content itself. */
 
+/* .main is a flex column, so the horizontal axis is the cross axis here. */
 .roadmap-main {
-  display: flex;
-  justify-content: center;
+  align-items: center;
 }
 
 .roadmap-shell {
