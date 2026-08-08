@@ -60,14 +60,30 @@
      below the threshold where an edge reads as an edge at all, which is most of
      why this looked flat. Every step is now 3.9 points or wider, and the floor
      is genuinely black (4.3%, against the 5.5% it used to bottom out at). Depth
-     comes from value and light, not from hue. */
+     comes from value and light, not from hue.
+
+     Then it was measured properly, in CIE L* rather than in HSL lightness, and
+     the one number that actually decides whether a panel looks bolted on turned
+     out to be the one nobody had checked: the gap between a panel face and the
+     patch of chassis directly behind it. It was 4.9 L*. Every panel on the page
+     was within five points of the sheet it sits on, which is why the console
+     read as a printed diagram of itself.
+
+     Two rungs move, in opposite directions, and the gap goes to 8.3 L*: the page
+     drops (@rack 6.65 → 4.93) and the panel face lifts (@tile 13.00 → 14.97).
+     Splitting it across both is deliberate — dropping the page alone would have
+     dimmed the whole console, and lifting the panels alone would have washed the
+     lamp out. The rungs above @tile follow it up so the steps stay even, and
+     saturation lands between 5.7% and 9.1% the whole way, inside the band the
+     paragraphs above commit to. Text was re-measured against the new face:
+     @text-muted 5.73:1 and @text-faint 3.53:1, still over the 4.5 and 3.0 floors. */
   --field:    #0a0b0c; /* the floor: wells, legend plates, inputs */
-  --rack:     #131517; /* the page itself */
-  --tile:     #1f2224; /* panel body: machined grey */
-  --tile-lit: #292d30; /* header, buttons, raised rows */
-  --chip:     #363b3e; /* hover */
-  --hairline: #414649; /* rules and dividers */
-  --edge:     #5c6266; /* the strongest rule: button and input borders */
+  --rack:     #0f1112; /* the page itself */
+  --tile:     #232629; /* panel body: machined grey */
+  --tile-lit: #2e3236; /* header, buttons, raised rows */
+  --chip:     #3b4145; /* hover */
+  --hairline: #474d51; /* rules and dividers */
+  --edge:     #646b70; /* the strongest rule: button and input borders */
 
   /* The ink every shadow here is cast in. The ladder carried two rungs below
      where the ladder stops, which is also why it isn't on it: nothing is ever
@@ -135,7 +151,7 @@
   /* the brush marks in the chassis — see `body::before`. Strength is one
      number on purpose: it is the only thing here worth taste-testing, and it
      wants to sit just below the threshold where you notice it as a texture. */
-  --grain-strength: 0.42;
+  --grain-strength: 0.52;
   --grain-falloff: radial-gradient(ellipse 1300px 820px at 50% -10%,
     rgba(0, 0, 0, 1) 0%, rgba(0, 0, 0, 0.5) 46%, rgba(0, 0, 0, 0) 80%);
 
@@ -153,16 +169,34 @@
      `0 1px 0` hairline — which is a drawn line, not a shadow. Nothing on the
      page was ever cast into one until you hovered it, so the whole console read
      as artwork printed on the chassis rather than parts bolted to it. Resting
-     panels now get a real penumbra; hover deepens it rather than introducing it. */
-  --shadow-sm: 0 1px 0 color-mix(in srgb, var(--shadow-ink) 60%, transparent),
-               0 4px 12px color-mix(in srgb, var(--shadow-ink) 42%, transparent);
-  --shadow-md: 0 2px 0 color-mix(in srgb, var(--shadow-ink) 60%, transparent),
-               0 12px 30px color-mix(in srgb, var(--shadow-ink) 52%, transparent);
-  --shadow-lg: 0 20px 52px color-mix(in srgb, var(--shadow-ink) 70%, transparent);
+     panels now get a real penumbra; hover deepens it rather than introducing it.
+
+     Each is now two shadows doing two different jobs, because one blur cannot do
+     both. The tight one is contact — a couple of pixels, nearly opaque, right
+     under the edge, and it is the whole reason a panel reads as touching the
+     chassis rather than hovering a centimetre off it. The wide one is ambient
+     occlusion, the light that never reaches the gap. The old single 12px blur at
+     42% split the difference and landed as neither: too soft to be contact, too
+     faint to be occlusion, on a chassis this dark. */
+  --shadow-sm: 0 1px 2px color-mix(in srgb, var(--shadow-ink) 78%, transparent),
+               0 6px 16px color-mix(in srgb, var(--shadow-ink) 60%, transparent),
+               0 14px 34px color-mix(in srgb, var(--shadow-ink) 38%, transparent);
+  --shadow-md: 0 2px 4px color-mix(in srgb, var(--shadow-ink) 80%, transparent),
+               0 14px 32px color-mix(in srgb, var(--shadow-ink) 68%, transparent),
+               0 30px 62px color-mix(in srgb, var(--shadow-ink) 44%, transparent);
+  --shadow-lg: 0 4px 10px color-mix(in srgb, var(--shadow-ink) 72%, transparent),
+               0 28px 64px color-mix(in srgb, var(--shadow-ink) 78%, transparent);
   /* the top chamfer catches the same warm lamp every other highlight does. At 7%
      it was below the threshold where a 1px line is visible at all, so no edge on
      the page was actually catching the light the palette is built around. */
-  --bezel: inset 0 1px 0 color-mix(in srgb, var(--light) 14%, transparent);
+  --bezel: inset 0 1px 0 color-mix(in srgb, var(--light) 20%, transparent);
+  /* A chamfer has two sides. @bezel lights the top one; a piece of metal under a
+     lamp also turns away from it at the bottom, and leaving that edge unpainted
+     is what let every panel end in the same hairline it started in — a rectangle
+     rather than a solid. The pair is the depth: the eye reads the lit-over-dark
+     transition as a thickness, and it costs two inset lines to say so. */
+  --bezel-deep: inset 0 1px 0 color-mix(in srgb, var(--light) 24%, transparent),
+                inset 0 -1px 0 color-mix(in srgb, var(--shadow-ink) 75%, transparent);
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 
   --site-gutter-visual-width: 12px;
@@ -222,7 +256,7 @@ body {
      the radial and by each panel's own lit top edge, not by washing out the
      field they sit on. */
   background-image:
-    radial-gradient(ellipse 1200px 520px at 50% -10%, color-mix(in srgb, var(--light) 8%, transparent), transparent 70%),
+    radial-gradient(ellipse 1200px 620px at 50% -10%, color-mix(in srgb, var(--light) 11%, transparent), transparent 70%),
     linear-gradient(180deg,
       color-mix(in srgb, var(--tile) 22%, var(--rack)) 0%,
       var(--rack) 40%,
@@ -276,11 +310,48 @@ body::before {
   mask-image: var(--grain-falloff);
 }
 
+/* ---------- the vignette ----------
+   The chassis is lit by one lamp above the middle of the page. A lamp has a
+   reach; this is where it stops.
+
+   Without it the corners of the page sat at exactly the value of the middle,
+   which is not a lit object — it is an evenly backlit sheet, and no amount of
+   shadow under the individual panels fixes it, because the field they are cast
+   onto is uniform. Falling off toward the edges is what turns the background
+   from a colour into a surface with a light source somewhere, and it is the
+   cheapest depth on the page: one gradient, no hue, nothing to maintain.
+
+   Centred at 32% rather than 50% for the same reason the wash above it is —
+   the light is above the fold, so the falloff has to be biased that way too, or
+   the two disagree about where the lamp is and cancel each other out.
+
+   Sits in ::after so it is painted over the grain rather than under it: brush
+   marks in the corner of a panel are in shadow along with the metal they are
+   in, and a texture that stays at full strength into the dark corners reads as
+   an overlay sitting in front of the page. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(ellipse 108% 82% at 50% 32%,
+    transparent 0%,
+    transparent 40%,
+    color-mix(in srgb, var(--shadow-ink) 38%, transparent) 76%,
+    color-mix(in srgb, var(--shadow-ink) 72%, transparent) 100%);
+}
+
 /* Full-bleed video and charts are the content, not the chassis — the grain has
-   no panel to sit behind there, so it would just be noise over a picture. */
+   no panel to sit behind there, so it would just be noise over a picture. The
+   vignette goes with it: it is the chassis falling away from the lamp, and in
+   theater mode there is no chassis, only the picture. */
 body.dashboard-theater-mode::before,
 body.stream-theater-mode::before,
-body.subs-theater-mode::before { display: none; }
+body.subs-theater-mode::before,
+body.dashboard-theater-mode::after,
+body.stream-theater-mode::after,
+body.subs-theater-mode::after { display: none; }
 
 /* Links rest in plain text and light on hover, so the lift *is* the focus.
    They used to sit in amber at rest, which spent the signal colour on every
@@ -376,14 +447,21 @@ input[type="text"], input[type="search"], input[type="range"], select, textarea 
   font-weight: 500;
   letter-spacing: 0.01em;
   outline: none;
-  box-shadow: inset 0 2px 5px color-mix(in srgb, var(--shadow-ink) 45%, transparent);
+  /* the same four-part cut the search slot is built from, at field scale — see
+     the note on .home-search-wrap */
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--shadow-ink) 85%, transparent),
+              inset 0 4px 9px color-mix(in srgb, var(--shadow-ink) 58%, transparent),
+              0 1px 0 color-mix(in srgb, var(--light) 10%, transparent);
   transition: border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
 input[type="text"]::placeholder, input[type="search"]::placeholder { color: var(--text-faint); font-weight: 500; }
 input[type="text"]:focus, input[type="search"]:focus, select:focus {
   border-color: var(--light-border);
-  box-shadow: inset 0 2px 5px color-mix(in srgb, var(--shadow-ink) 45%, transparent), 0 0 0 3px var(--light-soft);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--shadow-ink) 85%, transparent),
+              inset 0 4px 9px color-mix(in srgb, var(--shadow-ink) 58%, transparent),
+              0 1px 0 color-mix(in srgb, var(--light) 10%, transparent),
+              0 0 0 3px var(--light-soft);
 }
 
 /* ---------- layout shell ---------- */
@@ -462,21 +540,46 @@ header {
   padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--surface-raised), var(--surface));
-  box-shadow: var(--bezel), var(--shadow-md);
+  /* three stops, not two: the bezel is the piece of metal nearest the lamp, so
+     it carries the most travel of any surface on the page — lit at the chamfer,
+     @surface-raised across the face, and turning into its own shadow at the
+     bottom lip where the filament sits. */
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--light) 8%, var(--surface-raised)) 0%,
+    var(--surface-raised) 46%,
+    var(--surface) 100%);
+  box-shadow: var(--bezel-deep), var(--shadow-md);
   position: relative;
   z-index: 10;
   flex: 0 0 auto;
   margin-bottom: 14px;
 }
-/* amber filament along the bottom edge — the panel is powered */
+/* ---------- the filament ----------
+   A lit hairline along the bottom edge: the bezel is powered. Drawn in @light
+   and not in amber, whatever the comment here used to claim — amber means a
+   panel is holding live data, and a bezel holds no data. It was written before
+   the palette moved focus off the signal colour and never caught up.
+
+   It is built as one element rather than a line plus a glow because a 1px box
+   cannot cast a shadow that follows its own gradient: `box-shadow` works off the
+   element's rectangle, so the bloom would have carried straight through the
+   transparent ends and printed a bar across the full width. Instead the element
+   is 7px tall and holds both layers — a hard-stop linear paints the 1px core,
+   a radial paints the light it throws — and a single mask fades the pair out
+   toward the corners, so the core and its bloom always agree about where the
+   filament ends. */
 header::after {
   content: '';
   position: absolute;
-  left: 12px; right: 12px; bottom: -1px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--light-border), transparent);
-  opacity: 0.7;
+  left: 12px; right: 12px; bottom: -3px;
+  height: 7px;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 0 3px, var(--light) 3px 4px, transparent 4px),
+    radial-gradient(64% 100% at 50% 50%, var(--light-soft), transparent 72%);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+  opacity: 0.8;
 }
 
 .brand {
@@ -534,7 +637,9 @@ body.home-page .status-rail {
   background: var(--well);
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
-  box-shadow: inset 0 2px 5px color-mix(in srgb, var(--shadow-ink) 45%, transparent);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--shadow-ink) 85%, transparent),
+              inset 0 4px 9px color-mix(in srgb, var(--shadow-ink) 58%, transparent),
+              0 1px 0 color-mix(in srgb, var(--light) 10%, transparent);
 }
 body.home-page .rail-cell {
   display: flex;
@@ -654,7 +759,9 @@ header .controls { flex: 1 1 auto; }
   border-radius: var(--r-md);
   border: 1px solid var(--border);
   background: var(--well);
-  box-shadow: inset 0 2px 6px color-mix(in srgb, var(--shadow-ink) 50%, transparent);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--shadow-ink) 85%, transparent),
+              inset 0 5px 12px color-mix(in srgb, var(--shadow-ink) 60%, transparent),
+              0 1px 0 color-mix(in srgb, var(--light) 10%, transparent);
 }
 .ticker-strip tv-ticker-tape { flex: 1; border-radius: var(--r-sm); overflow: hidden; }
 
@@ -670,17 +777,31 @@ tv-ticker-tape { width: 100%; height: 100%; }
 .card {
   --plate-lamp: transparent;
   background: linear-gradient(180deg,
-    color-mix(in srgb, var(--light) 4%, var(--surface)) 0%,
-    var(--surface) 38%,
-    color-mix(in srgb, var(--shadow-ink) 22%, var(--surface)) 100%);
+    color-mix(in srgb, var(--light) 7%, var(--surface)) 0%,
+    var(--surface) 42%,
+    color-mix(in srgb, var(--shadow-ink) 34%, var(--surface)) 100%);
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
   padding: 16px;
   position: relative;
-  box-shadow: var(--bezel), var(--shadow-sm);
-  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
+  box-shadow: var(--bezel-deep), var(--shadow-sm);
+  transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease), transform 0.2s var(--ease);
 }
-.card:hover { border-color: var(--border-strong); box-shadow: var(--bezel), var(--shadow-md); }
+/* Hover picks the panel up off the chassis. One pixel, which sounds like
+   nothing and is the whole effect: the shadow under it goes from @shadow-sm to
+   @shadow-md at the same time, so the panel and its shadow move apart — that
+   disagreement is what the eye reads as height. Moving the panel without
+   growing the shadow just slides it; growing the shadow without moving the
+   panel just darkens the gap. It has to be both, and it has to be small.
+
+   The lift is the only transform on a resting panel, so no card becomes a
+   containing block for anything positioned — checked against the fixed
+   overlays, which all live on .tv-panel and the theater grid, not in here. */
+.card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--bezel-deep), var(--shadow-md);
+  transform: translateY(-1px);
+}
 /* only panels that actually carry a legend plate go flush at the top */
 .card:has(> .home-box-title:first-child), .card:has(> h2:first-child) { padding-top: 0; }
 
@@ -700,13 +821,16 @@ tv-ticker-tape { width: 100%; height: 100%; }
      @plate-lamp is the annunciator bleeding onto its own plate; it is
      transparent until the panel's data lands. See the lamp block below. */
   background:
-    radial-gradient(42px 24px at 17px 50%, var(--plate-lamp), transparent 72%),
+    radial-gradient(78px 30px at 18px 50%, var(--plate-lamp), transparent 74%),
     linear-gradient(180deg,
-      color-mix(in srgb, var(--shadow-ink) 60%, var(--well)) 0%,
-      var(--well) 72%);
+      color-mix(in srgb, var(--shadow-ink) 80%, var(--well)) 0%,
+      var(--well) 76%);
   border-bottom: 1px solid var(--border);
   border-radius: var(--r-lg) var(--r-lg) 0 0;
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--light) 6%, transparent);
+  /* the lip below the cut, catching the lamp. See the well-recess block at the
+     foot of this file — same trick, same reason, and at 6% it was under the
+     threshold the @bezel note already documents for a 1px line. */
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--light) 11%, transparent);
 }
 /* .center is overridden deliberately: plates align left so lamps form a column */
 .card > .home-box-title.center:first-child { text-align: left; justify-content: flex-start; }
@@ -782,7 +906,7 @@ tv-ticker-tape { width: 100%; height: 100%; }
 .card:has(.hn-list),
 .card:has(.quake-empty),
 .card:has(.subs-card) {
-  --plate-lamp: color-mix(in srgb, var(--tally) 16%, transparent);
+  --plate-lamp: color-mix(in srgb, var(--tally) 30%, transparent);
 }
 
 @keyframes lamp-breathe {
@@ -797,10 +921,20 @@ tv-ticker-tape { width: 100%; height: 100%; }
 
    Every element's resting state is the visible one; the animation only supplies
    a starting offset via `both`. That way, if animation is disabled the content
-   is still shown rather than stranded at opacity 0. */
+   is still shown rather than stranded at opacity 0.
+
+   The offset is carried on `translate` rather than on `transform`, and that is a
+   correctness fix, not a style choice. `both` means this animation keeps applying
+   its final keyframe forever after it ends, and a filling animation outranks every
+   normal declaration in the cascade — so a `to` frame reading `transform: none`
+   silently beat .card:hover's lift and the panels could not be picked up at all.
+   Measured, not guessed: with `transform` keyframes the hovered card computes
+   `matrix(1,0,0,1,0,9)`; with `translate` keyframes it computes the intended
+   `matrix(1,0,0,1,0,-1)`. `translate` and `transform` are separate properties that
+   compose, so the boot offset and the hover lift stop fighting over one slot. */
 @keyframes boot-in {
-  from { opacity: 0; transform: translateY(9px); }
-  to { opacity: 1; transform: none; }
+  from { opacity: 0; translate: 0 9px; }
+  to { opacity: 1; translate: none; }
 }
 
 /* A lamp does not fade up — it overshoots, then settles. The overshoot is
@@ -833,6 +967,19 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 /* ---------- home search ---------- */
 /* the search field is the hero: a wide machined slot, set to the news column's
    width so its edges line up with the panel below it */
+/* The one control on the page, sitting alone above the console at the width of
+   the column under it — so it is the first thing seen, and it was reading as an
+   empty rectangle with a grey outline. A recess is not a dark fill; it is the
+   four things a cut in metal actually does to light, and it had one of them:
+
+     the near wall throws a hard shadow across the top of the cut  (inset, tight)
+     the cavity is darker than the face, deepest at the top        (inset, soft)
+     the far lip below the cut catches the lamp                    (0 1px 0 @light)
+     the whole assembly is seated in the chassis                   (the outer cast)
+
+   The third is the one that does the work, and it is the same `0 1px 0` the data
+   wells at the foot of this file are built on — a slot and a well are the same
+   cut, so they are lit the same way. */
 .home-search-wrap {
   width: 100%;
   max-width: 730px;
@@ -840,13 +987,29 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   padding: 0;
   border-radius: var(--r-lg);
   border: 1px solid var(--border-strong);
-  background: var(--well);
-  box-shadow: inset 0 3px 8px color-mix(in srgb, var(--shadow-ink) 55%, transparent), var(--bezel);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--shadow-ink) 72%, var(--well)) 0%,
+    var(--well) 58%);
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, var(--shadow-ink) 92%, transparent),
+    inset 0 5px 12px color-mix(in srgb, var(--shadow-ink) 72%, transparent),
+    0 1px 0 color-mix(in srgb, var(--light) 13%, transparent),
+    0 10px 26px color-mix(in srgb, var(--shadow-ink) 52%, transparent);
   transition: border-color 0.18s ease, box-shadow 0.18s ease;
 }
+/* Focus keeps every one of those and adds the lamp on top, so the slot does not
+   flatten out the moment it is used — the earlier rule dropped the seat and the
+   lit lip when it rebuilt the stack, and the field visibly rose out of the metal
+   on click. */
 .home-search-wrap:focus-within {
   border-color: var(--light-border);
-  box-shadow: inset 0 3px 8px color-mix(in srgb, var(--shadow-ink) 55%, transparent), 0 0 0 3px var(--light-soft), 0 0 18px var(--light-soft);
+  box-shadow:
+    inset 0 1px 2px color-mix(in srgb, var(--shadow-ink) 92%, transparent),
+    inset 0 5px 12px color-mix(in srgb, var(--shadow-ink) 72%, transparent),
+    0 1px 0 color-mix(in srgb, var(--light) 13%, transparent),
+    0 10px 26px color-mix(in srgb, var(--shadow-ink) 52%, transparent),
+    0 0 0 3px var(--light-soft),
+    0 0 22px var(--light-soft);
 }
 .home-search-form { margin: 0; width: 100%; display: flex; justify-content: center; }
 .home-search-input {
@@ -924,15 +1087,25 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   left: 0; top: 0; bottom: 0;
   width: 3px;
   background: var(--ql-accent);
-  opacity: 0.55;
-  transition: opacity 0.16s ease;
+  opacity: 0.7;
+  transition: opacity 0.16s ease, box-shadow 0.16s ease;
 }
+/* Hover pulls the marker's own colour a short way into the tile. The marker is
+   already the code for which service this is; the wash is that code answering
+   when you point at it, which is cheaper than a second cue and cannot be
+   confused with the amber that means live data. It stops at 55% so the label
+   keeps a plain field to sit on — a tile washed end to end stops being metal. */
 .quick-links-list li a:hover {
   border-color: var(--border-strong);
-  background: var(--surface-hover);
+  background: linear-gradient(90deg,
+    color-mix(in srgb, var(--ql-accent) 16%, var(--surface-hover)) 0%,
+    var(--surface-hover) 55%);
   color: var(--text);
 }
-.quick-links-list li a:hover::before { opacity: 1; }
+.quick-links-list li a:hover::before {
+  opacity: 1;
+  box-shadow: 0 0 9px color-mix(in srgb, var(--ql-accent) 65%, transparent);
+}
 
 .quick-links-list a[href*="youtube.com"] { --ql-accent: #ff4a5e; }
 .quick-links-list a[href*="twitch.tv"] { --ql-accent: #9d7dff; }
@@ -997,6 +1170,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
    left to inherit would sit centred and read as a heading rather than a note */
 .news-status-note { margin: 0; padding: 2px 0; font-size: 0.78rem; color: var(--text-faint); text-align: left; }
 .news-item-card {
+  position: relative;
   margin-bottom: 1px;
   padding: 11px 14px;
   border: 0;
@@ -1005,9 +1179,42 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   background: transparent;
   transition: background 0.14s ease;
 }
-.news-item-card:first-child { border-top: 0; }
+/* The row under the cursor gets a marker down its left edge, in @light rather
+   than in amber: this is the lamp landing on a thing, which is the definition
+   @light carries everywhere else. Amber here would say the headline is live
+   data, and every headline in the list is equally live. */
+.news-item-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+  background: var(--light);
+  opacity: 0;
+  transition: opacity 0.14s ease;
+}
+.news-item-card:hover::before { opacity: 0.85; }
 .news-item-card:hover { background: var(--surface-raised); }
 .news-item-link { color: var(--text); text-decoration: none; font-size: 0.98rem; line-height: 1.45; font-weight: 400; display: block; }
+
+/* ---------- the lead ----------
+   This panel is the widest surface on the page and it was ten headlines at one
+   size, one weight and one colour, which is a list rather than a story — there
+   was no entry point, so the eye had to start at the top and read, or skip the
+   whole column. A newspaper solves this on the front page and has for two
+   hundred years: the lead is set larger, and everything under it is a digest.
+
+   The break is between the first item and the rest, not a gradual ramp down the
+   list, because the ranking below the lead is the feed's order and not an
+   editorial judgement this page is in a position to make. One story is promoted;
+   the other nine stay peers. */
+.news-item-card:first-child { border-top: 0; padding-top: 5px; padding-bottom: 14px; }
+.news-item-card:first-child .news-item-link {
+  font-size: 1.24rem;
+  line-height: 1.28;
+  font-weight: 500;
+  letter-spacing: -0.012em;
+  text-wrap: balance;
+}
 .news-item-link:hover { color: var(--light); }
 .news-item-meta {
   font-size: 0.7rem;
@@ -1020,6 +1227,19 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 
 /* ---------- info widgets (sentiment / clock / weather / nascar) ---------- */
 .info-card { display: flex; flex-direction: column; gap: 2px; }
+/* ---------- the headline reading ----------
+   One number per panel is the thing the panel exists to report, and until now
+   it was set in the same ink as the label under it — bigger and bolder, but
+   still ink. On an instrument the headline reading is not printed on the metal,
+   it is lit from behind it, and the difference between those two is a glow the
+   character throws onto the face around it.
+
+   Mixed from `currentColor`, not from a token, and that is the entire reason
+   this is one rule instead of four. The sentiment score is recoloured by zone
+   from the script (red through @fresh), the Kp reading by storm level, the
+   temperature stays @light — each one glows in whatever colour it is currently
+   reporting, and a reading that turns red turns its own halo red with it.
+   Naming a token here would have frozen all of them at amber. */
 .info-value {
   font-family: var(--font-mono);
   font-size: 1.5rem;
@@ -1029,6 +1249,8 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   line-height: 1.15;
   letter-spacing: -0.01em;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 28px color-mix(in srgb, currentColor 34%, transparent),
+               0 0 8px color-mix(in srgb, currentColor 22%, transparent);
 }
 
 /* ---------- sentiment gauge ----------
@@ -1336,11 +1558,15 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
 .market-index-change.flat { color: var(--text-faint); }
 
 .weather-box { text-align: left; width: 100%; }
+/* the largest reading on the page, so it takes the widest halo — same
+   construction as .info-value, scaled to the type */
 .weather-temp {
   font-family: var(--font-mono);
   font-size: 2.1rem; margin: 0; font-weight: 700;
   color: var(--light); line-height: 1.05;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 34px color-mix(in srgb, currentColor 36%, transparent),
+               0 0 10px color-mix(in srgb, currentColor 22%, transparent);
 }
 .weather-range { font-family: var(--font-mono); font-size: 0.8rem; margin: 6px 0 4px; color: var(--text-muted); font-weight: 400; font-variant-numeric: tabular-nums; }
 .weather-desc { font-size: 0.86rem; margin: 0; color: var(--text); }
@@ -1407,7 +1633,7 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   border: 1px solid var(--border);
   border-radius: var(--r-sm);
   overflow: hidden;
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--light) 7%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--light) 12%, transparent);
 }
 .weather-alert {
   --alert-accent: var(--border-strong);
@@ -1513,15 +1739,18 @@ body.home-page .home-search-wrap { animation: boot-in 0.42s var(--ease) 0.12s bo
   border: 1px solid var(--border);
   border-radius: var(--r-md);
   background: linear-gradient(180deg,
-    color-mix(in srgb, var(--light) 4%, var(--surface)) 0%,
-    var(--surface) 38%,
-    color-mix(in srgb, var(--shadow-ink) 22%, var(--surface)) 100%);
+    color-mix(in srgb, var(--light) 7%, var(--surface)) 0%,
+    var(--surface) 42%,
+    color-mix(in srgb, var(--shadow-ink) 34%, var(--surface)) 100%);
   height: 100%;
   overflow: hidden;
-  box-shadow: var(--bezel), var(--shadow-sm);
+  box-shadow: var(--bezel-deep), var(--shadow-sm);
   transition: border-color 0.2s var(--ease), box-shadow 0.2s var(--ease);
 }
-.tv-panel:hover { border-color: var(--border-strong); box-shadow: var(--bezel), var(--shadow-md); }
+/* No lift here, unlike .card: these are sized to a locked 100vh grid and each
+   one holds a third-party iframe, so a transform buys a repaint of the chart
+   for a pixel of travel nobody asked for. The shadow still deepens. */
+.tv-panel:hover { border-color: var(--border-strong); box-shadow: var(--bezel-deep), var(--shadow-md); }
 
 .tv-panel-header {
   display: flex;
@@ -1703,18 +1932,28 @@ body.subs-theater-mode .subs-player:focus-within .subs-theater-exit {
   padding: 10px 14px;
   border: 1px solid var(--border);
   border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--surface-raised), var(--surface));
-  box-shadow: var(--bezel), var(--shadow-md);
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--light) 8%, var(--surface-raised)) 0%,
+    var(--surface-raised) 46%,
+    var(--surface) 100%);
+  box-shadow: var(--bezel-deep), var(--shadow-md);
   position: relative;
   flex: 0 0 auto;
 }
+/* the header's filament, mirrored — the two face each other and bracket the
+   console. Same construction; see the note on header::after. */
 .site-footer::before {
   content: '';
   position: absolute;
-  left: 12px; right: 12px; top: -1px;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--light-border), transparent);
-  opacity: 0.7;
+  left: 12px; right: 12px; top: -3px;
+  height: 7px;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, transparent 0 3px, var(--light) 3px 4px, transparent 4px),
+    radial-gradient(64% 100% at 50% 50%, var(--light-soft), transparent 72%);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+  opacity: 0.8;
 }
 
 /* the nameplate: stamped into the chassis rather than backlit, so it reads a stop
@@ -1780,11 +2019,11 @@ body.subs-theater-mode .subs-player:focus-within .subs-theater-exit {
    carry their own inset would otherwise win on source order and drop the lip. */
 .market-index-list, .hn-list, .quake-list, .weather-hourly, .weather-summary,
 .nascar-meta, .panel-well {
-  box-shadow: 0 1px 0 color-mix(in srgb, var(--light) 7%, transparent);
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--light) 12%, transparent);
 }
 .spacewx-scale, .sentiment-track {
-  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--shadow-ink) 60%, transparent),
-              0 1px 0 color-mix(in srgb, var(--light) 7%, transparent);
+  box-shadow: inset 0 1px 3px color-mix(in srgb, var(--shadow-ink) 75%, transparent),
+              0 1px 0 color-mix(in srgb, var(--light) 12%, transparent);
 }
 
 /* ---------- responsive ---------- */
